@@ -37,7 +37,6 @@ Imports:
     base64enc,
     dplyr,
     magrittr,
-    floraR,
     geobr,
     grid,
     grDevices,
@@ -56,6 +55,8 @@ Imports:
     utils,
     stringi,
     jpeg
+Remotes:
+    DBOSlab/floraR
 Suggests:
     covr,
     knitr,
