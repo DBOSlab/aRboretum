@@ -1,1 +1,1 @@
-utils::globalVariables(c("botregions"))
+utils::globalVariables(c("botregions", "family", "taxonName"))

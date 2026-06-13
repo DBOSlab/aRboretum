@@ -118,7 +118,7 @@
 <code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/" class="external-link">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
 <span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install-deprecated.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"DBOSlab/aRboretum"</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DBOSlab/aRboretum" class="external-link">aRboretum</a></span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://DBOSlab.github.io/aRboretum" class="external-link">aRboretum</a></span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
@@ -144,7 +144,7 @@
 </h4>
 <p>The following code retrieves species information from both Flora e Funga do Brasil (FFB) and Plants of the World Online (POWO), handling synonym resolution and merging data from both sources into a single dataframe.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DBOSlab/aRboretum" class="external-link">aRboretum</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://DBOSlab.github.io/aRboretum" class="external-link">aRboretum</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Extract data for multiple species</span></span>
 <span><span class="va">spp_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Euterpe edulis"</span>, <span class="st">"Paubrasilia echinata"</span>, <span class="st">"Coffea arabica"</span><span class="op">)</span></span>
@@ -165,7 +165,7 @@
 </h4>
 <p>Create folder structure and phrase files for personal audio recordings:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DBOSlab/aRboretum" class="external-link">aRboretum</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://DBOSlab.github.io/aRboretum" class="external-link">aRboretum</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Create folders for personal audio recordings</span></span>
 <span><span class="fu"><a href="reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
@@ -184,7 +184,7 @@
 <em>3. <code>arboretum_photos</code>: Prepare folders for personal photos</em><a class="anchor" aria-label="anchor" href="#id_3-arboretum_photos-prepare-folders-for-personal-photos"></a>
 </h4>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DBOSlab/aRboretum" class="external-link">aRboretum</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://DBOSlab.github.io/aRboretum" class="external-link">aRboretum</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/arboretum_photos.html">arboretum_photos</a></span><span class="op">(</span>data_path <span class="op">=</span> <span class="st">"extracted_data/my_species_data.xlsx"</span>, </span>
 <span>                 verbose <span class="op">=</span> <span class="cn">TRUE</span> <span class="op">)</span></span></code></pre></div>
@@ -196,7 +196,7 @@
 </h4>
 <p>Once you have your species data (either from <code>arboretum_data</code> or your own prepared dataframe), you can generate interactive HTML labels with text-to-speech functionality, or automatically use personal recordings when available:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/DBOSlab/aRboretum" class="external-link">aRboretum</a></span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://DBOSlab.github.io/aRboretum" class="external-link">aRboretum</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Generate HTML labels (will use personal recordings if found)</span></span>
 <span><span class="fu"><a href="reference/arboretum_labels.html">arboretum_labels</a></span><span class="op">(</span></span>
@@ -582,7 +582,6 @@ ORCID: 0000-0001-7072-2656</li>
 <ul class="list-unstyled">
 <li><a href="https://app.codecov.io/gh/DBOSlab/aRboretum" class="external-link"><img src="https://codecov.io/gh/DBOSlab/aRboretum/graph/badge.svg" alt="Codecov test coverage"></a></li>
 <li><a href="https://github.com/DBOSlab/aRboretum/actions/workflows/test-coverage.yaml" class="external-link"><img src="https://github.com/DBOSlab/aRboretum/actions/workflows/test-coverage.yaml/badge.svg" alt="Test Coverage"></a></li>
-<li><a href="https://cran.r-project.org/package=aRboretum" class="external-link"><img src="https://cranlogs.r-pkg.org/badges/grand-total/aRboretum" alt="CRAN Downloads"></a></li>
 <li><a href="https://github.com/DBOSlab/aRboretum/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/DBOSlab/aRboretum/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></li>
 <li><a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a></li>
 </ul>

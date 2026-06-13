@@ -36,6 +36,7 @@ Depends: R (>= 3.5)
 Imports:
     base64enc,
     dplyr,
+    magrittr,
     floraR,
     geobr,
     grid,
@@ -43,7 +44,6 @@ Imports:
     htmltools,
     jsonlite,
     leaflet,
-    magrittr,
     openxlsx,
     png,
     qrcode,
@@ -53,14 +53,17 @@ Imports:
     tibble,
     tidyr,
     tools,
-    utils
+    utils,
+    stringi,
+    jpeg
 Suggests:
-    jpeg,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
 VignetteBuilder: knitr
-URL: https://github.com/DBOSlab/aRboretum
+URL: https://DBOSlab.github.io/aRboretum,
+    https://github.com/DBOSlab/aRboretum,
+    https://dboslab.github.io/aRboretum/
 BugReports: https://github.com/DBOSlab/aRboretum/issues
 Config/roxygen2/version: 8.0.0
 RoxygenNote: 7.3.3

@@ -188,7 +188,7 @@
 #' @importFrom tibble add_column tibble
 #' @importFrom magrittr %>%
 #' @importFrom dplyr arrange
-#' @importFrom stats na.omit
+#' @importFrom stats na.omit setNames
 #' @importFrom stringi stri_trans_general
 #'
 #' @export
