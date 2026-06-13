@@ -458,7 +458,7 @@ https://github.com/DBOSlab/aRboretum
 ## Documentation
 
 Full function documentation and articles are available at the
-`aRboretum` [website](https://dboslab.github.io/aRboretum-website/).
+`aRboretum` [website](https://dboslab.github.io/aRboretum).
 
 ## License
 
