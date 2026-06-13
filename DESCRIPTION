@@ -1,0 +1,66 @@
+Package: aRboretum
+Type: Package
+Title: Generate Multilingual Audio-Enhanced Labels for Plant Collections
+Version: 1.0.0
+Authors@R: 
+    c(
+    person(given = "Martin",
+           family = "Boucknooghe",
+           role = c("aut"),
+           email = "martin.boucknooghe@etu.umontpellier.fr",
+           comment = c(ORCID = "0000-0001-7072-2656")),
+    person(given = "Domingos",
+           family = "Cardoso",
+           role = c("aut", "cre", "cph"),
+           email = "domingoscardoso@jbrj.gov.br",
+           comment = c(ORCID = "0000-0001-7072-2656"))
+    )
+Description: Creates interactive HTML labels for botanical and living plant 
+    collections with built-in text-to-speech capabilities in multiple languages 
+    (Portuguese, English, French, Spanish). The package extracts species data 
+    from taxonomic databases (Flora e Funga do Brasil and Plants of the World 
+    Online), handles synonym resolution, generates natural language descriptions, 
+    and produces standalone HTML files with audio playback controls. Users can 
+    optionally provide personal audio recordings that automatically take priority 
+    over synthesized speech. The package includes interactive maps showing species 
+    distribution at global and Brazilian state levels. Designed to expedite the 
+    production of collection labels for arboreta, botanical gardens, and living 
+    plant collections. Each label includes taxonomic information, distribution 
+    data, habitat descriptions, and origin status, with the ability to listen 
+    to descriptions using browser speech synthesis or custom recordings.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+Depends: R (>= 3.5)
+Imports:
+    base64enc,
+    dplyr,
+    floraR,
+    geobr,
+    grid,
+    grDevices,
+    htmltools,
+    jsonlite,
+    leaflet,
+    magrittr,
+    openxlsx,
+    png,
+    qrcode,
+    sf,
+    stats,
+    taxize,
+    tibble,
+    tidyr,
+    tools,
+    utils
+Suggests:
+    jpeg,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+URL: https://github.com/DBOSlab/aRboretum
+BugReports: https://github.com/DBOSlab/aRboretum/issues
+Config/roxygen2/version: 8.0.0
+RoxygenNote: 7.3.3
