@@ -1,4 +1,4 @@
-^.*\.Rproj$
+^aRboretum\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^README\.Rmd$
@@ -6,3 +6,5 @@
 ^docs$
 ^pkgdown$
 ^\.github$
+^vignettes/articles/figures$
+^vignettes$
