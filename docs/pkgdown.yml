@@ -2,9 +2,9 @@ pandoc: 3.6.3
 pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
-  add_lang_panara_vignette: add_lang_panara_vignette.html
+  add_lang: add_lang.html
   aRboretum: aRboretum.html
   howto_audios: howto_audios.html
   howto_photos: howto_photos.html
   quickstart: quickstart.html
-last_built: 2026-06-13T12:22Z
+last_built: 2026-06-13T13:25Z

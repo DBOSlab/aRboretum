@@ -1,10 +1,10 @@
 ---
-title: "Community-language accessibility: a Panará example"
+title: "Community-language accessibility"
 author: "Martin Boucknooghe & Domingos Cardoso"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Community-language accessibility: a Panará example}
+  %\VignetteIndexEntry{Community-language accessibility}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
 ---
@@ -22,7 +22,7 @@ In some projects, a full translation of the website or minisite interface is not
 
 For this purpose, `aRboretum` provides the `add_lang` argument in both `arboretum_audios()` and `arboretum_labels()`. This argument supports one additional language as a flexible accessibility layer, without requiring the full multilingual translation workflow used for the built-in package languages.
 
-In this example, we use **Panará** as an additional language.
+In this example, we use **Tukano** as an additional language.
 
 ## How `add_lang` works
 
@@ -39,27 +39,27 @@ This is particularly useful when the website interface can remain in Portuguese,
 
 ### Step 1. Prepare the dataset
 
-Start from a dataset created with `arboretum_data()` or from your own formatted input file. To include Panará, add a column named `full_phrases_ADD_LANGUAGE`. This column should contain the complete label text you want to display in the extra language.
+Start from a dataset created with `arboretum_data()` or from your own formatted input file. To include Tukano, add a column named `full_phrases_ADD_LANGUAGE`. This column should contain the complete label text you want to display in the extra language.
 
-```{r panara-example-data}
-panara_example <- data.frame(
+```{r tukano-example-data}
+tukano_example <- data.frame(
   taxonName = c("Paubrasilia echinata", "Euterpe edulis"),
   family = c("Fabaceae", "Arecaceae"),
   full_phrases_ADD_LANGUAGE = c(
-    "Texto completo em Panará para Paubrasilia echinata.",
-    "Texto completo em Panará para Euterpe edulis."
+    "Texto completo em Tukano para Paubrasilia echinata.",
+    "Texto completo em Tukano para Euterpe edulis."
   ),
   stringsAsFactors = FALSE
 )
 
-panara_example
+tukano_example
 ```
 
 In practice, your file will also include the standard columns used by `aRboretum`, such as taxonomy, native distribution, uses, and notes.
 
 ### Minimal column schema
 
-For the `add_lang = "PANARA"` workflow, the most important requirement is the presence of the column `full_phrases_ADD_LANGUAGE`.
+For the `add_lang = "TUKANO"` workflow, the most important requirement is the presence of the column `full_phrases_ADD_LANGUAGE`.
 
 A minimal input file should include at least the following columns:
 
@@ -74,8 +74,8 @@ A minimal input file should include at least the following columns:
 
 A more realistic toy example may also include built-in language note fields:
 
-```{r panara-schema-example-extended}
-panara_example_extended <- data.frame(
+```{r tukano-schema-example-extended}
+tukano_example_extended <- data.frame(
   taxonName = c("Paubrasilia echinata", "Euterpe edulis"),
   family = c("Fabaceae", "Arecaceae"),
   plant_uses_PT = c("Madeira e uso ornamental.", "Alimentação e paisagismo."),
@@ -84,31 +84,31 @@ panara_example_extended <- data.frame(
     "Espécie importante da Mata Atlântica."
   ),
   full_phrases_ADD_LANGUAGE = c(
-    "Texto completo em Panará para Paubrasilia echinata.",
-    "Texto completo em Panará para Euterpe edulis."
+    "Texto completo em Tukano para Paubrasilia echinata.",
+    "Texto completo em Tukano para Euterpe edulis."
   ),
   stringsAsFactors = FALSE
 )
 
-panara_example_extended
+tukano_example_extended
 ```
 
 ### Step 2. Create folders for optional personal recordings
 
-Use `arboretum_audios()` with `add_lang = "PANARA"`:
+Use `arboretum_audios()` with `add_lang = "TUKANO"`:
 
-```{r panara-audios, eval = FALSE}
+```{r tukano-audios, eval = FALSE}
 library(aRboretum)
 
 arboretum_audios(
   data_path = "extracted_data/my_species_data.xlsx",
   printed_lang = c("pt", "en"),
-  add_lang = "PANARA",
+  add_lang = "TUKANO",
   verbose = TRUE
 )
 ```
 
-This creates the `arboretum_audios/` folder and one additional recording folder per species using the `PANARA` code.
+This creates the `arboretum_audios/` folder and one additional recording folder per species using the `TUKANO` code.
 
 A simplified folder structure looks like this:
 
@@ -116,18 +116,18 @@ A simplified folder structure looks like this:
 arboretum_audios/
 ├── FABACEAE_Paubrasilia_echinata_PT/
 ├── FABACEAE_Paubrasilia_echinata_EN/
-├── FABACEAE_Paubrasilia_echinata_PANARA/
+├── FABACEAE_Paubrasilia_echinata_TUKANO/
 ├── ARECACEAE_Euterpe_edulis_PT/
 ├── ARECACEAE_Euterpe_edulis_EN/
-├── ARECACEAE_Euterpe_edulis_PANARA/
+├── ARECACEAE_Euterpe_edulis_TUKANO/
 └── __personal_audio_recording_guide.html
 ```
 
 The HTML guide can be used to help organize custom recordings for each species and language.
 
-### Step 3. Add Panará recordings if available
+### Step 3. Add Tukano recordings if available
 
-You may optionally place one personal recording file inside each `*_PANARA/` folder.
+You may optionally place one personal recording file inside each `*_TUKANO/` folder.
 
 When a personal recording is available, it is used in the final label. When it is not available, the HTML label may fall back to browser text-to-speech. For additional community languages, browser speech synthesis may not work reliably unless the device has a compatible voice installed. Personal recordings are therefore recommended whenever possible.
 
@@ -135,24 +135,24 @@ When a personal recording is available, it is used in the final label. When it i
 
 Now generate the labels with `arboretum_labels()`:
 
-```{r panara-labels, eval = FALSE}
+```{r tukano-labels, eval = FALSE}
 arboretum_labels(
   data_path = "extracted_data/my_species_data.xlsx",
   audio_dir = "arboretum_audios",
   printed_lang = c("pt", "en"),
-  add_lang = "PANARA",
+  add_lang = "TUKANO",
   verbose = TRUE,
   dir = "html_species_labels"
 )
 ```
 
-When `add_lang` is provided and `full_phrases_ADD_LANGUAGE` contains non-empty text, the generated HTML labels include **Panará** as an additional language option.
+When `add_lang` is provided and `full_phrases_ADD_LANGUAGE` contains non-empty text, the generated HTML labels include **Tukano** as an additional language option.
 
 In this workflow:
 
 - Portuguese and English are handled through the standard package workflow.
-- Panará text is read directly from `full_phrases_ADD_LANGUAGE`.
-- Panará audio is used when a personal recording is present.
+- Tukano text is read directly from `full_phrases_ADD_LANGUAGE`.
+- Tukano audio is used when a personal recording is present.
 - The rest of the website or minisite interface can remain in the built-in package languages.
 
 ## Why this workflow matters
