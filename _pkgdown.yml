@@ -68,10 +68,10 @@ reference:
       - arboretum_labels
       - arboretum_minisite
       - arboretum_qrcodes
-  - title: Internal helpers
-    desc: Low-level utilities used internally by the package.
+  - title: Package data
+    desc: Internal datasets used by the package workflow.
     contents:
-      - starts_with(".")
+      - botregions
 
 articles:
   - title: Getting started
