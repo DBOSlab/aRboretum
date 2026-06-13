@@ -383,7 +383,7 @@ The site is fully responsive and works on:
 For QR codes at your botanical garden:
 
 Point QR codes to individual species URLs:
-<https://your-domain.com/ARECACEAE_Euterpe_edulis_label.html> Visitors
+`https://your-domain.com/ARECACEAE_Euterpe_edulis_label.html` Visitors
 scan → instantly see the species label with audio!
 
 ## Important Notes for Deployment
