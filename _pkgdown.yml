@@ -68,7 +68,6 @@ reference:
       - arboretum_labels
       - arboretum_minisite
       - arboretum_qrcodes
-
   - title: Internal helpers
     desc: Low-level utilities used internally by the package.
     contents:
