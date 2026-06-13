@@ -112,7 +112,7 @@ library(aRboretum)
 arboretum_audios(
   data_path = "extracted_data/my_species_data.xlsx",
   printed_lang = c("pt", "en", "fr", "es"),
-  add_lang = "PANARA",
+  add_lang = "TUKANO",
   verbose = TRUE
 )
 ```
@@ -160,7 +160,7 @@ arboretum_labels(
   data_path = "extracted_data/my_species_data.csv",
   audio_dir = "arboretum_audios",  # optional, defaults to this
   printed_lang = c("pt", "en", "fr", "es"),
-  add_lang = "PANARA",
+  add_lang = "TUKANO",
   path_to_logo = "jbrj_logo.png",  # optional
   logo_url = "https://www.jbrj.gov.br",   # optional
   verbose = TRUE,
@@ -220,10 +220,10 @@ A typical workflow is:
 1.  Prepare your species dataset with the usual columns.
 2.  Add a column named `full_phrases_ADD_LANGUAGE` containing the full
     label text in the extra language.
-3.  Run `arboretum_audios(..., add_lang = "PANARA")` to create folders
+3.  Run `arboretum_audios(..., add_lang = "TUKANO")` to create folders
     for optional personal recordings.
 4.  Add audio files to the corresponding species folders if desired.
-5.  Run `arboretum_labels(..., add_lang = "PANARA")` to include the
+5.  Run `arboretum_labels(..., add_lang = "TUKANO")` to include the
     extra language in the generated labels.
 
 This approach allows the package to support meaningful multilingual
@@ -475,7 +475,7 @@ for details.
 
 The package uses data from:
 
-- [Flora e Funga do Brasil](https://floradobrasil.jbrj.gov.br/)
+- [Flora e Funga do Brasil (FFB)](https://floradobrasil.jbrj.gov.br/)
 - [Plants of the World Online (POWO)](https://powo.science.kew.org/)
 
 ## Contributing
