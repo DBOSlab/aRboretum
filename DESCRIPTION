@@ -55,13 +55,13 @@ Imports:
     utils,
     stringi,
     jpeg
-Remotes:
-    DBOSlab/floraR
 Suggests:
     covr,
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
+Remotes:
+    DBOSlab/floraR
 VignetteBuilder: knitr
 URL: https://DBOSlab.github.io/aRboretum,
     https://github.com/DBOSlab/aRboretum,
