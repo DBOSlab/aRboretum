@@ -600,7 +600,7 @@ arboretum_labels <- function(data_path = NULL,
 
   logo_dir <- system.file("figures", package = "aRboretum")
   logo_config <- list(
-    list(file = "aRboretum_hex_sticker.png", url = "https://github.com/DBOSlab/aRboretum", alt = "aRboretum"),
+    list(file = "aRboretum_hex_sticker.png", url = "https://dboslab.github.io/aRboretum/", alt = "aRboretum"),
     list(file = "jbrj_horizontal_logo.png", url = "https://www.gov.br/jbrj/pt-br", alt = "JBRJ"),
     list(file = "mma.png", url = "https://www.gov.br/mma", alt = "MMA"),
     list(file = "reflora.png", url = "https://reflora.jbrj.gov.br/consulta/#CondicaoTaxonCP", alt = "Reflora")
