@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# aRboretum <img src="inst/figures/aRboretum_hex_sticker.png" align="right" alt="" width="120" />
+# aRboretum <img src="man/figures/aRboretum_hex_sticker.png" align="right" alt="" width="120" />
 
 <!-- badges: start -->
 

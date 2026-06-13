@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# aRboretum <img src="inst/figures/aRboretum_hex_sticker.png" align="right" alt="" width="120" />
+# aRboretum <img src="man/figures/aRboretum_hex_sticker.png" align="right" alt="" width="120" />
 
 <!-- badges: start -->
 [![Codecov test coverage](https://codecov.io/gh/DBOSlab/aRboretum/graph/badge.svg)](https://app.codecov.io/gh/DBOSlab/aRboretum)
