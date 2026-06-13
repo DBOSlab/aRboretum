@@ -272,8 +272,8 @@ arboretum_data <- function(spp_list = NULL,
   genus_ranked$rank <- 1:nrow(genus_ranked)
   max_diversity <- max(genus_ranked$Freq, na.rm = TRUE)
   n_max_genera <- sum(genus_ranked$Freq == max_diversity, na.rm = TRUE)
-  genus_counts <- setNames(genus_richness_br$Freq, genus_richness_br$Var1)
-  rank_by_genus <- setNames(genus_ranked$rank, genus_ranked$Var1)
+  genus_counts <- stats::setNames(genus_richness_br$Freq, genus_richness_br$Var1)
+  rank_by_genus <- stats::setNames(genus_ranked$rank, genus_ranked$Var1)
 
   # Collection of data for each species ####
   for (i in seq_along(spp_list)) {
