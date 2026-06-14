@@ -157,14 +157,21 @@ arboretum_audios <- function(data_path = NULL,
     es = "Español"
   )
 
+  # Generate phrases for each requested language
   html_phrases <- list()
   for (lang in printed_lang) {
-    html_phrases[[lang]] <- .phrase_generator(
-      df = df,
-      lang = lang,
-      dict = .dict(),
-      verbose = verbose
-    )
+    html_phrases[[lang]] <- .phrase_generator(df,
+                                              dict = .dict(),
+                                              lang = lang,
+                                              verbose = verbose)
+    if (verbose) message("Generated phrases for language: ", toupper(lang))
+    if (!is.null(add_lang)) {
+      html_phrases[[add_lang]] <- html_phrases[[1]]
+      for (j in seq_along(html_phrases[[add_lang]])) {
+        html_phrases[[add_lang]][j] <- df$full_phrases_ADD_LANGUAGE[j]
+      }
+      if (verbose) message("Added phrases for language: ", toupper(add_lang))
+    }
   }
 
   output_path <- file.path(audio_dir, "__personal_audio_recording_guide.html")

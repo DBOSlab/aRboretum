@@ -343,21 +343,37 @@ arboretum_labels <- function(data_path = NULL,
   # Read input species data
   df <- .read_species_data(data_path, verbose)
 
-  # Generate phrases for each requested language
+  has_add_lang_phrases <- !is.null(add_lang) &&
+    "full_phrases_ADD_LANGUAGE" %in% names(df) &&
+    any(nzchar(trimws(stats::na.omit(df$full_phrases_ADD_LANGUAGE))))
+
+  if (has_add_lang_phrases) {
+    printed_lang <- unique(c(printed_lang, add_lang))
+    if (verbose) message("Added custom language to labels: ", toupper(add_lang))
+  }
+
   html_phrases <- list()
-  for (lang in printed_lang) {
-    html_phrases[[lang]] <- .phrase_generator(df,
-                                              dict = .dict(),
-                                              lang = lang,
-                                              verbose = verbose)
+  base_langs <- setdiff(printed_lang, add_lang)
+
+  for (lang in base_langs) {
+    html_phrases[[lang]] <- .phrase_generator(
+      df = df,
+      dict = .dict(),
+      lang = lang,
+      verbose = verbose
+    )
     if (verbose) message("Generated phrases for language: ", toupper(lang))
-    if (!is.null(add_lang)) {
-      html_phrases[[add_lang]] <- html_phrases[[1]]
-      for (j in seq_along(html_phrases[[add_lang]])) {
-        html_phrases[[add_lang]][j] <- df$full_phrases_ADD_LANGUAGE[j]
-      }
-      if (verbose) message("Added phrases for language: ", toupper(add_lang))
-    }
+  }
+
+  if (has_add_lang_phrases) {
+    add_phrases <- as.list(ifelse(
+      is.na(df$full_phrases_ADD_LANGUAGE) | !nzchar(trimws(df$full_phrases_ADD_LANGUAGE)),
+      "",
+      df$full_phrases_ADD_LANGUAGE
+    ))
+    names(add_phrases) <- df$taxonName
+    html_phrases[[add_lang]] <- add_phrases
+    if (verbose) message("Loaded custom phrases for language: ", toupper(add_lang))
   }
 
   output_paths <- character(nrow(df))
@@ -369,7 +385,7 @@ arboretum_labels <- function(data_path = NULL,
   br_states <- geobr::read_state(year = 2025,
                                  simplified = FALSE,
                                  showProgress = FALSE,
-                                 cache = FALSE)
+                                 cache = TRUE)
 
   # Generate one HTML file per species
   for (i in seq_along(df$taxonName)) {
@@ -379,6 +395,7 @@ arboretum_labels <- function(data_path = NULL,
       world = world,
       br_states = br_states,
       printed_lang = printed_lang,
+      add_lang = add_lang,
       path_to_logo = path_to_logo,
       logo_url = logo_url,
       output_dir = dir,
@@ -603,6 +620,7 @@ arboretum_labels <- function(data_path = NULL,
                                    world,
                                    br_states,
                                    printed_lang,
+                                   add_lang,
                                    path_to_logo,
                                    logo_url,
                                    output_dir,
@@ -657,14 +675,16 @@ arboretum_labels <- function(data_path = NULL,
                                                back_index = "Volver a la página principal")
     )
 
-    # Extract plant uses and curiosities from data
-    col_uses <- paste0("plant_uses_", toupper(lang))
-    uses <- species_data[[col_uses]][1]
-    if (is.na(uses)) uses <- ""
+    if (lang != add_lang) {
+      # Extract plant uses and curiosities from data
+      col_uses <- paste0("plant_uses_", toupper(lang))
+      uses <- species_data[[col_uses]][1]
+      if (is.na(uses)) uses <- ""
 
-    col_curi <- paste0("free_notes_", toupper(lang))
-    curi <- species_data[[col_curi]][1]
-    if (is.na(curi)) curi <- ""
+      col_curi <- paste0("free_notes_", toupper(lang))
+      curi <- species_data[[col_curi]][1]
+      if (is.na(curi)) curi <- ""
+    }
 
     extra_html <- ""
     extra_spoken <- ""
@@ -1217,7 +1237,12 @@ arboretum_labels <- function(data_path = NULL,
         htmltools::tags$button(id = "voiceBtn", class = "voice-btn", "🔊 Listen"),
         htmltools::tags$button(id = "stopBtn", class = "stop-btn", "⏹ Stop"),
         lapply(printed_lang, function(lang){
-          label <- switch(lang, pt = "Português", en = "English", fr = "Français", es = "Español")
+          label <- switch(lang,
+                          pt = "Português",
+                          en = "English",
+                          fr = "Français",
+                          es = "Español",
+                          toupper(lang))
           htmltools::tags$button(class = "lang-btn", `data-lang` = lang, label)
         })
       ),
@@ -1315,16 +1340,26 @@ arboretum_labels <- function(data_path = NULL,
 
       function speakCurrentLanguage() {
         if (playPersonalAudio(currentLang)) return;
+
         const textToSpeak = spokenTexts[currentLang] || spokenTexts[Object.keys(spokenTexts)[0]];
-        const langCode = voiceLangs[currentLang] || 'en-US';
+        const langCode = voiceLangs[currentLang];
+
+        if (!langCode) {
+        const preview = document.getElementById('spokenPreview');
+        if (preview) preview.textContent = textToSpeak || '';
+        return;
+        }
+
         stopCurrentAudio();
         const utterance = new SpeechSynthesisUtterance(textToSpeak);
         utterance.lang = langCode;
         utterance.rate = rate;
         utterance.pitch = pitch;
         utterance.volume = volume;
+
         const voice = chooseVoiceForLang(langCode);
         if (voice) utterance.voice = voice;
+
         window.speechSynthesis.speak(utterance);
       }
 
@@ -1354,7 +1389,15 @@ arboretum_labels <- function(data_path = NULL,
         }
         const voiceBtn = document.getElementById('voiceBtn');
         if (voiceBtn) {
-          voiceBtn.innerHTML = audioFiles[currentLang] ? '🎵 Listen (Personal Recording)' : '🔊 Listen';
+          const hasAudio = !!audioFiles[langKey];
+          const hasTts = !!voiceLangs[langKey];
+          if (hasAudio) {
+            voiceBtn.textContent = '🎵 Listen (Personal Recording)';
+          } else if (hasTts) {
+            voiceBtn.textContent = '🔊 Listen';
+          } else {
+            voiceBtn.textContent = '📖 Text only';
+          }
         }
       }
 
