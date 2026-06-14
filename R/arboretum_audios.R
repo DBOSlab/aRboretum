@@ -64,7 +64,7 @@
 #' @importFrom utils read.csv
 #' @importFrom openxlsx read.xlsx
 #' @importFrom tools file_ext
-#'
+#' @importFrom jsonlite toJSON
 #' @export
 
 arboretum_audios <- function(data_path = NULL,
@@ -157,22 +157,22 @@ arboretum_audios <- function(data_path = NULL,
     es = "Español"
   )
 
-  # Generate phrases for each requested language
-  html_phrases <- list()
-  for (lang in printed_lang) {
-    html_phrases[[lang]] <- .phrase_generator(df,
-                                              dict = .dict(),
-                                              lang = lang,
-                                              verbose = verbose)
-    if (verbose) message("Generated phrases for language: ", toupper(lang))
-    if (!is.null(add_lang)) {
-      html_phrases[[add_lang]] <- html_phrases[[1]]
-      for (j in seq_along(html_phrases[[add_lang]])) {
-        html_phrases[[add_lang]][j] <- df$full_phrases_ADD_LANGUAGE[j]
-      }
-      if (verbose) message("Added phrases for language: ", toupper(add_lang))
-    }
+  missing_langs <- setdiff(printed_lang, names(lang_button_label))
+  if (length(missing_langs) > 0) {
+    lang_button_label[missing_langs] <- toupper(missing_langs)
   }
+
+  # Generate phrases for each requested language
+  phrases_out <- .build_arboretum_phrases(
+    data_path = NULL,
+    df = df,
+    printed_lang = printed_lang,
+    add_lang = add_lang,
+    verbose = verbose
+  )
+
+  printed_lang <- phrases_out$printed_lang
+  html_phrases <- phrases_out$html_phrases
 
   output_path <- file.path(audio_dir, "__personal_audio_recording_guide.html")
   .save_phrase_html(
@@ -378,6 +378,43 @@ body {
 .subtitle-link:hover {
   text-decoration: underline;
 }
+.record-root-wrap {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.record-root-status {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+.record-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.record-btn,
+.stop-record-btn {
+  padding: 7px 11px;
+  border: 1px solid #d4e4d4;
+  border-radius: 10px;
+  background: #f0f7f0;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.stop-record-btn {
+  background: #faf3f0;
+}
+.record-status {
+  color: var(--muted);
+  font-size: 0.9rem;
+  min-width: 80px;
+}
 </style>
 </head>
 <body>
@@ -389,6 +426,10 @@ body {
         <p id="pageSubtitle">', .audio_subtitle_html(audio_ui_strings, initial_lang), '</p>
       </div>
       <div class="lang-switch">', lang_buttons_html, '</div>
+    </div>
+    <div class="record-root-wrap">
+      <button id="pickAudioRoot" class="lang-btn" type="button">📁 Choose audio folder</button>
+      <span id="audioRootStatus" class="record-root-status"></span>
     </div>
   </section>
 
@@ -416,12 +457,18 @@ body {
   const uiStrings = ', ui_strings_json, ';
   const generatedDate = "', .escape_html(as.character(Sys.Date())), '";
   let currentLang = "', initial_lang, '";
+  let audioRootHandle = null;
+  let mediaRecorder = null;
+  let mediaStream = null;
+  let recordedChunks = [];
+  let currentSection = null;
 
   const input = document.getElementById("searchInput");
   const cards = Array.from(document.querySelectorAll(".species-card"));
   const links = Array.from(document.querySelectorAll(".index-link"));
   const emptyState = document.getElementById("emptyState");
   const langButtons = Array.from(document.querySelectorAll(".lang-btn"));
+  const audioRootStatus = document.getElementById("audioRootStatus");
 
   function escapeHtml(text) {
     return String(text)
@@ -429,6 +476,11 @@ body {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
+  }
+
+  function setStatus(section, value) {
+    const node = section ? section.querySelector(".record-status") : null;
+    if (node) node.textContent = value || "";
   }
 
   function applyLanguage(lang) {
@@ -440,18 +492,18 @@ body {
     document.getElementById("pageTitle").textContent = ui.title;
     document.getElementById("pageSubtitle").innerHTML =
       escapeHtml(ui.subtitle) + "<br>" +
-      escapeHtml(ui.generated_with) + \' <a href="https://github.com/DBOSlab/aRboretum" target="_blank" rel="noopener noreferrer" class="subtitle-link">aRboretum</a> \' +
+      escapeHtml(ui.generated_with) + " <a href=\\"https://github.com/DBOSlab/aRboretum\\" target=\\"_blank\\" rel=\\"noopener noreferrer\\" class=\\"subtitle-link\\">aRboretum</a> " +
       generatedDate + ".";
     document.getElementById("indexTitle").textContent = ui.index_title;
     document.getElementById("footerNote").textContent = ui.footer_note;
     document.getElementById("searchInput").placeholder = ui.search_placeholder;
     document.getElementById("emptyState").textContent = ui.no_results;
 
-    document.querySelectorAll("[data-i18n=\'family\']").forEach(el => {
+    document.querySelectorAll("[data-i18n=\\"family\\"]").forEach(el => {
       el.textContent = ui.family;
     });
 
-    document.querySelectorAll("[data-i18n=\'back_to_top\']").forEach(el => {
+    document.querySelectorAll("[data-i18n=\\"back_to_top\\"]").forEach(el => {
       el.textContent = ui.back_to_top;
     });
 
@@ -492,11 +544,139 @@ body {
     emptyState.style.display = visibleCount === 0 ? "block" : "none";
   }
 
+  async function pickAudioRoot() {
+    if (!window.showDirectoryPicker) {
+      alert("Direct folder saving is supported in Chromium-based browsers when this page is served from localhost or HTTPS.");
+      return;
+    }
+
+    try {
+      audioRootHandle = await window.showDirectoryPicker();
+      if (audioRootStatus) {
+        audioRootStatus.textContent = "Folder selected: " + audioRootHandle.name;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function getOrCreateSubfolder(rootHandle, folderName) {
+    return await rootHandle.getDirectoryHandle(folderName, { create: true });
+  }
+
+  async function saveRecordingToFolder(blob, sectionEl) {
+    if (!audioRootHandle) {
+      throw new Error("Please choose the audio root folder first.");
+    }
+
+    const family = sectionEl.dataset.family;
+    const folderSpecies = sectionEl.dataset.folderSpecies;
+    const langSuffix = sectionEl.dataset.langSuffix;
+    const subfolderName = `${family}_${folderSpecies}_${langSuffix}`;
+    const filename = `${family}_${folderSpecies}_${langSuffix}.webm`;
+
+    const subfolder = await getOrCreateSubfolder(audioRootHandle, subfolderName);
+    const fileHandle = await subfolder.getFileHandle(filename, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+  }
+
+  async function startRecording(sectionEl) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert("Audio recording is not supported in this browser.");
+      return;
+    }
+
+    if (!audioRootHandle) {
+      alert("Please choose the audio root folder first.");
+      return;
+    }
+
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      alert("A recording is already in progress.");
+      return;
+    }
+
+    currentSection = sectionEl;
+    recordedChunks = [];
+    setStatus(sectionEl, "Recording...");
+
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(mediaStream);
+
+      mediaRecorder.ondataavailable = function(event) {
+        if (event.data && event.data.size > 0) {
+          recordedChunks.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async function() {
+        try {
+          const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+          await saveRecordingToFolder(blob, currentSection);
+          setStatus(currentSection, "Saved");
+        } catch (err) {
+          console.error(err);
+          setStatus(currentSection, "Save failed");
+        } finally {
+          if (mediaStream) {
+            mediaStream.getTracks().forEach(track => track.stop());
+          }
+          mediaStream = null;
+          mediaRecorder = null;
+          recordedChunks = [];
+          currentSection = null;
+        }
+      };
+
+      mediaRecorder.start();
+    } catch (err) {
+      console.error(err);
+      setStatus(sectionEl, "Mic denied");
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+      }
+      mediaStream = null;
+      mediaRecorder = null;
+      recordedChunks = [];
+      currentSection = null;
+    }
+  }
+
+  function stopRecording(sectionEl) {
+    if (!mediaRecorder || mediaRecorder.state === "inactive") {
+      setStatus(sectionEl, "Idle");
+      return;
+    }
+    setStatus(sectionEl, "Saving...");
+    mediaRecorder.stop();
+  }
+
   input.addEventListener("input", applyFilter);
 
   langButtons.forEach(btn => {
     btn.addEventListener("click", function () {
-      applyLanguage(this.dataset.lang);
+      if (this.id !== "pickAudioRoot") {
+        applyLanguage(this.dataset.lang);
+      }
+    });
+  });
+
+  document.getElementById("pickAudioRoot")?.addEventListener("click", pickAudioRoot);
+
+  document.querySelectorAll(".record-btn").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const section = this.closest(".lang-block");
+      if (section) startRecording(section);
+    });
+  });
+
+  document.querySelectorAll(".stop-record-btn").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const section = this.closest(".lang-block");
+      stopRecording(section);
     });
   });
 
@@ -522,6 +702,8 @@ body {
     species_name <- .normalize_text(df$taxonName[i])
     family_name <- .normalize_text(df$family[i])
     species_id <- .slugify(species_name)
+    folder_species <- .folder_species_name(species_name)
+    family_upper <- toupper(family_name)
 
     lang_blocks <- character(0)
 
@@ -539,13 +721,24 @@ body {
       full_text <- .normalize_text(full_text, ensure_period = FALSE)
 
       hidden_class <- if (lang == initial_lang) "" else " hidden"
+      lang_suffix <- .lang_suffix(lang)
 
       lang_blocks <- c(
         lang_blocks,
         paste0(
-          '<section class="lang-block lang-content', hidden_class, '" data-lang="', lang, '">',
+          '<section class="lang-block lang-content', hidden_class, '" ',
+          'data-lang="', .escape_html(lang), '" ',
+          'data-species="', .escape_html(species_name), '" ',
+          'data-family="', .escape_html(family_upper), '" ',
+          'data-folder-species="', .escape_html(folder_species), '" ',
+          'data-lang-suffix="', .escape_html(lang_suffix), '">',
           '<h3>', .escape_html(.lang_label(lang)), '</h3>',
           '<p>', .escape_html(full_text), '</p>',
+          '<div class="record-controls">',
+          '<button type="button" class="record-btn">🎙 Record</button>',
+          '<button type="button" class="stop-record-btn">⏹ Stop</button>',
+          '<span class="record-status"></span>',
+          '</div>',
           '</section>'
         )
       )
@@ -571,7 +764,8 @@ body {
          pt = "Português",
          en = "English",
          fr = "Français",
-         es = "Español")
+         es = "Español",
+         toupper(lang))
 }
 
 .lang_suffix <- function(lang) {
@@ -579,7 +773,8 @@ body {
          pt = "PT",
          en = "EN",
          fr = "FR",
-         es = "ES")
+         es = "ES",
+         toupper(lang))
 }
 
 .is_missing_text <- function(x) {
@@ -606,6 +801,12 @@ body {
   x <- gsub(">", "&gt;", x, fixed = TRUE)
   x <- gsub('"', "&quot;", x, fixed = TRUE)
   x
+}
+
+.folder_species_name <- function(species_name) {
+  species_name <- trimws(as.character(species_name))
+  species_name <- gsub("\\s+", "_", species_name)
+  species_name
 }
 
 .slugify <- function(x) {
@@ -674,9 +875,15 @@ body {
 
   btns <- vapply(printed_lang, function(lang) {
     active <- if (lang == initial_lang) ' class="lang-btn active"' else ' class="lang-btn"'
+
+    label <- unname(lang_button_label[lang])
+    if (length(label) == 0 || is.na(label) || !nzchar(trimws(label))) {
+      label <- toupper(lang)
+    }
+
     paste0(
       "<button", active, ' data-lang="', lang, '">',
-      .escape_html(unname(lang_button_label[lang])),
+      .escape_html(label),
       "</button>"
     )
   }, character(1))

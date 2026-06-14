@@ -36,7 +36,7 @@ recordings, usually created with \code{arboretum_audios()}.
 Default is \code{"arboretum_audios"}. The expected subfolder pattern is
 \code{FAMILY_Genus_species_LANG}, for example
 \code{FABACEAE_Paubrasilia_echinata_PT}. Supported audio file extensions are
-\code{.mp3}, \code{.wav}, \code{.m4a}, \code{.ogg}, and \code{.flac}.}
+\code{.mp3}, \code{.wav}, \code{.m4a}, \code{.ogg}, \code{.flac} and \code{.webm}.}
 
 \item{photo_dir}{Character string. Directory containing personal species photos,
 usually created with \code{arboretum_photos()}. Default is

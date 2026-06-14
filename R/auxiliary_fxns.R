@@ -125,6 +125,69 @@
 }
 
 # Phrase generator function ####
+.build_arboretum_phrases <- function(data_path = NULL,
+                                     df = NULL,
+                                     printed_lang = c("pt", "en", "fr", "es"),
+                                     add_lang = NULL,
+                                     verbose = TRUE) {
+
+  printed_lang <- .arg_check_printed_lang(printed_lang)
+
+  if (is.null(df)) {
+    df <- .read_species_data(data_path, verbose)
+  }
+
+  dict <- .dict()
+
+  has_add_lang_phrases <- !is.null(add_lang) &&
+    "full_phrases_ADD_LANGUAGE" %in% names(df) &&
+    any(nzchar(trimws(stats::na.omit(df$full_phrases_ADD_LANGUAGE))))
+
+  if (has_add_lang_phrases) {
+    printed_lang <- unique(c(printed_lang, add_lang))
+    if (verbose) {
+      message("Added custom language to phrases: ", toupper(add_lang))
+    }
+  }
+
+  html_phrases <- list()
+  base_langs <- setdiff(printed_lang, add_lang)
+
+  for (lang in base_langs) {
+    html_phrases[[lang]] <- .phrase_generator(
+      df = df,
+      dict = dict,
+      lang = lang,
+      verbose = verbose
+    )
+    if (verbose) {
+      message("Generated phrases for language: ", toupper(lang))
+    }
+  }
+
+  if (has_add_lang_phrases) {
+    add_phrases <- as.list(ifelse(
+      is.na(df$full_phrases_ADD_LANGUAGE) |
+        !nzchar(trimws(df$full_phrases_ADD_LANGUAGE)),
+      "",
+      df$full_phrases_ADD_LANGUAGE
+    ))
+    names(add_phrases) <- df$taxonName
+    html_phrases[[add_lang]] <- add_phrases
+
+    if (verbose) {
+      message("Loaded custom phrases for language: ", toupper(add_lang))
+    }
+  }
+
+  list(
+    df = df,
+    printed_lang = printed_lang,
+    html_phrases = html_phrases,
+    has_add_lang_phrases = has_add_lang_phrases
+  )
+}
+
 .phrase_generator <- function(df,
                               dict,
                               lang = "en",

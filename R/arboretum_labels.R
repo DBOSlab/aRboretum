@@ -50,7 +50,7 @@
 #' Default is \code{"arboretum_audios"}. The expected subfolder pattern is
 #' \code{FAMILY_Genus_species_LANG}, for example
 #' \code{FABACEAE_Paubrasilia_echinata_PT}. Supported audio file extensions are
-#' \code{.mp3}, \code{.wav}, \code{.m4a}, \code{.ogg}, and \code{.flac}.
+#' \code{.mp3}, \code{.wav}, \code{.m4a}, \code{.ogg}, \code{.flac} and \code{.webm}.
 #' @param photo_dir Character string. Directory containing personal species photos,
 #' usually created with \code{arboretum_photos()}. Default is
 #' \code{"arboretum_photos"}. The expected subfolder pattern is
@@ -340,41 +340,16 @@ arboretum_labels <- function(data_path = NULL,
     photo_dir <- NULL
   }
 
-  # Read input species data
-  df <- .read_species_data(data_path, verbose)
+  phrases_out <- .build_arboretum_phrases(
+    data_path = data_path,
+    printed_lang = printed_lang,
+    add_lang = add_lang,
+    verbose = verbose
+  )
 
-  has_add_lang_phrases <- !is.null(add_lang) &&
-    "full_phrases_ADD_LANGUAGE" %in% names(df) &&
-    any(nzchar(trimws(stats::na.omit(df$full_phrases_ADD_LANGUAGE))))
-
-  if (has_add_lang_phrases) {
-    printed_lang <- unique(c(printed_lang, add_lang))
-    if (verbose) message("Added custom language to labels: ", toupper(add_lang))
-  }
-
-  html_phrases <- list()
-  base_langs <- setdiff(printed_lang, add_lang)
-
-  for (lang in base_langs) {
-    html_phrases[[lang]] <- .phrase_generator(
-      df = df,
-      dict = .dict(),
-      lang = lang,
-      verbose = verbose
-    )
-    if (verbose) message("Generated phrases for language: ", toupper(lang))
-  }
-
-  if (has_add_lang_phrases) {
-    add_phrases <- as.list(ifelse(
-      is.na(df$full_phrases_ADD_LANGUAGE) | !nzchar(trimws(df$full_phrases_ADD_LANGUAGE)),
-      "",
-      df$full_phrases_ADD_LANGUAGE
-    ))
-    names(add_phrases) <- df$taxonName
-    html_phrases[[add_lang]] <- add_phrases
-    if (verbose) message("Loaded custom phrases for language: ", toupper(add_lang))
-  }
+  df <- phrases_out$df
+  printed_lang <- phrases_out$printed_lang
+  html_phrases <- phrases_out$html_phrases
 
   output_paths <- character(nrow(df))
 
@@ -1561,7 +1536,7 @@ arboretum_labels <- function(data_path = NULL,
     lang_code <- toupper(lang)
     folder_name <- file.path(audio_dir, paste(family_name, species_name, lang_code, sep = "_"))
     if (dir.exists(folder_name)) {
-      audio_extensions <- c("\\.mp3$", "\\.wav$", "\\.m4a$", "\\.ogg$", "\\.flac$")
+      audio_extensions <- c("\\.mp3$", "\\.wav$", "\\.m4a$", "\\.ogg$", "\\.flac$", "\\.webm$")
       pattern <- paste(audio_extensions, collapse = "|")
       audio_file <- list.files(folder_name, pattern = pattern, ignore.case = TRUE, full.names = TRUE)
       if (length(audio_file) > 0) audio_files[[lang]] <- audio_file[1]
