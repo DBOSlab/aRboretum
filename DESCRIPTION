@@ -44,7 +44,6 @@ Imports:
     jsonlite,
     leaflet,
     openxlsx,
-    png,
     qrcode,
     sf,
     stats,
@@ -54,7 +53,10 @@ Imports:
     tools,
     utils,
     stringi,
-    jpeg
+    jpeg,
+    png,
+    htmlwidgets,
+    plotly
 Suggests:
     covr,
     knitr,

@@ -252,7 +252,6 @@
 #'
 #' @importFrom utils download.file read.csv txtProgressBar unzip
 #' @importFrom tools file_ext
-#' @importFrom base64enc dataURI
 #' @importFrom htmltools tags save_html HTML as.tags
 #' @importFrom jsonlite toJSON
 #' @importFrom dplyr left_join
@@ -262,6 +261,10 @@
 #' @importFrom geobr read_state
 #' @importFrom openxlsx read.xlsx
 #' @importFrom magrittr %>%
+#' @importFrom htmlwidgets saveWidget
+#' @importFrom plotly as_widget
+#' @importFrom jpeg readJPEG writeJPEG
+#' @importFrom png readPNG writePNG
 #'
 #' @export
 
@@ -275,16 +278,20 @@ arboretum_labels <- function(data_path = NULL,
                              back_to_index = TRUE,
                              index_file = "index.html",
                              verbose = TRUE,
-                             dir = "arboretum_labels") {
+                             dir = "arboretum_labels"){
 
+  # Validate and clean output directory
   dir <- .arg_check_dir(dir)
+  # Validate language vector
   printed_lang <- .arg_check_printed_lang(printed_lang)
 
+  # Create output directory if it does not exist
   if (!dir.exists(dir)) {
     dir.create(dir, recursive = TRUE)
     if (verbose) message("Created directory: ", dir)
   }
 
+  # Copy personal audio folder if it exists and is not empty
   if (dir.exists(audio_dir)) {
     if (length(list.files(audio_dir, recursive = TRUE)) > 0) {
       .copy_folder_progress(from = audio_dir, to = dir, verbose = verbose)
@@ -304,16 +311,26 @@ arboretum_labels <- function(data_path = NULL,
     audio_dir <- NULL
   }
 
+  # Copy photo folder if it exists and is not empty
   if (dir.exists(photo_dir)) {
     if (length(list.files(photo_dir, recursive = TRUE)) > 0) {
       .copy_folder_progress(from = photo_dir, to = dir, verbose = verbose)
-      temp <- paste0(dir, "/__", photo_dir)
-      src <- file.path(dir, photo_dir)
+
+      temp <- file.path(dir, paste0("__", basename(photo_dir)))
+      src <- file.path(dir, basename(photo_dir))
+
       if (dir.exists(src)) {
         file.rename(src, temp)
+
+        .compress_images_in_dir(
+          photo_dir = temp,
+          max_size_mb = 1,
+          verbose = verbose
+        )
       } else {
-        warning("Source folder to rename not found” : ", src)
+        warning("Source folder to rename not found: ", src)
       }
+
       photo_dir <- temp
     } else {
       if (verbose) message("Photo folder is empty: ", photo_dir, " - ignored.")
@@ -323,52 +340,38 @@ arboretum_labels <- function(data_path = NULL,
     photo_dir <- NULL
   }
 
+  # Read input species data
   df <- .read_species_data(data_path, verbose)
 
-  has_add_lang_phrases <- !is.null(add_lang) &&
-    "full_phrases_ADD_LANGUAGE" %in% names(df) &&
-    any(nzchar(trimws(stats::na.omit(df$full_phrases_ADD_LANGUAGE))))
-
-  if (has_add_lang_phrases) {
-    printed_lang <- unique(c(printed_lang, add_lang))
-    if (verbose) message("Added custom language to labels: ", toupper(add_lang))
-  }
-
+  # Generate phrases for each requested language
   html_phrases <- list()
-  base_langs <- setdiff(printed_lang, add_lang)
-
-  for (lang in base_langs) {
-    html_phrases[[lang]] <- .phrase_generator(
-      df = df,
-      dict = .dict(),
-      lang = lang,
-      verbose = verbose
-    )
+  for (lang in printed_lang) {
+    html_phrases[[lang]] <- .phrase_generator(df,
+                                              dict = .dict(),
+                                              lang = lang,
+                                              verbose = verbose)
     if (verbose) message("Generated phrases for language: ", toupper(lang))
-  }
-
-  if (has_add_lang_phrases) {
-    add_phrases <- as.list(ifelse(
-      is.na(df$full_phrases_ADD_LANGUAGE) | !nzchar(trimws(df$full_phrases_ADD_LANGUAGE)),
-      "",
-      df$full_phrases_ADD_LANGUAGE
-    ))
-    names(add_phrases) <- df$taxonName
-    html_phrases[[add_lang]] <- add_phrases
-    if (verbose) message("Loaded custom phrases for language: ", toupper(add_lang))
+    if (!is.null(add_lang)) {
+      html_phrases[[add_lang]] <- html_phrases[[1]]
+      for (j in seq_along(html_phrases[[add_lang]])) {
+        html_phrases[[add_lang]][j] <- df$full_phrases_ADD_LANGUAGE[j]
+      }
+      if (verbose) message("Added phrases for language: ", toupper(add_lang))
+    }
   }
 
   output_paths <- character(nrow(df))
 
+  # Get world map (WGSRPD level 3)
   world <- .get_world_map()
 
-  br_states <- geobr::read_state(
-    year = 2025,
-    simplified = FALSE,
-    showProgress = FALSE,
-    cache = FALSE
-  )
+  # Get Brazil states map
+  br_states <- geobr::read_state(year = 2025,
+                                 simplified = FALSE,
+                                 showProgress = FALSE,
+                                 cache = FALSE)
 
+  # Generate one HTML file per species
   for (i in seq_along(df$taxonName)) {
     output_paths[i] <- .generate_species_html(
       species_data = df[i, , drop = FALSE],
@@ -387,17 +390,212 @@ arboretum_labels <- function(data_path = NULL,
     )
   }
 
+  # Clean up temporary WGSRPD folder
   unlink("WGSRPD", recursive = TRUE)
 
   if (verbose) {
-    message(
-      "\nCompleted! Generated ", length(output_paths),
-      " HTML files in: ", normalizePath(dir, winslash = "/")
-    )
+    message("\nCompleted! Generated ", length(output_paths), " HTML files in: ",
+            normalizePath(dir, winslash = "/"))
   }
 
   invisible(output_paths)
 }
+
+
+# Internal function to compress photos ####
+.compress_images_in_dir <- function(photo_dir,
+                                    max_size_mb = 1,
+                                    verbose = TRUE) {
+  if (is.null(photo_dir) || !dir.exists(photo_dir)) {
+    return(invisible(character(0)))
+  }
+
+  files <- list.files(
+    photo_dir,
+    recursive = TRUE,
+    full.names = TRUE,
+    ignore.case = TRUE
+  )
+
+  files <- files[grepl("\\.(jpg|jpeg|png)$", files, ignore.case = TRUE)]
+
+  if (length(files) == 0) {
+    return(invisible(character(0)))
+  }
+
+  compressed <- character(0)
+
+  for (f in files) {
+    ok <- tryCatch(
+      .compress_single_image(
+        path = f,
+        max_size_mb = max_size_mb,
+        verbose = verbose
+      ),
+      error = function(e) {
+        warning("Could not compress image: ", f, " | ", conditionMessage(e))
+        FALSE
+      }
+    )
+
+    if (isTRUE(ok)) {
+      compressed <- c(compressed, f)
+    }
+  }
+
+  invisible(compressed)
+}
+
+.compress_single_image <- function(path,
+                                   max_size_mb = 1,
+                                   verbose = TRUE) {
+  if (!file.exists(path)) {
+    return(FALSE)
+  }
+
+  size_limit <- max_size_mb * 1024^2
+  original_size <- file.info(path)$size
+
+  if (is.na(original_size) || original_size <= size_limit) {
+    return(FALSE)
+  }
+
+  ext <- tolower(tools::file_ext(path))
+  tmp <- tempfile(fileext = paste0(".", ext))
+
+  on.exit({
+    if (file.exists(tmp)) {
+      unlink(tmp)
+    }
+  }, add = TRUE)
+
+  img <- .read_image_generic(path, ext)
+
+  if (is.null(img)) {
+    warning("Unsupported image format for compression: ", path)
+    return(FALSE)
+  }
+
+  if (ext %in% c("jpg", "jpeg")) {
+    ok <- .compress_jpeg_to_target(
+      img = img,
+      out_path = tmp,
+      size_limit = size_limit
+    )
+  } else if (ext == "png") {
+    ok <- .compress_png_to_target(
+      img = img,
+      out_path = tmp,
+      size_limit = size_limit
+    )
+  } else {
+    return(FALSE)
+  }
+
+  if (!ok || !file.exists(tmp)) {
+    return(FALSE)
+  }
+
+  new_size <- file.info(tmp)$size
+
+  if (is.na(new_size) || new_size >= original_size) {
+    return(FALSE)
+  }
+
+  file.copy(tmp, path, overwrite = TRUE, copy.mode = TRUE, copy.date = TRUE)
+
+  if (verbose) {
+    message(
+      "Compressed image: ",
+      basename(path),
+      " (",
+      round(original_size / 1024^2, 2),
+      " MB -> ",
+      round(new_size / 1024^2, 2),
+      " MB)"
+    )
+  }
+
+  TRUE
+}
+
+.read_image_generic <- function(path, ext) {
+  if (ext %in% c("jpg", "jpeg")) {
+    return(jpeg::readJPEG(path, native = FALSE))
+  }
+
+  if (ext == "png") {
+    return(png::readPNG(path, native = FALSE))
+  }
+
+  NULL
+}
+
+.compress_jpeg_to_target <- function(img, out_path, size_limit) {
+  qualities <- c(0.85, 0.75, 0.65, 0.55, 0.45, 0.35, 0.25)
+  scales <- c(1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4)
+
+  for (scale in scales) {
+    img_scaled <- if (scale < 1) .resize_image_array(img, scale) else img
+
+    for (q in qualities) {
+      jpeg::writeJPEG(img_scaled, target = out_path, quality = q)
+
+      if (file.exists(out_path) && file.info(out_path)$size <= size_limit) {
+        return(TRUE)
+      }
+    }
+  }
+
+  FALSE
+}
+
+.compress_png_to_target <- function(img, out_path, size_limit) {
+  scales <- c(1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4)
+
+  for (scale in scales) {
+    img_scaled <- if (scale < 1) .resize_image_array(img, scale) else img
+
+    png::writePNG(
+      image = img_scaled,
+      target = out_path,
+      compression = 9
+    )
+
+    if (file.exists(out_path) && file.info(out_path)$size <= size_limit) {
+      return(TRUE)
+    }
+  }
+
+  FALSE
+}
+
+.resize_image_array <- function(img, scale = 1) {
+  if (!is.array(img) || length(dim(img)) < 2) {
+    stop("`img` must be a 2D or 3D image array.")
+  }
+
+  if (!is.numeric(scale) || length(scale) != 1 || scale <= 0 || scale > 1) {
+    stop("`scale` must be a single number in (0, 1].")
+  }
+
+  dims <- dim(img)
+  old_h <- dims[1]
+  old_w <- dims[2]
+
+  new_h <- max(1L, as.integer(round(old_h * scale)))
+  new_w <- max(1L, as.integer(round(old_w * scale)))
+
+  row_idx <- unique(pmin(old_h, pmax(1L, round(seq(1, old_h, length.out = new_h)))))
+  col_idx <- unique(pmin(old_w, pmax(1L, round(seq(1, old_w, length.out = new_w)))))
+
+  if (length(dims) == 2) {
+    return(img[row_idx, col_idx, drop = FALSE])
+  }
+
+  img[row_idx, col_idx, , drop = FALSE]
+}
+
 
 # Internal function to generate HTML for a single species ####
 .generate_species_html <- function(species_data,
@@ -412,7 +610,7 @@ arboretum_labels <- function(data_path = NULL,
                                    photo_dir = "arboretum_photos",
                                    back_to_index = TRUE,
                                    index_file = "index.html",
-                                   verbose) {
+                                   verbose){
 
   species_name <- species_data$taxonName[1]
   family_name <- species_data$family[1]
@@ -422,110 +620,75 @@ arboretum_labels <- function(data_path = NULL,
   visible_distributions <- list()
   spoken_texts <- list()
 
-  default_labels_en <- list(
-    title = "Overview of the species",
-    stop = "Stop",
-    uses = "Uses",
-    curi = "Curiosities",
-    world = "World distribution",
-    brazil = "Distribution in the states of Brazil",
-    photos = "Photos",
-    back_index = "Back to main page"
-  )
-
+  # Build labels and texts for each language
   for (lang in printed_lang) {
-    printed_labels[[lang]] <- switch(
-      lang,
-      en = default_labels_en,
-      pt = list(
-        title = "Apresentação da espécie",
-        stop = "Parar",
-        uses = "Usos",
-        curi = "Curiosidades",
-        world = "Distribuição global",
-        brazil = "Distribuição nos estados do Brasil",
-        photos = "Fotos",
-        back_index = "Voltar à página principal"
-      ),
-      fr = list(
-        title = "Présentation de l'espèce",
-        stop = "Arrêter",
-        uses = "Usages",
-        curi = "Curiosités",
-        world = "Distribution mondiale",
-        brazil = "Distribution dans les États du Brésil",
-        photos = "Photos",
-        back_index = "Retour à la page principale"
-      ),
-      es = list(
-        title = "Descripción de la especie",
-        stop = "Detener",
-        uses = "Usos",
-        curi = "Curiosidades",
-        world = "Distribución mundial",
-        brazil = "Distribución en los estados de Brasil",
-        photos = "Fotos",
-        back_index = "Volver a la página principal"
-      ),
-      default_labels_en
+    printed_labels[[lang]] <- switch(lang,
+                                     en = list(title = "Overview of the species",
+                                               stop = "Stop",
+                                               uses = "Uses",
+                                               curi = "Curiosities",
+                                               world = "World distribution",
+                                               brazil = "Distribution in the states of Brazil",
+                                               photos = "Photos",
+                                               back_index = "Back to main page"),
+                                     pt = list(title = "Apresentação da espécie",
+                                               stop = "Parar",
+                                               uses = "Usos",
+                                               curi = "Curiosidades",
+                                               world = "Distribuição global",
+                                               brazil = "Distribuição nos estados do Brasil",
+                                               photos = "Fotos",
+                                               back_index = "Voltar à página principal"),
+                                     fr = list(title = "Présentation de l'espèce",
+                                               stop = "Arrêter",
+                                               uses = "Usages",
+                                               curi = "Curiosités",
+                                               world = "Distribution mondiale",
+                                               brazil = "Distribution dans les États du Brésil",
+                                               photos = "Photos",
+                                               back_index = "Retour à la page principale"),
+                                     es = list(title = "Descripción de la especie",
+                                               stop = "Detener",
+                                               uses = "Usos",
+                                               curi = "Curiosidades",
+                                               world = "Distribución mundial",
+                                               brazil = "Distribución en los estados de Brasil",
+                                               photos = "Fotos",
+                                               back_index = "Volver a la página principal")
     )
 
+    # Extract plant uses and curiosities from data
     col_uses <- paste0("plant_uses_", toupper(lang))
-    uses <- if (col_uses %in% names(species_data)) species_data[[col_uses]][1] else ""
-    if (is.null(uses) || is.na(uses)) uses <- ""
+    uses <- species_data[[col_uses]][1]
+    if (is.na(uses)) uses <- ""
 
     col_curi <- paste0("free_notes_", toupper(lang))
-    curi <- if (col_curi %in% names(species_data)) species_data[[col_curi]][1] else ""
-    if (is.null(curi) || is.na(curi)) curi <- ""
+    curi <- species_data[[col_curi]][1]
+    if (is.na(curi)) curi <- ""
 
     extra_html <- ""
     extra_spoken <- ""
-
-    if (nzchar(uses)) {
-      extra_html <- paste0(
-        extra_html,
-        "<br><br><strong class='section-label'>",
-        printed_labels[[lang]]$uses,
-        ":</strong> ",
-        uses
-      )
-      extra_spoken <- paste0(
-        extra_spoken,
-        " ",
-        printed_labels[[lang]]$uses,
-        ": ",
-        uses,
-        ". "
-      )
+    if (nchar(uses) > 0) {
+      extra_html <- paste0(extra_html, "<br><br><strong class='section-label'>",
+                           printed_labels[[lang]]$uses, ":</strong> ", uses)
+      extra_spoken <- paste0(extra_spoken, " ",
+                             printed_labels[[lang]]$uses, ": ", uses, ". ")
     }
-
-    if (nzchar(curi)) {
-      extra_html <- paste0(
-        extra_html,
-        "<br><br><strong class='section-label'>",
-        printed_labels[[lang]]$curi,
-        ":</strong> ",
-        curi
-      )
-      extra_spoken <- paste0(
-        extra_spoken,
-        printed_labels[[lang]]$curi,
-        ": ",
-        curi,
-        ". "
-      )
+    if (nchar(curi) > 0) {
+      extra_html <- paste0(extra_html, "<br><br><strong class='section-label'>",
+                           printed_labels[[lang]]$curi, ":</strong> ", curi)
+      extra_spoken <- paste0(extra_spoken,
+                             printed_labels[[lang]]$curi, ": ", curi, ". ")
     }
 
     visible_distributions[[lang]] <- paste0(phrases[[lang]][[species_name]], extra_html)
     clean_text <- gsub("<[^>]*>", "", phrases[[lang]][[species_name]])
-    spoken_texts[[lang]] <- paste0(
-      species_name, ". ",
-      printed_labels[[lang]]$title, ": ",
-      clean_text,
-      extra_spoken
-    )
+    spoken_texts[[lang]] <- paste0(species_name, ". ",
+                                   printed_labels[[lang]]$title, ": ",
+                                   clean_text, extra_spoken)
   }
 
+  # Load IUCN status icons
   icons_dir <- system.file("figures/iucn_status_spp_icons", package = "aRboretum")
   iucn_img <- NULL
   iucn_status <- species_data$IUCN.status[1]
@@ -534,54 +697,43 @@ arboretum_labels <- function(data_path = NULL,
     filename <- list.files(icons_dir)[grepl(clean_status, list.files(icons_dir))]
     file_path <- file.path(icons_dir, filename)
     if (file.exists(file_path)) {
-      data_uri <- base64enc::dataURI(file = file_path, mime = "image/svg+xml")
-      iucn_img <- htmltools::tags$img(
-        src = data_uri,
-        alt = iucn_status,
-        title = iucn_status,
-        style = "height: 24px; width: auto; margin-right: 5px;"
-      )
+      icon_src <- .copy_asset_for_html(file_path, output_dir)
+      iucn_img <- htmltools::tags$img(src = icon_src,
+                                      alt = iucn_status,
+                                      title = iucn_status,
+                                      style = "height: 24px; width: auto; margin-right: 5px;")
     }
   }
 
+  # FFB and POWO icons with links
   ffb_img <- NULL
   powo_img <- NULL
 
   ffb_path <- file.path(icons_dir, "ffb_sp_icon.png")
   if (file.exists(ffb_path)) {
-    data_uri <- base64enc::dataURI(file = ffb_path, mime = "image/png")
-    img <- htmltools::tags$img(
-      src = data_uri,
-      alt = "FFB",
-      style = "height: 24px; width: auto; margin-right: 5px;"
-    )
+    icon_src <- .copy_asset_for_html(ffb_path, output_dir)
+    img <- htmltools::tags$img(src = icon_src,
+                               alt = "FFB",
+                               style = "height: 24px; width: auto; margin-right: 5px;")
     reflora_url <- species_data$FFB.url[1]
     if (!is.na(reflora_url) && nzchar(reflora_url)) {
-      ffb_img <- htmltools::tags$a(
-        href = reflora_url,
-        target = "_blank",
-        rel = "noopener noreferrer",
-        img
-      )
+      ffb_img <- htmltools::tags$a(href = reflora_url,
+                                   target = "_blank",
+                                   rel = "noopener noreferrer", img)
     }
   }
 
   powo_path <- file.path(icons_dir, "k_sp_icon.png")
   if (file.exists(powo_path)) {
-    data_uri <- base64enc::dataURI(file = powo_path, mime = "image/png")
-    img <- htmltools::tags$img(
-      src = data_uri,
-      alt = "POWO",
-      style = "height: 24px; width: auto; margin-right: 5px;"
-    )
+    icon_src <- .copy_asset_for_html(powo_path, output_dir)
+    img <- htmltools::tags$img(src = icon_src,
+                               alt = "POWO",
+                               style = "height: 24px; width: auto; margin-right: 5px;")
     powo_url <- species_data$POWO.url[1]
     if (!is.na(powo_url) && nzchar(powo_url)) {
-      powo_img <- htmltools::tags$a(
-        href = powo_url,
-        target = "_blank",
-        rel = "noopener noreferrer",
-        img
-      )
+      powo_img <- htmltools::tags$a(href = powo_url,
+                                    target = "_blank",
+                                    rel = "noopener noreferrer", img)
     }
   }
 
@@ -592,51 +744,58 @@ arboretum_labels <- function(data_path = NULL,
 
   voice_langs <- list(pt = "pt-BR", en = "en-US", fr = "fr-FR", es = "es-ES")
 
+  # Generate distribution maps (Brazil map only if species has occurrences)
   maps <- .mk_map_dist(species_data, world, br_states)
-  world_map_html <- if (!is.null(maps$world_map)) htmltools::as.tags(maps$world_map) else NULL
-  brazil_map_html <- if (!is.null(maps$brazil_map)) htmltools::as.tags(maps$brazil_map) else NULL
-
-  logo_tag <- .create_logo_tag(path_to_logo, logo_url)
-
-  logo_dir <- system.file("figures", package = "aRboretum")
-  logo_config <- list(
-    list(file = "aRboretum_hex_sticker.png", url = "https://dboslab.github.io/aRboretum/", alt = "aRboretum"),
-    list(file = "jbrj_horizontal_logo.png", url = "https://www.gov.br/jbrj/pt-br", alt = "JBRJ"),
-    list(file = "mma.png", url = "https://www.gov.br/mma", alt = "MMA"),
-    list(file = "reflora.png", url = "https://reflora.jbrj.gov.br/consulta/#CondicaoTaxonCP", alt = "Reflora")
+  world_map_html <- .save_map_widget_for_html(
+    widget = maps$world_map,
+    output_dir = output_dir,
+    species_name = species_name,
+    map_type = "world"
+  )
+  brazil_map_html <- .save_map_widget_for_html(
+    widget = maps$brazil_map,
+    output_dir = output_dir,
+    species_name = species_name,
+    map_type = "brazil"
   )
 
+  # Create institution logo tag
+  logo_tag <- .create_logo_tag(path_to_logo, logo_url, output_dir)
+
+  # Package logos (aRboretum, JBRJ, MMA, Reflora, POWO)
+  logo_dir <- system.file("figures", package = "aRboretum")
+  logo_config <- list(
+    list(file = "aRboretum_hex_sticker.png",
+         url = "https://github.com/DBOSlab/aRboretum",
+         alt = "aRboretum"),
+    list(file = "jbrj_horizontal_logo.png",
+         url = "https://www.gov.br/jbrj/pt-br",
+         alt = "JBRJ"),
+    list(file = "mma.png",
+         url = "https://www.gov.br/mma",
+         alt = "MMA"),
+    list(file = "reflora.png",
+         url = "https://reflora.jbrj.gov.br/consulta/#CondicaoTaxonCP",
+         alt = "Reflora")
+  )
   package_logos <- list()
   for (config in logo_config) {
     file_path <- file.path(logo_dir, config$file)
     if (file.exists(file_path)) {
-      ext <- tolower(tools::file_ext(file_path))
-      mime <- switch(
-        ext,
-        png = "image/png",
-        jpg = "image/jpeg",
-        jpeg = "image/jpeg",
-        gif = "image/gif",
-        svg = "image/svg+xml",
-        webp = "image/webp"
-      )
-      data_uri <- base64enc::dataURI(file = file_path, mime = mime)
-      img_tag <- htmltools::tags$img(
-        src = data_uri,
-        alt = config$alt,
-        title = paste("Visit", config$alt, "website"),
-        style = "height: 60px; width: auto; margin: 0 8px;"
-      )
-      img_tag <- htmltools::tags$a(
-        href = config$url,
-        target = "_blank",
-        rel = "noopener noreferrer",
-        img_tag
-      )
+      icon_src <- .copy_asset_for_html(file_path, output_dir)
+      img_tag <- htmltools::tags$img(src = icon_src,
+                                     alt = config$alt,
+                                     title = paste("Visit", config$alt, "website"),
+                                     style = "height: 60px; width: auto; margin: 0 8px;")
+      img_tag <- htmltools::tags$a(href = config$url,
+                                   target = "_blank",
+                                   rel = "noopener noreferrer",
+                                   img_tag)
       package_logos <- c(package_logos, list(img_tag))
     }
   }
 
+  # Prepare personal audio data URIs if available
   if (is.null(audio_dir)) {
     js_audio_files <- jsonlite::toJSON(audio_dir, auto_unbox = TRUE)
   } else {
@@ -645,16 +804,8 @@ arboretum_labels <- function(data_path = NULL,
     for (lang in printed_lang) {
       if (!is.null(personal_audios[[lang]])) {
         audio_ext <- tools::file_ext(personal_audios[[lang]])
-        mime_type <- switch(
-          tolower(audio_ext),
-          mp3 = "audio/mpeg",
-          wav = "audio/wav",
-          m4a = "audio/mp4",
-          ogg = "audio/ogg",
-          flac = "audio/flac",
-          "audio/mpeg"
-        )
-        audio_files[[lang]] <- base64enc::dataURI(file = personal_audios[[lang]], mime = mime_type)
+        mime_type <- switch(tolower(audio_ext), mp3 = "audio/mpeg", wav = "audio/wav", m4a = "audio/mp4", ogg = "audio/ogg", flac = "audio/flac", "audio/mpeg")
+        audio_files[[lang]] <- .path_for_html(personal_audios[[lang]], output_dir)
       } else {
         audio_files[[lang]] <- NULL
       }
@@ -662,6 +813,7 @@ arboretum_labels <- function(data_path = NULL,
     js_audio_files <- jsonlite::toJSON(audio_files, auto_unbox = TRUE)
   }
 
+  # Build photo slideshow if photos are available
   if (is.null(photo_dir)) {
     slideshow_tag <- NULL
   } else {
@@ -670,32 +822,30 @@ arboretum_labels <- function(data_path = NULL,
       slide_items <- lapply(seq_along(photo_paths), function(i) {
         f <- photo_paths[i]
         ext <- tolower(tools::file_ext(f))
-        mime <- switch(
-          ext,
-          jpg = "image/jpeg",
-          jpeg = "image/jpeg",
-          png = "image/png",
-          gif = "image/gif",
-          webp = "image/webp",
-          bmp = "image/bmp",
-          svg = "image/svg+xml",
-          "image/jpeg"
-        )
-        data_uri <- base64enc::dataURI(file = f, mime = mime)
+        mime <- switch(ext,
+                       jpg  = "image/jpeg", jpeg = "image/jpeg",
+                       png  = "image/png",  gif  = "image/gif",
+                       webp = "image/webp", bmp  = "image/bmp",
+                       svg  = "image/svg+xml", "image/jpeg")
+        photo_src <- .path_for_html(f, output_dir)
         htmltools::tags$div(
           class = if (i == 1L) "slide active" else "slide",
-          htmltools::tags$img(class = "slide__img", src = data_uri, alt = paste("Species photo", i))
+          htmltools::tags$img(class = "slide__img", src = photo_src,
+                              alt = paste("Species photo", i))
         )
       })
       htmltools::tags$div(
         class = "photo-slideshow",
         htmltools::tags$h3(id = "photosTitle", "Photos"),
         htmltools::tags$div(
-          id = "slideshow",
-          class = "slideshow",
+          id = "slideshow", class = "slideshow",
           slide_items,
-          htmltools::tags$button(type = "button", class = "slideArrow slideArrow--prev", htmltools::HTML("&#10094;")),
-          htmltools::tags$button(type = "button", class = "slideArrow slideArrow--next", htmltools::HTML("&#10095;")),
+          htmltools::tags$button(type = "button",
+                                 class = "slideArrow slideArrow--prev",
+                                 htmltools::HTML("&#10094;")),
+          htmltools::tags$button(type = "button",
+                                 class = "slideArrow slideArrow--next",
+                                 htmltools::HTML("&#10095;")),
           htmltools::tags$div(
             class = "slideProgress-wrap",
             htmltools::tags$div(id = "slideProgress", class = "slideProgress")
@@ -708,12 +858,14 @@ arboretum_labels <- function(data_path = NULL,
     }
   }
 
+  # Convert R objects to JSON for JavaScript
   js_printed_labels <- jsonlite::toJSON(printed_labels, auto_unbox = TRUE)
   js_visible_distributions <- jsonlite::toJSON(visible_distributions, auto_unbox = TRUE)
   js_spoken_texts <- jsonlite::toJSON(spoken_texts, auto_unbox = TRUE)
   js_voice_langs <- jsonlite::toJSON(voice_langs, auto_unbox = TRUE)
   js_initial_lang <- jsonlite::toJSON(printed_lang[1], auto_unbox = TRUE)
 
+  # Assemble final HTML page
   page <- .build_html_page(
     species_name = species_name,
     family_name = family_name,
@@ -738,6 +890,7 @@ arboretum_labels <- function(data_path = NULL,
     index_file = index_file
   )
 
+  # Save HTML file
   filename <- paste0(toupper(family_name), "_", gsub("\\s", "_", species_name), "_label.html")
   htmltools::save_html(page, file = file.path(output_dir, filename))
   if (verbose) message("Species label file '", filename, "' successfully created!")
@@ -1063,15 +1216,8 @@ arboretum_labels <- function(data_path = NULL,
         class = "controls",
         htmltools::tags$button(id = "voiceBtn", class = "voice-btn", "🔊 Listen"),
         htmltools::tags$button(id = "stopBtn", class = "stop-btn", "⏹ Stop"),
-        lapply(printed_lang, function(lang) {
-          label <- switch(
-            lang,
-            pt = "Português",
-            en = "English",
-            fr = "Français",
-            es = "Español",
-            toupper(lang)
-          )
+        lapply(printed_lang, function(lang){
+          label <- switch(lang, pt = "Português", en = "English", fr = "Français", es = "Español")
           htmltools::tags$button(class = "lang-btn", `data-lang` = lang, label)
         })
       ),
@@ -1384,13 +1530,74 @@ arboretum_labels <- function(data_path = NULL,
   return(audio_files)
 }
 
-.create_logo_tag <- function(path_to_logo, logo_url){
+
+.copy_asset_for_html <- function(file_path, output_dir, asset_dir = "__assets"){
+  if (is.null(file_path) || !nzchar(file_path)) return(NULL)
+  if (!file.exists(file_path)) stop("Asset file not found: ", file_path, call. = FALSE)
+  asset_root <- file.path(output_dir, asset_dir)
+  if (!dir.exists(asset_root)) dir.create(asset_root, recursive = TRUE, showWarnings = FALSE)
+  dest <- file.path(asset_root, basename(file_path))
+  if (!file.exists(dest)) file.copy(file_path, dest, overwrite = TRUE)
+  file.path(asset_dir, basename(file_path))
+}
+
+.path_for_html <- function(file_path, output_dir){
+  if (is.null(file_path) || !nzchar(file_path)) return(NULL)
+  output_dir_norm <- normalizePath(output_dir, winslash = "/", mustWork = FALSE)
+  file_path_norm <- normalizePath(file_path, winslash = "/", mustWork = FALSE)
+  prefix <- paste0(output_dir_norm, "/")
+  if (startsWith(file_path_norm, prefix)) {
+    return(substring(file_path_norm, nchar(prefix) + 1L))
+  }
+  basename(file_path_norm)
+}
+
+.save_map_widget_for_html <- function(widget,
+                                      output_dir,
+                                      species_name,
+                                      map_type = c("world", "brazil")){
+  if (is.null(widget)) return(NULL)
+  map_type <- match.arg(map_type)
+
+  maps_dir <- file.path(output_dir, "__maps")
+  if (!dir.exists(maps_dir)) dir.create(maps_dir, recursive = TRUE, showWarnings = FALSE)
+
+  slug <- gsub("[^A-Za-z0-9]+", "_", species_name)
+  slug <- gsub("^_+|_+$", "", slug)
+  file_name <- paste0(slug, "_", map_type, "_map.html")
+  map_file <- file.path(maps_dir, file_name)
+
+  htmlwidgets::saveWidget(
+    widget = plotly::as_widget(widget),
+    file = map_file,
+    selfcontained = FALSE,
+    libdir = "libs"
+  )
+
+  htmltools::tags$iframe(
+    src = file.path("__maps", file_name),
+    title = paste(toupper(substr(map_type, 1, 1)), substring(map_type, 2), "map for", species_name),
+    loading = "lazy",
+    style = paste(
+      "width: 100%;",
+      "height: 420px;",
+      "border: none;",
+      "border-radius: 10px;",
+      "background: #fff;"
+    )
+  )
+}
+
+
+.create_logo_tag <- function(path_to_logo, logo_url, output_dir){
   if (is.null(path_to_logo)) return(NULL)
   if (!file.exists(path_to_logo)) stop("Logo file not found: ", path_to_logo, call. = FALSE)
   ext <- tolower(tools::file_ext(path_to_logo))
-  mime_type <- switch(ext, png = "image/png", jpg = "image/jpeg", jpeg = "image/jpeg", gif = "image/gif", svg = "image/svg+xml", webp = "image/webp", stop("Unsupported logo format."))
-  logo_data_uri <- base64enc::dataURI(file = path_to_logo, mime = mime_type)
-  img_tag <- htmltools::tags$img(src = logo_data_uri, style = "height: 300px; width: auto; display: block;")
+  switch(ext,
+         png = , jpg = , jpeg = , gif = , svg = , webp = NULL,
+         stop("Unsupported logo format."))
+  logo_src <- .copy_asset_for_html(path_to_logo, output_dir)
+  img_tag <- htmltools::tags$img(src = logo_src, style = "height: 300px; width: auto; display: block;")
   if (!is.null(logo_url) && nzchar(logo_url)) {
     return(htmltools::tags$a(href = logo_url, target = "_blank", rel = "noopener noreferrer", img_tag))
   }
