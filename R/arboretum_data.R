@@ -181,7 +181,6 @@
 #' )
 #' }
 #'
-#' @importFrom floraR flora_download flora_parse
 #' @importFrom taxize pow_search pow_lookup
 #' @importFrom openxlsx write.xlsx
 #' @importFrom utils write.csv
@@ -234,6 +233,11 @@ arboretum_data <- function(spp_list = NULL,
   )
 
   # Download and parse Flora e Funga do Brasil DwC-A dataset ####
+
+  if (!requireNamespace("floraR", quietly = TRUE)) {
+    stop("Package 'floraR' is required for `arboretum_data()`. Please install it.")
+  }
+
   floraR::flora_download(version = "latest", dir = "flora_download")
   # Remove the downloaded FFB folder flora_download when this function finishes,
   # run this cleanup code before returning.
