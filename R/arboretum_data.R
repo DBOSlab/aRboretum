@@ -17,6 +17,14 @@
 #'   authorship. Leading and trailing whitespace are removed, and names are standardized
 #'   internally before querying. An error is thrown if any element does not contain a
 #'   space, indicating a probable non-species name.
+#' @param printed_lang Character vector. Built-in language(s) to generate folders and
+#'   phrases for. Accepted values are `"pt"`, `"en"`, `"fr"`, and `"es"`.
+#' @param add_lang Character string or `NULL`. Optional code for one additional
+#'   language to include in the folder structure for personal recordings, for
+#'   example `"PANARA"` or `"TUKANO"`. This argument is intended for cases where
+#'   users want to add custom community or local-language audio without translating
+#'   the full package interface. When supplied, one extra recording folder per
+#'   species is created using that language code.
 #' @param verbose Logical. If `TRUE`, progress messages are printed to the console.
 #'   Default is `TRUE`.
 #' @param save Logical. If `TRUE`, the resulting dataframe is saved to disk.
@@ -193,289 +201,280 @@
 #' @export
 
 arboretum_data <- function(spp_list = NULL,
+                           printed_lang = c("pt", "en", "fr", "es"),
+                           add_lang = NULL,
                            verbose = TRUE,
                            save = TRUE,
                            format = c("csv", "xlsx"),
-                           filename = "arboretum_mined_data",
-                           dir = "arboretum_mined_data"){
+                           filename = "arboretum_data",
+                           dir = "arboretum_data"){
 
   # Input validation  ####
   spp_list <- .arg_check_spp_list(spp_list)
+  printed_lang <- .arg_check_printed_lang(printed_lang)
   dir <- .arg_check_dir(dir)
   format <- match.arg(format)
 
-  # Setting up the dataframe structure with the required information ####
-  result_FFB <- data.frame(
-    original_query = spp_list,
-    family = NA_character_,
-    taxonName = NA_character_,
-    scientificNameAuthorship = NA_character_,
-    vernacularName = NA_character_,
-    country = NA_character_,
-    endemism = NA_character_,
-    establishmentMeans = NA_character_,
-    stateProvince = NA_character_,
-    phytogeographicDomain = NA_character_,
-    vegetationType = NA_character_,
-    references = NA_character_
-  )
+  files <- list.files(dir)
 
-  result_POWO <- data.frame(
-    original_query = spp_list,
-    family = NA_character_,
-    taxonName = NA_character_,
-    scientificNameAuthorship = NA_character_,
-    country = NA_character_,
-    botanical_country = NA_character_,
-    introduced_to = NA_character_,
-    IUCN.status = NA_character_,
-    references = NA_character_
-  )
+  if (!any(grepl("[.]xlsx$|[.]csv$", files))) {
 
-  # Download and parse Flora e Funga do Brasil DwC-A dataset ####
+    # Setting up the dataframe structure with the required information ####
+    result_FFB <- data.frame(
+      original_query = spp_list,
+      family = NA_character_,
+      taxonName = NA_character_,
+      scientificNameAuthorship = NA_character_,
+      vernacularName = NA_character_,
+      country = NA_character_,
+      endemism = NA_character_,
+      establishmentMeans = NA_character_,
+      stateProvince = NA_character_,
+      phytogeographicDomain = NA_character_,
+      vegetationType = NA_character_,
+      references = NA_character_
+    )
 
-  if (!requireNamespace("floraR", quietly = TRUE)) {
-    stop("Package 'floraR' is required for `arboretum_data()`. Please install it.")
-  }
+    result_POWO <- data.frame(
+      original_query = spp_list,
+      family = NA_character_,
+      taxonName = NA_character_,
+      scientificNameAuthorship = NA_character_,
+      country = NA_character_,
+      botanical_country = NA_character_,
+      introduced_to = NA_character_,
+      IUCN.status = NA_character_,
+      references = NA_character_
+    )
 
-  floraR::flora_download(version = "latest", dir = "flora_download")
-  # Remove the downloaded FFB folder flora_download when this function finishes,
-  # run this cleanup code before returning.
-  on.exit(unlink("flora_download", recursive = TRUE, force = TRUE), add = TRUE)
+    # Download and parse Flora e Funga do Brasil DwC-A dataset ####
 
-  dwca <- floraR::flora_parse(path = "flora_download", version = "latest")
-
-  if (verbose) message("Flora e Funga do Brasil DwC-A dataset successfully donwloaded and parsed!")
-
-  # Data extraction ####
-  # The first one contains all the required data; as the names may change, we therefore take the first element
-  taxon_data <- dwca[[1]][["data"]][["taxon.txt"]]
-  taxon_data <- taxon_data[taxon_data$taxonRank %in% "ESPECIE", ]
-  distribution_data <- dwca[[1]][["data"]][["distribution.txt"]]
-  distribution_data$locationID <- gsub("BR-", "", distribution_data$locationID)
-  vernacular_data <- dwca[[1]][["data"]][["vernacularname.txt"]]
-  speciesprofile_data <- dwca[[1]][["data"]][["speciesprofile.txt"]]
-  speciesprofile_data$vegetationType <- gsub("\\s[(].*", "", speciesprofile_data$vegetationType)
-  tf <- speciesprofile_data$vegetationType %in% "Caatinga"
-  speciesprofile_data$vegetationType[tf] <- "Caatinga sensu stricto"
-  tf <- speciesprofile_data$vegetationType %in% "Cerrado"
-  speciesprofile_data$vegetationType[tf] <- "Cerrado sensu lato"
-
-  # Adjusting FFB database into English
-  distribution_data[[3]][distribution_data[[3]] %in% "BR"] <- "Brazil"
-  distribution_data[[4]][distribution_data[[4]] %in% "NATIVA"] <- "Native"
-  distribution_data[[4]][distribution_data[[4]] %in% "CULTIVADA"] <- "Cultivated"
-  distribution_data[[4]][distribution_data[[4]] %in% "NATURALIZADA"] <- "Naturalized"
-  distribution_data[[6]][distribution_data[[6]] %in% "Endemica"] <- "Endemic"
-  distribution_data[[6]][distribution_data[[6]] %in% "Não endemica"] <- "Non-endemic"
-  distribution_data[[7]][distribution_data[[7]] %in% "Amazônia"] <- "Amazon"
-  distribution_data[[7]][distribution_data[[7]] %in% "Mata Atlântica"] <- "Atlantic Forest"
-
-  genus_richness_br <- as.data.frame(table(taxon_data$genus))
-  genus_ranked <- genus_richness_br[order(genus_richness_br$Freq, decreasing = TRUE), ]
-  genus_ranked$rank <- 1:nrow(genus_ranked)
-  max_diversity <- max(genus_ranked$Freq, na.rm = TRUE)
-  n_max_genera <- sum(genus_ranked$Freq == max_diversity, na.rm = TRUE)
-  genus_counts <- stats::setNames(genus_richness_br$Freq, genus_richness_br$Var1)
-  rank_by_genus <- stats::setNames(genus_ranked$rank, genus_ranked$Var1)
-
-  # Collection of data for each species ####
-  for (i in seq_along(spp_list)) {
-    sp <- spp_list[i]
-
-    if (verbose) message(i, "/", length(spp_list), ": retrieving information from '", sp, "'")
-
-    # POWO data
-    result_POWO <- .extract_powo_data(result_POWO, sp, i)
-
-    # FFB data
-    # Retrieve the taxonIDs corresponding to the exact name
-    taxon_id <- taxon_data$id[taxon_data$taxonName == sp]
-    if (length(taxon_id) > 0) {
-      # Handling synonyms ####
-      taxon_id <- .get_accepted_name_id(taxon_id,
-                                        taxon_data,
-                                        verbose = verbose)
-
-      temp_taxon <- taxon_data[taxon_data$id == taxon_id, ]
-      temp_dist <- distribution_data[distribution_data$id == taxon_id, ]
-      temp_vern <- vernacular_data[vernacular_data$id == taxon_id, ]
-      temp_vege <- speciesprofile_data[speciesprofile_data$id == taxon_id, ]
-
-      result_FFB$family[i] <- unique(temp_taxon$family)
-      result_FFB$taxonName[i] <- unique(temp_taxon$taxonName)
-      result_FFB$scientificNameAuthorship[i] <- unique(temp_taxon$scientificNameAuthorship)
-      result_FFB$vernacularName[i] <- paste0(sort(unique(temp_vern$vernacularName)),
-                                             collapse = " | ")
-      result_FFB$endemism[i] <- unique(temp_dist$endemism)
-      result_FFB$establishmentMeans[i] <- unique(temp_dist$establishmentMeans)
-      result_FFB$stateProvince[i] <- paste0(sort(unique(temp_dist$locationID)),
-                                            collapse = " | ")
-      result_FFB$country[i] <- unique(temp_dist$countryCode)
-      result_FFB$phytogeographicDomain[i] <- paste0(sort(unique(temp_dist$phytogeographicDomain)),
-                                                    collapse = " | ")
-      result_FFB$vegetationType[i] <- paste0(sort(unique(temp_vege$vegetationType)),
-                                             collapse = " | ")
-
-      # The references column shows where the URL for each species in FFB
-      result_FFB$references[i] <- temp_taxon$references
-    }
-  }
-
-  # Convert all empty spaces to NA across all columns
-  result_FFB <- data.frame(lapply(result_FFB, function(x) {
-    if (is.character(x)) {
-      x[x == "" | trimws(x) == ""] <- NA
-    }
-    x
-  }), stringsAsFactors = FALSE)
-
-  result_POWO <- data.frame(lapply(result_POWO, function(x) {
-    if (is.character(x)) {
-      x[x == "" | trimws(x) == ""] <- NA
-    }
-    x
-  }), stringsAsFactors = FALSE)
-
-  # Update the originally queried species list
-  spp_list_updated <- vector()
-  for (i in seq_along(spp_list)) {
-
-    tf <- result_POWO$original_query %in% spp_list[i]
-    if (any(tf)) {
-      spp_list_updated[i] <- result_POWO$taxonName[tf]
+    if (!requireNamespace("floraR", quietly = TRUE)) {
+      stop("Package 'floraR' is required for `arboretum_data()`. Please install it.")
     }
 
-    tf <- result_FFB$original_query %in% spp_list[i]
-    if (any(tf)) {
-      if (!is.na(result_FFB$taxonName[tf])) {
-        spp_list_updated[i] <- result_FFB$taxonName[tf]
+    floraR::flora_download(version = "latest", dir = "flora_download")
+    # Remove the downloaded FFB folder flora_download when this function finishes,
+    # run this cleanup code before returning.
+    on.exit(unlink("flora_download", recursive = TRUE, force = TRUE), add = TRUE)
+
+    dwca <- floraR::flora_parse(path = "flora_download", version = "latest")
+
+    if (verbose) message("Flora e Funga do Brasil DwC-A dataset successfully donwloaded and parsed!")
+
+    # Data extraction ####
+    # The first one contains all the required data; as the names may change, we therefore take the first element
+    taxon_data <- dwca[[1]][["data"]][["taxon.txt"]]
+    taxon_data <- taxon_data[taxon_data$taxonRank %in% "ESPECIE", ]
+    distribution_data <- dwca[[1]][["data"]][["distribution.txt"]]
+    distribution_data$locationID <- gsub("BR-", "", distribution_data$locationID)
+    vernacular_data <- dwca[[1]][["data"]][["vernacularname.txt"]]
+    speciesprofile_data <- dwca[[1]][["data"]][["speciesprofile.txt"]]
+    speciesprofile_data$vegetationType <- gsub("\\s[(].*", "", speciesprofile_data$vegetationType)
+    tf <- speciesprofile_data$vegetationType %in% "Caatinga"
+    speciesprofile_data$vegetationType[tf] <- "Caatinga sensu stricto"
+    tf <- speciesprofile_data$vegetationType %in% "Cerrado"
+    speciesprofile_data$vegetationType[tf] <- "Cerrado sensu lato"
+
+    # Adjusting FFB database into English
+    distribution_data[[3]][distribution_data[[3]] %in% "BR"] <- "Brazil"
+    distribution_data[[4]][distribution_data[[4]] %in% "NATIVA"] <- "Native"
+    distribution_data[[4]][distribution_data[[4]] %in% "CULTIVADA"] <- "Cultivated"
+    distribution_data[[4]][distribution_data[[4]] %in% "NATURALIZADA"] <- "Naturalized"
+    distribution_data[[6]][distribution_data[[6]] %in% "Endemica"] <- "Endemic"
+    distribution_data[[6]][distribution_data[[6]] %in% "Não endemica"] <- "Non-endemic"
+    distribution_data[[7]][distribution_data[[7]] %in% "Amazônia"] <- "Amazon"
+    distribution_data[[7]][distribution_data[[7]] %in% "Mata Atlântica"] <- "Atlantic Forest"
+
+    genus_richness_br <- as.data.frame(table(taxon_data$genus))
+    genus_ranked <- genus_richness_br[order(genus_richness_br$Freq, decreasing = TRUE), ]
+    genus_ranked$rank <- 1:nrow(genus_ranked)
+    max_diversity <- max(genus_ranked$Freq, na.rm = TRUE)
+    n_max_genera <- sum(genus_ranked$Freq == max_diversity, na.rm = TRUE)
+    genus_counts <- stats::setNames(genus_richness_br$Freq, genus_richness_br$Var1)
+    rank_by_genus <- stats::setNames(genus_ranked$rank, genus_ranked$Var1)
+
+    # Collection of data for each species ####
+    for (i in seq_along(spp_list)) {
+      sp <- spp_list[i]
+
+      if (verbose) message(i, "/", length(spp_list), ": retrieving information from '", sp, "'")
+
+      # POWO data
+      result_POWO <- .extract_powo_data(result_POWO, sp, i)
+
+      # FFB data
+      # Retrieve the taxonIDs corresponding to the exact name
+      taxon_id <- taxon_data$id[taxon_data$taxonName == sp]
+      if (length(taxon_id) > 0) {
+        # Handling synonyms ####
+        taxon_id <- .get_accepted_name_id(taxon_id,
+                                          taxon_data,
+                                          verbose = verbose)
+
+        temp_taxon <- taxon_data[taxon_data$id == taxon_id, ]
+        temp_dist <- distribution_data[distribution_data$id == taxon_id, ]
+        temp_vern <- vernacular_data[vernacular_data$id == taxon_id, ]
+        temp_vege <- speciesprofile_data[speciesprofile_data$id == taxon_id, ]
+
+        result_FFB$family[i] <- unique(temp_taxon$family)
+        result_FFB$taxonName[i] <- unique(temp_taxon$taxonName)
+        result_FFB$scientificNameAuthorship[i] <- unique(temp_taxon$scientificNameAuthorship)
+        result_FFB$vernacularName[i] <- paste0(sort(unique(temp_vern$vernacularName)),
+                                               collapse = " | ")
+        result_FFB$endemism[i] <- unique(temp_dist$endemism)
+        result_FFB$establishmentMeans[i] <- unique(temp_dist$establishmentMeans)
+        result_FFB$stateProvince[i] <- paste0(sort(unique(temp_dist$locationID)),
+                                              collapse = " | ")
+        result_FFB$country[i] <- unique(temp_dist$countryCode)
+        result_FFB$phytogeographicDomain[i] <- paste0(sort(unique(temp_dist$phytogeographicDomain)),
+                                                      collapse = " | ")
+        result_FFB$vegetationType[i] <- paste0(sort(unique(temp_vege$vegetationType)),
+                                               collapse = " | ")
+
+        # The references column shows where the URL for each species in FFB
+        result_FFB$references[i] <- temp_taxon$references
       }
     }
 
-  }
-  spp_list_updated <- unique(spp_list_updated)
+    # Convert all empty spaces to NA across all columns
+    result_FFB <- data.frame(lapply(result_FFB, function(x) {
+      if (is.character(x)) {
+        x[x == "" | trimws(x) == ""] <- NA
+      }
+      x
+    }), stringsAsFactors = FALSE)
 
-  tf <- is.na(result_FFB$taxonName)
-  if (any(tf)) {
-    result_FFB <- result_FFB[!tf, ]
-    row.names(result_FFB) <- 1:nrow(result_FFB)
-    if (verbose) {
-      message()
-    }
-  }
+    result_POWO <- data.frame(lapply(result_POWO, function(x) {
+      if (is.character(x)) {
+        x[x == "" | trimws(x) == ""] <- NA
+      }
+      x
+    }), stringsAsFactors = FALSE)
 
-  tf <- is.na(result_POWO$taxonName)
-  if (any(tf)) {
-    result_POWO <- result_POWO[!tf, ]
-    row.names(result_POWO) <- 1:nrow(result_POWO)
-    if (verbose) {
-      message()
-    }
-  }
+    # Update the originally queried species list
+    spp_list_updated <- vector()
+    for (i in seq_along(spp_list)) {
 
-  tf <- duplicated(result_POWO$taxonName)
-  if (any(tf)) {
-    result_POWO <- result_POWO[!tf, ]
-    row.names(result_POWO) <- 1:nrow(result_POWO)
-    if (verbose) {
-      message()
-    }
-  }
-
-  if (nrow(result_FFB) == 0 && nrow(result_POWO) > 0) {
-    result_merged <- data.frame(
-      family = result_POWO$family,
-      genus = NA_character_,
-      taxonName = result_POWO$taxonName,
-      scientificNameAuthorship = result_POWO$scientificNameAuthorship,
-      FFB.vernacularName = NA_character_,
-      country = result_POWO$country,
-      endemism = ifelse(grepl("\\s[|]\\s", result_POWO$country), "Non-endemic", "Endemic"),
-      botanical_country = result_POWO$botanical_country,
-      introduced_to = result_POWO$introduced_to,
-      FFB.establishmentMeans = NA_character_,
-      FFB.stateProvince = NA_character_,
-      FFB.vegetationType = NA_character_,
-      FFB.genusRichness = NA_character_,
-      FFB.genusRank = NA_character_,
-      IUCN.status = result_POWO$IUCN.status,
-      plant_uses_EN = NA_character_,
-      plant_uses_PT = NA_character_,
-      plant_uses_ES = NA_character_,
-      plant_uses_FR = NA_character_,
-      free_notes_EN = NA_character_,
-      free_notes_PT = NA_character_,
-      free_notes_ES = NA_character_,
-      free_notes_FR = NA_character_,
-      full_phrases_ADD_LANGUAGE = NA_character_,
-      POWO.url = result_POWO$references
-    )
-  } else {
-    result_merged <- data.frame(
-      family = NA_character_,
-      genus = NA_character_,
-      taxonName = spp_list_updated,
-      scientificNameAuthorship = NA_character_,
-      FFB.vernacularName = NA_character_,
-      country = NA_character_,
-      endemism = NA_character_,
-      botanical_country = NA_character_,
-      introduced_to = NA_character_,
-      FFB.establishmentMeans = NA_character_,
-      FFB.stateProvince = NA_character_,
-      FFB.phytogeographicDomain = NA_character_,
-      FFB.vegetationType = NA_character_,
-      FFB.genusRichness = NA_character_,
-      FFB.genusRank = NA_character_,
-      IUCN.status = NA_character_,
-      plant_uses_EN = NA_character_,
-      plant_uses_PT = NA_character_,
-      plant_uses_ES = NA_character_,
-      plant_uses_FR = NA_character_,
-      free_notes_EN = NA_character_,
-      free_notes_PT = NA_character_,
-      free_notes_ES = NA_character_,
-      free_notes_FR = NA_character_,
-      full_phrases_ADD_LANGUAGE = NA_character_,
-      POWO.url = NA_character_,
-      FFB.url = NA_character_
-    )
-
-    # Filling in with FFB extracted data
-    for (i in seq_along(result_FFB$taxonName)) {
-      tf <- result_merged$taxonName %in% result_FFB$taxonName[i]
-      result_merged$family[tf] <- result_FFB$family[i]
-      result_merged$scientificNameAuthorship[tf] <- result_FFB$scientificNameAuthorship[i]
-      result_merged$FFB.vernacularName[tf] <- result_FFB$vernacularName[i]
-      result_merged$country[tf] <- result_FFB$country[i]
-      result_merged$endemism[tf] <- result_FFB$endemism[i]
-      result_merged$FFB.establishmentMeans[tf] <- result_FFB$establishmentMeans[i]
-      result_merged$FFB.stateProvince[tf] <- result_FFB$stateProvince[i]
-      result_merged$FFB.phytogeographicDomain[tf] <- result_FFB$phytogeographicDomain[i]
-      result_merged$FFB.vegetationType[tf] <- result_FFB$vegetationType[i]
-      result_merged$FFB.url[tf] <- result_FFB$references[i]
-    }
-
-    # Filling in with POWO extracted data
-    for (i in seq_along(result_POWO$taxonName)) {
-      tf <- result_merged$taxonName %in% result_POWO$taxonName[i]
+      tf <- result_POWO$original_query %in% spp_list[i]
       if (any(tf)) {
-        result_merged$family[tf] <- result_POWO$family[i]
-        result_merged$scientificNameAuthorship[tf] <- result_POWO$scientificNameAuthorship[i]
-        result_merged$botanical_country[tf] <- result_POWO$botanical_country[i]
-        result_merged$introduced_to[tf] <- result_POWO$introduced_to[i]
-        result_merged$IUCN.status[tf] <- result_POWO$IUCN.status[i]
-        result_merged$POWO.url[tf] <- result_POWO$references[i]
-        if (result_merged$endemism[tf] %in% "Non-endemic" | is.na(result_merged$country[tf])) {
-          result_merged$country[tf] <- result_POWO$country[i]
-          result_merged$endemism[tf] <- ifelse(grepl("\\s[|]\\s", result_POWO$country[i]),
-                                               "Non-endemic",
-                                               "Endemic")
+        spp_list_updated[i] <- result_POWO$taxonName[tf]
+      }
+
+      tf <- result_FFB$original_query %in% spp_list[i]
+      if (any(tf)) {
+        if (!is.na(result_FFB$taxonName[tf])) {
+          spp_list_updated[i] <- result_FFB$taxonName[tf]
         }
-      } else {
-        tf <- result_FFB$original_query %in% result_POWO$taxonName[i]
-        tf <- result_merged$taxonName %in% result_FFB$taxonName[tf]
+      }
+
+    }
+    spp_list_updated <- unique(spp_list_updated)
+
+    tf <- is.na(result_FFB$taxonName)
+    if (any(tf)) {
+      result_FFB <- result_FFB[!tf, ]
+      row.names(result_FFB) <- 1:nrow(result_FFB)
+      if (verbose) {
+        message()
+      }
+    }
+
+    tf <- is.na(result_POWO$taxonName)
+    if (any(tf)) {
+      result_POWO <- result_POWO[!tf, ]
+      row.names(result_POWO) <- 1:nrow(result_POWO)
+      if (verbose) {
+        message()
+      }
+    }
+
+    tf <- duplicated(result_POWO$taxonName)
+    if (any(tf)) {
+      result_POWO <- result_POWO[!tf, ]
+      row.names(result_POWO) <- 1:nrow(result_POWO)
+      if (verbose) {
+        message()
+      }
+    }
+
+    if (nrow(result_FFB) == 0 && nrow(result_POWO) > 0) {
+      result_merged <- data.frame(
+        family = result_POWO$family,
+        genus = NA_character_,
+        taxonName = result_POWO$taxonName,
+        scientificNameAuthorship = result_POWO$scientificNameAuthorship,
+        FFB.vernacularName = NA_character_,
+        country = result_POWO$country,
+        endemism = ifelse(grepl("\\s[|]\\s", result_POWO$country), "Non-endemic", "Endemic"),
+        botanical_country = result_POWO$botanical_country,
+        introduced_to = result_POWO$introduced_to,
+        FFB.establishmentMeans = NA_character_,
+        FFB.stateProvince = NA_character_,
+        FFB.vegetationType = NA_character_,
+        FFB.genusRichness = NA_character_,
+        FFB.genusRank = NA_character_,
+        IUCN.status = result_POWO$IUCN.status,
+        plant_uses_EN = NA_character_,
+        plant_uses_PT = NA_character_,
+        plant_uses_ES = NA_character_,
+        plant_uses_FR = NA_character_,
+        free_notes_EN = NA_character_,
+        free_notes_PT = NA_character_,
+        free_notes_ES = NA_character_,
+        free_notes_FR = NA_character_,
+        full_phrases_ADD_LANGUAGE = NA_character_,
+        POWO.url = result_POWO$references
+      )
+    } else {
+      result_merged <- data.frame(
+        family = NA_character_,
+        genus = NA_character_,
+        taxonName = spp_list_updated,
+        scientificNameAuthorship = NA_character_,
+        FFB.vernacularName = NA_character_,
+        country = NA_character_,
+        endemism = NA_character_,
+        botanical_country = NA_character_,
+        introduced_to = NA_character_,
+        FFB.establishmentMeans = NA_character_,
+        FFB.stateProvince = NA_character_,
+        FFB.phytogeographicDomain = NA_character_,
+        FFB.vegetationType = NA_character_,
+        FFB.genusRichness = NA_character_,
+        FFB.genusRank = NA_character_,
+        IUCN.status = NA_character_,
+        plant_uses_EN = NA_character_,
+        plant_uses_PT = NA_character_,
+        plant_uses_ES = NA_character_,
+        plant_uses_FR = NA_character_,
+        free_notes_EN = NA_character_,
+        free_notes_PT = NA_character_,
+        free_notes_ES = NA_character_,
+        free_notes_FR = NA_character_,
+        full_phrases_ADD_LANGUAGE = NA_character_,
+        POWO.url = NA_character_,
+        FFB.url = NA_character_
+      )
+
+      # Filling in with FFB extracted data
+      for (i in seq_along(result_FFB$taxonName)) {
+        tf <- result_merged$taxonName %in% result_FFB$taxonName[i]
+        result_merged$family[tf] <- result_FFB$family[i]
+        result_merged$scientificNameAuthorship[tf] <- result_FFB$scientificNameAuthorship[i]
+        result_merged$FFB.vernacularName[tf] <- result_FFB$vernacularName[i]
+        result_merged$country[tf] <- result_FFB$country[i]
+        result_merged$endemism[tf] <- result_FFB$endemism[i]
+        result_merged$FFB.establishmentMeans[tf] <- result_FFB$establishmentMeans[i]
+        result_merged$FFB.stateProvince[tf] <- result_FFB$stateProvince[i]
+        result_merged$FFB.phytogeographicDomain[tf] <- result_FFB$phytogeographicDomain[i]
+        result_merged$FFB.vegetationType[tf] <- result_FFB$vegetationType[i]
+        result_merged$FFB.url[tf] <- result_FFB$references[i]
+      }
+
+      # Filling in with POWO extracted data
+      for (i in seq_along(result_POWO$taxonName)) {
+        tf <- result_merged$taxonName %in% result_POWO$taxonName[i]
         if (any(tf)) {
           result_merged$family[tf] <- result_POWO$family[i]
           result_merged$scientificNameAuthorship[tf] <- result_POWO$scientificNameAuthorship[i]
@@ -483,48 +482,108 @@ arboretum_data <- function(spp_list = NULL,
           result_merged$introduced_to[tf] <- result_POWO$introduced_to[i]
           result_merged$IUCN.status[tf] <- result_POWO$IUCN.status[i]
           result_merged$POWO.url[tf] <- result_POWO$references[i]
-          if (result_merged$endemism[tf] %in% "Non-endemic") {
+          if (result_merged$endemism[tf] %in% "Non-endemic" | is.na(result_merged$country[tf])) {
             result_merged$country[tf] <- result_POWO$country[i]
             result_merged$endemism[tf] <- ifelse(grepl("\\s[|]\\s", result_POWO$country[i]),
                                                  "Non-endemic",
                                                  "Endemic")
           }
+        } else {
+          tf <- result_FFB$original_query %in% result_POWO$taxonName[i]
+          tf <- result_merged$taxonName %in% result_FFB$taxonName[tf]
+          if (any(tf)) {
+            result_merged$family[tf] <- result_POWO$family[i]
+            result_merged$scientificNameAuthorship[tf] <- result_POWO$scientificNameAuthorship[i]
+            result_merged$botanical_country[tf] <- result_POWO$botanical_country[i]
+            result_merged$introduced_to[tf] <- result_POWO$introduced_to[i]
+            result_merged$IUCN.status[tf] <- result_POWO$IUCN.status[i]
+            result_merged$POWO.url[tf] <- result_POWO$references[i]
+            if (result_merged$endemism[tf] %in% "Non-endemic") {
+              result_merged$country[tf] <- result_POWO$country[i]
+              result_merged$endemism[tf] <- ifelse(grepl("\\s[|]\\s", result_POWO$country[i]),
+                                                   "Non-endemic",
+                                                   "Endemic")
+            }
+          }
         }
       }
     }
+
+    # ============================================================
+    # Create dataframe and empty folders for personal audios ####
+    # ============================================================
+
+    result_merged <- result_merged %>%
+      dplyr::arrange(family, taxonName)
+
+    result_merged$genus <- gsub("\\s.*", "", result_merged$taxonName)
+    result_merged$FFB.genusRichness <- genus_counts[result_merged$genus]
+    result_merged$FFB.genusRank <- rank_by_genus[result_merged$genus]
+    result_merged$FFB.genusRichness[is.na(result_merged$FFB.genusRichness)] <- 0
+
+    result_merged <- .add_genus_curiosity_notes(
+      result_merged = result_merged,
+      max_diversity = max_diversity,
+      n_max_genera = n_max_genera
+    )
+
+    if (save) {
+      if (format == "csv") {
+        .save_csv(df = result_merged,
+                  verbose = verbose,
+                  filename = filename,
+                  dir = dir)
+      } else if (format == "xlsx") {
+        .save_xlsx(df = result_merged,
+                   verbose = verbose,
+                   filename = filename,
+                   dir = dir)
+      }
+    }
+
+  } else {
+
+    data_path <- file.path(dir, files[grepl("[.]xlsx$|[.]csv$", files)])
+    result_merged <- .read_species_data(data_path, verbose)
   }
 
-  # ============================================================
-  # Create dataframe and empty folders for personal audios ####
-  # ============================================================
+  # Generate phrases for each requested language
+  ui_strings <- .ui_strings()
 
-  result_merged <- result_merged %>%
-    dplyr::arrange(family, taxonName)
-
-  result_merged$genus <- gsub("\\s.*", "", result_merged$taxonName)
-  result_merged$FFB.genusRichness <- genus_counts[result_merged$genus]
-  result_merged$FFB.genusRank <- rank_by_genus[result_merged$genus]
-  result_merged$FFB.genusRichness[is.na(result_merged$FFB.genusRichness)] <- 0
-
-  result_merged <- .add_genus_curiosity_notes(
-    result_merged = result_merged,
-    max_diversity = max_diversity,
-    n_max_genera = n_max_genera
+  lang_button_label <- c(
+    en = "English",
+    pt = "Português",
+    fr = "Français",
+    es = "Español"
   )
 
-  if (save) {
-    if (format == "csv") {
-      .save_csv(df = result_merged,
-                verbose = verbose,
-                filename = filename,
-                dir = dir)
-    } else if (format == "xlsx") {
-      .save_xlsx(df = result_merged,
-                 verbose = verbose,
-                 filename = filename,
-                 dir = dir)
-    }
+  missing_langs <- setdiff(printed_lang, names(lang_button_label))
+  if (length(missing_langs) > 0) {
+    lang_button_label[missing_langs] <- toupper(missing_langs)
   }
+
+  phrases_out <- .build_arboretum_phrases(
+    data_path = NULL,
+    df = result_merged,
+    printed_lang = printed_lang,
+    add_lang = add_lang,
+    verbose = verbose
+  )
+
+  printed_lang <- phrases_out$printed_lang
+  html_phrases <- phrases_out$html_phrases
+
+  output_path <- file.path(dir, "__phrase_generating_guide.html")
+  .save_phrase_html(
+    df = result_merged,
+    function_use = "_data",
+    ui_strings = ui_strings,
+    lang_button_label = lang_button_label,
+    printed_lang = printed_lang,
+    html_phrases = html_phrases,
+    output_path = output_path,
+    verbose = verbose
+  )
 
   return(result_merged)
 }

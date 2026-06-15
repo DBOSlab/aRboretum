@@ -6,11 +6,13 @@
 \usage{
 arboretum_data(
   spp_list = NULL,
+  printed_lang = c("pt", "en", "fr", "es"),
+  add_lang = NULL,
   verbose = TRUE,
   save = TRUE,
   format = c("csv", "xlsx"),
-  filename = "arboretum_mined_data",
-  dir = "arboretum_mined_data"
+  filename = "arboretum_data",
+  dir = "arboretum_data"
 )
 }
 \arguments{
@@ -19,6 +21,16 @@ arboretum_data(
 authorship. Leading and trailing whitespace are removed, and names are standardized
 internally before querying. An error is thrown if any element does not contain a
 space, indicating a probable non-species name.}
+
+\item{printed_lang}{Character vector. Built-in language(s) to generate folders and
+phrases for. Accepted values are \code{"pt"}, \code{"en"}, \code{"fr"}, and \code{"es"}.}
+
+\item{add_lang}{Character string or \code{NULL}. Optional code for one additional
+language to include in the folder structure for personal recordings, for
+example \code{"PANARA"} or \code{"TUKANO"}. This argument is intended for cases where
+users want to add custom community or local-language audio without translating
+the full package interface. When supplied, one extra recording folder per
+species is created using that language code.}
 
 \item{verbose}{Logical. If \code{TRUE}, progress messages are printed to the console.
 Default is \code{TRUE}.}
