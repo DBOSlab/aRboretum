@@ -24,3 +24,6 @@ Internal datasets used by the package workflow.
 
 - [`botregions`](https://DBOSlab.github.io/aRboretum/reference/botregions.md)
   : Countries and associated classification of botanical divisions
+- [`WGSRPD`](https://DBOSlab.github.io/aRboretum/reference/WGSRPD.md) :
+  World Geographical Scheme for Recording Plant Distributions - Spatial
+  Map

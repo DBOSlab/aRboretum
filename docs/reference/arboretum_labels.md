@@ -77,7 +77,7 @@ arboretum_labels(
   Default is `"arboretum_audios"`. The expected subfolder pattern is
   `FAMILY_Genus_species_LANG`, for example
   `FABACEAE_Paubrasilia_echinata_PT`. Supported audio file extensions
-  are `.mp3`, `.wav`, `.m4a`, `.ogg`, and `.flac`.
+  are `.mp3`, `.wav`, `.m4a`, `.ogg`, `.flac` and `.webm`.
 
 - photo_dir:
 

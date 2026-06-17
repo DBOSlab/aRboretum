@@ -72,6 +72,7 @@ reference:
     desc: Internal datasets used by the package workflow.
     contents:
       - botregions
+      - WGSRPD
 
 articles:
   - title: Getting started

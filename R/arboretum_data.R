@@ -286,7 +286,10 @@ arboretum_data <- function(spp_list = NULL,
     distribution_data[[7]][distribution_data[[7]] %in% "Amazônia"] <- "Amazon"
     distribution_data[[7]][distribution_data[[7]] %in% "Mata Atlântica"] <- "Atlantic Forest"
 
-    genus_richness_br <- as.data.frame(table(taxon_data$genus))
+    #Genus statistics and synonym management for accurate data
+    taxon_data_temp <- taxon_data[taxon_data$taxonomicStatus %in% "NOME_ACEITO", ]
+
+    genus_richness_br <- as.data.frame(table(taxon_data_temp$genus))
     genus_ranked <- genus_richness_br[order(genus_richness_br$Freq, decreasing = TRUE), ]
     genus_ranked$rank <- 1:nrow(genus_ranked)
     max_diversity <- max(genus_ranked$Freq, na.rm = TRUE)

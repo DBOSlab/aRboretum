@@ -353,8 +353,10 @@ arboretum_labels <- function(data_path = NULL,
 
   output_paths <- character(nrow(df))
 
-  # Get world map (WGSRPD level 3)
-  world <- .get_world_map()
+  # Get world map of botanical subdivisions (WGSRPD level 3) from internal package data
+  WGSRPD <- get("WGSRPD", envir = as.environment("package:aRboretum"))
+
+  # world <- .get_world_map()
 
   # Get Brazil states map
   br_states <- geobr::read_state(year = 2025,
@@ -367,7 +369,7 @@ arboretum_labels <- function(data_path = NULL,
     output_paths[i] <- .generate_species_html(
       species_data = df[i, , drop = FALSE],
       phrases = html_phrases,
-      world = world,
+      world = WGSRPD,
       br_states = br_states,
       printed_lang = printed_lang,
       add_lang = add_lang,
@@ -383,7 +385,7 @@ arboretum_labels <- function(data_path = NULL,
   }
 
   # Clean up temporary WGSRPD folder
-  unlink("WGSRPD", recursive = TRUE)
+  # unlink("WGSRPD", recursive = TRUE)
 
   if (verbose) {
     message("\nCompleted! Generated ", length(output_paths), " HTML files in: ",
@@ -650,7 +652,7 @@ arboretum_labels <- function(data_path = NULL,
                                                back_index = "Volver a la página principal")
     )
 
-    if (lang != add_lang) {
+    if (is.null(add_lang) || lang != add_lang) {
       # Extract plant uses and curiosities from data
       col_uses <- paste0("plant_uses_", toupper(lang))
       uses <- species_data[[col_uses]][1]
@@ -659,6 +661,9 @@ arboretum_labels <- function(data_path = NULL,
       col_curi <- paste0("free_notes_", toupper(lang))
       curi <- species_data[[col_curi]][1]
       if (is.na(curi)) curi <- ""
+    } else {
+      uses <- ""
+      curi <- ""
     }
 
     extra_html <- ""
@@ -1622,22 +1627,22 @@ arboretum_labels <- function(data_path = NULL,
   return(img_tag)
 }
 
-.get_world_map <- function(){
-  download.file(url = "https://github.com/tdwg/wgsrpd/archive/master.zip",
-                destfile = "wgsrpd-master.zip")
-  unzip("wgsrpd-master.zip")
-  unlink("wgsrpd-master.zip")
-  file.rename("wgsrpd-master", "WGSRPD")
-  unlink(c("WGSRPD/level1", "WGSRPD/level2", "WGSRPD/level4", "WGSRPD/geojson"),
-         recursive = TRUE)
-  file.rename("WGSRPD/README.md", "WGSRPD/README.txt")
-  world <- sf::st_read("WGSRPD/level3/level3.shp")
-  world <- world[!world$LEVEL3_NAM %in% "Antarctica", ]
-  world$LEVEL3_NAM[367] <- "DR Congo"
-  world$LEVEL3_NAM[306] <- "Sudan-South Sudan"
-
-  return(world)
-}
+# .get_world_map <- function(){
+#   download.file(url = "https://github.com/tdwg/wgsrpd/archive/master.zip",
+#                 destfile = "wgsrpd-master.zip")
+#   unzip("wgsrpd-master.zip")
+#   unlink("wgsrpd-master.zip")
+#   file.rename("wgsrpd-master", "WGSRPD")
+#   unlink(c("WGSRPD/level1", "WGSRPD/level2", "WGSRPD/level4", "WGSRPD/geojson"),
+#          recursive = TRUE)
+#   file.rename("WGSRPD/README.md", "WGSRPD/README.txt")
+#   world <- sf::st_read("WGSRPD/level3/level3.shp")
+#   world <- world[!world$LEVEL3_NAM %in% "Antarctica", ]
+#   world$LEVEL3_NAM[367] <- "DR Congo"
+#   world$LEVEL3_NAM[306] <- "Sudan-South Sudan"
+#
+#   return(world)
+# }
 
 .mk_map_dist <- function(df_sp = NULL, world, br_states){
   world_plant <- .get_pr_ab_world(df_sp, world)

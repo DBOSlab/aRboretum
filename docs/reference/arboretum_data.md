@@ -15,11 +15,13 @@ rank information derived from FFB.
 ``` r
 arboretum_data(
   spp_list = NULL,
+  printed_lang = c("pt", "en", "fr", "es"),
+  add_lang = NULL,
   verbose = TRUE,
   save = TRUE,
   format = c("csv", "xlsx"),
-  filename = "arboretum_mined_data",
-  dir = "arboretum_mined_data"
+  filename = "arboretum_data",
+  dir = "arboretum_data"
 )
 ```
 
@@ -33,6 +35,21 @@ arboretum_data(
   names are standardized internally before querying. An error is thrown
   if any element does not contain a space, indicating a probable
   non-species name.
+
+- printed_lang:
+
+  Character vector. Built-in language(s) to generate folders and phrases
+  for. Accepted values are `"pt"`, `"en"`, `"fr"`, and `"es"`.
+
+- add_lang:
+
+  Character string or `NULL`. Optional code for one additional language
+  to include in the folder structure for personal recordings, for
+  example `"PANARA"` or `"TUKANO"`. This argument is intended for cases
+  where users want to add custom community or local-language audio
+  without translating the full package interface. When supplied, one
+  extra recording folder per species is created using that language
+  code.
 
 - verbose:
 
