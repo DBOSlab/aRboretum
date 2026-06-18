@@ -768,15 +768,15 @@ arboretum_labels <- function(data_path = NULL,
     list(file = "aRboretum_hex_sticker.png",
          url = "https://github.com/DBOSlab/aRboretum",
          alt = "aRboretum"),
+    list(file = "reflora.png",
+         url = "https://reflora.jbrj.gov.br/consulta/#CondicaoTaxonCP",
+         alt = "Reflora"),
     list(file = "jbrj_horizontal_logo.png",
          url = "https://www.gov.br/jbrj/pt-br",
          alt = "JBRJ"),
     list(file = "mma.png",
          url = "https://www.gov.br/mma",
-         alt = "MMA"),
-    list(file = "reflora.png",
-         url = "https://reflora.jbrj.gov.br/consulta/#CondicaoTaxonCP",
-         alt = "Reflora")
+         alt = "MMA")
   )
   package_logos <- list()
   for (config in logo_config) {
