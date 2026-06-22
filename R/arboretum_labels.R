@@ -43,8 +43,8 @@
 #' \code{free_notes_PT}, \code{free_notes_ES}, \code{free_notes_FR},
 #' \code{FFB.url}, \code{POWO.url}, \code{IUCN.status},
 #' \code{botanical_country}, \code{introduced_to}, \code{FFB.stateProvince},
-#' \code{FFB.establishmentMeans}, and and \code{full_phrases_ADD_LANGUAGE} are
-#' used when available. are used when available.
+#' \code{FFB.establishmentMeans}, and \code{full_phrases_ADD_LANGUAGE} are
+#' used when available.
 #' @param audio_dir Character string. Directory containing personal audio
 #' recordings, usually created with \code{arboretum_audios()}.
 #' Default is \code{"arboretum_audios"}. The expected subfolder pattern is

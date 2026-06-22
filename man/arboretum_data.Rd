@@ -22,15 +22,17 @@ authorship. Leading and trailing whitespace are removed, and names are standardi
 internally before querying. An error is thrown if any element does not contain a
 space, indicating a probable non-species name.}
 
-\item{printed_lang}{Character vector. Built-in language(s) to generate folders and
-phrases for. Accepted values are \code{"pt"}, \code{"en"}, \code{"fr"}, and \code{"es"}.}
+\item{printed_lang}{Character vector. Built-in language(s) for which phrases are
+generated in the HTML guide. Accepted values are \code{"pt"}, \code{"en"}, \code{"fr"}, and
+\code{"es"}. Default is \code{c("pt", "en", "fr", "es")}.}
 
 \item{add_lang}{Character string or \code{NULL}. Optional code for one additional
-language to include in the folder structure for personal recordings, for
-example \code{"PANARA"} or \code{"TUKANO"}. This argument is intended for cases where
-users want to add custom community or local-language audio without translating
-the full package interface. When supplied, one extra recording folder per
-species is created using that language code.}
+language, for example \code{"PANARA"} or \code{"TUKANO"}. When supplied, the HTML phrase
+guide includes a dedicated editable field for entering a full phrase translation
+for the specified custom language. The content entered there is stored in the
+\code{full_phrases_ADD_LANGUAGE} column and can be used on subsequent runs of
+\code{arboretum_labels()} to include that language in the species labels.
+Default is \code{NULL}.}
 
 \item{verbose}{Logical. If \code{TRUE}, progress messages are printed to the console.
 Default is \code{TRUE}.}
@@ -38,8 +40,8 @@ Default is \code{TRUE}.}
 \item{save}{Logical. If \code{TRUE}, the resulting dataframe is saved to disk.
 Default is \code{TRUE}.}
 
-\item{format}{Character string indicating the output file format. One of \code{"csv"} or
-\code{"xlsx"}. Partial matching is allowed through \code{match.arg()}.
+\item{format}{Character string indicating the output file format. One of \code{"csv"}
+or \code{"xlsx"}. Partial matching is allowed through \code{match.arg()}.
 Default is \code{"csv"}.}
 
 \item{filename}{Character string. Base name for the output file, without extension.
@@ -52,6 +54,7 @@ not exist. Default is \code{"arboretum_data"}.}
 \value{
 A dataframe combining data retrieved from FFB and POWO. The returned columns include:
 \itemize{
+\item \code{original_query}: The species name as originally supplied in \code{spp_list}.
 \item \code{family}: Family name of the accepted taxon.
 \item \code{genus}: Genus extracted from the accepted scientific name.
 \item \code{taxonName}: Accepted scientific name after synonym resolution.
@@ -76,10 +79,15 @@ translated into English when applicable and concatenated by \code{" | "}.
 representing the richest genus.
 \item \code{plant_uses_EN}, \code{plant_uses_PT}, \code{plant_uses_ES},
 \code{plant_uses_FR}: Plant-use fields in English, Portuguese, Spanish, and French,
-reserved for downstream annotation or future use.
+intended for user annotation via the HTML phrase guide or direct editing of the
+saved file.
 \item \code{free_notes_EN}, \code{free_notes_PT}, \code{free_notes_ES},
 \code{free_notes_FR}: Free-text note fields in English, Portuguese, Spanish, and
-French, reserved for downstream annotation or future use.
+French, intended for user annotation via the HTML phrase guide or direct editing
+of the saved file.
+\item \code{full_phrases_ADD_LANGUAGE}: Reserved field for a complete phrase
+translation in the custom language specified by \code{add_lang}. Always present
+in the output; populated by the user via the HTML phrase guide or direct editing.
 \item \code{POWO.url}: URL to the species page in POWO.
 \item \code{FFB.url}: URL to the species page in FFB.
 }
@@ -89,6 +97,13 @@ returned as \code{NA}. Species not found in either database are omitted from the
 dataframe. For overlapping fields, FFB data generally take precedence, except for
 selected POWO-derived fields such as botanical country, introduced range, IUCN status,
 and POWO URL.
+
+When \code{save = TRUE}, the function also writes a standalone HTML phrase guide
+(\code{__phrase_generating_guide.html}) to \code{dir}. This file embeds the full
+dataframe and allows users to review generated phrases, edit annotation fields
+(\code{FFB.vernacularName}, \code{plant_uses_*}, \code{free_notes_*},
+\code{full_phrases_ADD_LANGUAGE}), and export the updated data as CSV or XLSX
+without rerunning the function.
 }
 \description{
 This function queries both \href{https://floradobrasil.jbrj.gov.br/consulta/}{Flora e Funga do Brasil (FFB)}
@@ -97,10 +112,13 @@ taxonomic, distributional, vernacular, conservation, and occurrence-related info
 for a given list of plant species. It standardizes input names, handles synonyms,
 merges data from both sources, and returns a single dataframe that can optionally be
 saved as a CSV or Excel file. The output also includes genus-level richness and rank
-information derived from FFB.
+information derived from FFB. When \code{save = TRUE}, the function also writes a
+standalone HTML phrase guide (\code{__phrase_generating_guide.html}) to \code{dir},
+which allows users to review, edit annotation fields, and export the updated data
+directly from the browser.
 }
 \details{
-The function follows four main steps:
+The function follows five main steps:
 
 \enumerate{
 \item \strong{Flora e Funga do Brasil data extraction}
@@ -144,6 +162,16 @@ are unavailable.
 \item Adds genus richness and genus rank to the final dataframe.
 \item Adds multilingual genus curiosity notes using internal helper functions,
 when available.
+}
+
+\item \strong{HTML phrase guide generation}
+\itemize{
+\item Generates natural-language species descriptions for each
+\code{printed_lang} and, if \code{add_lang} is supplied, includes a
+dedicated editable field for the custom language.
+\item Saves a standalone \code{__phrase_generating_guide.html} to \code{dir}
+when \code{save = TRUE}. The guide embeds the full dataframe and provides
+browser-based editing and export functionality.
 }
 }
 

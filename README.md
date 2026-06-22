@@ -24,15 +24,15 @@ files with audio playback capabilities.
 
 ## Key features
 
-- 🎵 **Dual audio support** - Personal recordings OR text-to-speech
-- 🌐 **Multilingual** - Portuguese, English, French, Spanish, plus one
+- 🎵 **Dual audio support** — Personal recordings OR text-to-speech
+- 🌐 **Multilingual** — Portuguese, English, French, Spanish, plus one
   flexible custom language slot for community-based accessibility
-- 🗺️ **Interactive maps** - World and Brazil state-level distribution
-- 🔍 **Searchable index** - Real-time filtering of species collection
-- 📊 **Data mining** - Automatic extraction from FFB and POWO databases
-- 🎨 **Customizable branding** - Add institutional logos
-- 📱 **Responsive design** - Works on mobile and desktop
-- 🚀 **Ready to deploy** - Complete website in one folder, no build step
+- 🗺️ **Interactive maps** — World and Brazil state-level distribution
+- 🔍 **Searchable index** — Real-time filtering of species collection
+- 📊 **Data mining** — Automatic extraction from FFB and POWO databases
+- 🎨 **Customizable branding** — Add institutional logos
+- 📱 **Responsive design** — Works on mobile and desktop
+- 🚀 **Ready to deploy** — Complete website in one folder, no build step
   needed
 - 🖼️ **Personal photos** — Add species photos and slideshows
 - 🧾 **QR-code labels** — Generate printable labels linked to species
@@ -58,18 +58,18 @@ library(aRboretum)
 
 ## Usage
 
-The package provides three main functions:
+The package provides six main functions:
 
-- `arboretum_data()` - retrieves and merges species data from Flora e
+- `arboretum_data()` — retrieves and merges species data from Flora e
   Funga do Brasil and Plants of the World Online.
-- `arboretum_audios()` - creates folders and an HTML recording guide for
+- `arboretum_audios()` — creates folders and an HTML recording guide for
   custom personal audio files, including one optional extra community or
   local language.
 - `arboretum_photos()` — creates folders for personal species photos.
-- `arboretum_labels()` - generates interactive multilingual,
+- `arboretum_labels()` — generates interactive multilingual,
   audio-enhanced HTML species labels, with support for one optional
   extra language supplied directly in the input data.
-- `arboretum_minisite` - creates a searchable multilingual index page
+- `arboretum_minisite()` — creates a searchable multilingual index page
   for all generated species labels.
 - `arboretum_qrcodes()` — generates printable QR-code labels linked to
   species pages or source URLs.
@@ -99,7 +99,12 @@ species_data <- arboretum_data(
 The resulting dataframe includes taxonomic information, distribution
 data, Brazilian states, phytogeographic domains, vegetation types,
 endemism, establishment means, IUCN status when available, genus-level
-richness summaries, and links to FFB and POWO species pages.
+richness summaries, and links to FFB and POWO species pages. When
+`save = TRUE`, the function also writes a standalone HTML phrase guide
+(`__phrase_generating_guide.html`) to `dir`, allowing you to review
+generated phrases, fill in annotation fields (`FFB.vernacularName`,
+`plant_uses_*`, `free_notes_*`, `full_phrases_ADD_LANGUAGE`), and export
+the updated data as CSV or XLSX directly from the browser.
 
 #### *2. `arboretum_audios`: Prepare folders for personal audio recordings*
 
@@ -117,10 +122,10 @@ arboretum_audios(
 )
 ```
 
-This creates the arboretum_personal_audios/ folder and a searchable HTML
-guide named:
+This creates the `arboretum_audios/` folder and a searchable HTML guide
+named:
 
-`arboretum_personal_audios/__personal_audio_recording_guide.html`
+`arboretum_audios/__personal_audio_recording_guide.html`
 
 Use this guide to record custom audio files for each species and
 language. Personal recordings are automatically preferred over browser
@@ -181,18 +186,18 @@ by the standard translation workflow.
 
 Features of generated HTML labels:
 
-🌍 Interactive maps - Distribution maps at global and Brazil state
+🌍 Interactive maps — Distribution maps at global and Brazil state
 levels  
-🎤 Dual audio - Plays personal recordings if available, falls back to
+🎤 Dual audio — Plays personal recordings if available, falls back to
 TTS  
-🎵 Visual feedback - Button shows “🎵 Personal Recording” when
+🎵 Visual feedback — Button shows “🎵 Personal Recording” when
 available  
-🌐 Language selection - Built-in support for Portuguese, English,
+🌐 Language selection — Built-in support for Portuguese, English,
 French, and Spanish, plus one optional custom language  
-⏹️ Stop control - Cancel audio playback at any time  
-📝 Text preview - Displays spoken text  
-🎨 Branding - Optional institutional logo with hyperlink  
-📱 Responsive design - Works on all devices
+⏹️ Stop control — Cancel audio playback at any time  
+📝 Text preview — Displays spoken text  
+🎨 Branding — Optional institutional logo with hyperlink  
+📱 Responsive design — Works on all devices
 
 #### *Working with one additional community language*
 
@@ -253,29 +258,35 @@ When data_path is supplied, the minisite also includes vernacular names
 and a dashboard summarizing species, genera, families, origin, Brazilian
 state distribution, phytogeographic domains, and world distribution:
 
-🔍 Real-time search - Filter species by name or family  
-🌐 Multilingual interface - Toggle between Portuguese, English, French,
+🔍 Real-time search — Filter species by name or family  
+🌐 Multilingual interface — Toggle between Portuguese, English, French,
 Spanish  
-📊 Species counter - Shows filtered/total species  
-🏷️ Family grouping - Organizes species by family (optional)  
-📱 Responsive design - Works on all devices  
-🔗 Direct links - Click any card to open its full species label  
+📊 Species counter — Shows filtered/total species  
+🏷️ Family grouping — Organizes species by family (optional)  
+📱 Responsive design — Works on all devices  
+🔗 Direct links — Click any card to open its full species label  
 
 #### *6. `arboretum_qrcodes`: Generate printable QR-code labels*
 
-After generating your species labels, create a beautiful, searchable
-index page that lists all species with real-time filtering and
-multilingual interface:
+Generate print-ready QR code labels arranged on A4 pages and saved as
+PDF or PNG. Four visual layouts are available: `"minimalist"` (default),
+`"classic"`, `"modern"`, and `"botanical"`. Each layout differs in
+typography, colour palette, and border style.
 
 ``` r
-# Create qrcodes linked to the species labels
+# Minimalist QR codes (default) using POWO/FFB URLs from the mined data
 arboretum_qrcodes(
-  data_path = "extracted_data/my_species_data.xlsx", 
-  base_url = "https://myinstitution.org/my-collection", 
-  layout = "complete", 
-  printed_lang = "pt", 
-  path_to_logo = "jbrj_logo.png", 
-  format = "pdf", 
+  data_path = "extracted_data/my_species_data.xlsx"
+)
+
+# Classic botanical layout linked to a published minisite
+arboretum_qrcodes(
+  data_path = "extracted_data/my_species_data.xlsx",
+  base_url = "https://myinstitution.org/my-collection",
+  layout = "classic",
+  printed_lang = "pt",
+  path_to_logo = "jbrj_logo.png",
+  format = "pdf",
   verbose = TRUE
 )
 ```
@@ -315,8 +326,8 @@ arboretum_audios(
 
 # Step 3: Add your own recordings!
 # Place files like:
-#   arboretum_personal_audios/ARECACEAE_Euterpe_edulis_EN/my_recording.mp3
-#   arboretum_personal_audios/ARECACEAE_Euterpe_edulis_PT/gravacao_pessoal.wav
+#   arboretum_audios/ARECACEAE_Euterpe_edulis_EN/my_recording.mp3
+#   arboretum_audios/ARECACEAE_Euterpe_edulis_PT/gravacao_pessoal.wav
 
 # Step 4: Prepare personal photo folders 
 arboretum_photos(
@@ -328,7 +339,6 @@ arboretum_photos(
 arboretum_labels(
   data_path = "data/my_garden_plants.xlsx",
   printed_lang = c("pt", "en"),
-  rate = 0.9,
   path_to_logo = "my_garden_logo.png",
   dir = "labels"
 )
@@ -345,12 +355,12 @@ arboretum_minisite(
 
 # Step 7: Generate QR-code labels linked to the published minisite 
 arboretum_qrcodes(
-  data_path = "data/my_garden_plants.xlsx", 
-  base_url = "https://myinstitution.org/my-collection", 
-  layout = "complete", 
-  printed_lang = "pt", 
-  path_to_logo = "my_garden_logo.png", 
-  format = "pdf", 
+  data_path = "data/my_garden_plants.xlsx",
+  base_url = "https://myinstitution.org/my-collection",
+  layout = "classic",
+  printed_lang = "pt",
+  path_to_logo = "my_garden_logo.png",
+  format = "pdf",
   verbose = TRUE
 )
 
@@ -364,9 +374,9 @@ arboretum_qrcodes(
 
 ## What Happens When You Open index.html?
 
-Landing page loads - Shows all species with search bar and language
-selector User searches - Real-time filtering without page reload Clicks
-a species card - Opens individual label with:
+Landing page loads — Shows all species with search bar and language
+selector User searches — Real-time filtering without page reload Clicks
+a species card — Opens individual label with:
 
 - Interactive distribution maps
 - Audio playback (personal recording or TTS)
@@ -401,23 +411,27 @@ scan → instantly see the species label with audio!
 The input data for `arboretum_labels()` must include the following
 columns (as produced by `arboretum_data()`):
 
-| Column                      | Description                                   |
-|-----------------------------|-----------------------------------------------|
-| `taxonName`                 | Accepted scientific name                      |
-| `family`                    | Botanical family                              |
-| `scientificNameAuthorship`  | Scientific name authorship                    |
-| `FFB.vernacularName`        | Vernacular names from Flora e Funga do Brasil |
-| `country`                   | Country-level distribution                    |
-| `endemism`                  | Endemism status                               |
-| `botanical_country`         | POWO botanical-country distribution           |
-| `introduced_to`             | Introduced range from POWO                    |
-| `FFB.establishmentMeans`    | Native, cultivated, naturalized, etc.         |
-| `FFB.stateProvince`         | Brazilian states                              |
-| `FFB.phytogeographicDomain` | Brazilian phytogeographic domains             |
-| `FFB.vegetationType`        | Vegetation types                              |
-| `IUCN.status`               | IUCN status from POWO, when available         |
-| `POWO.url`                  | POWO species page                             |
-| `FFB.url`                   | FFB species page                              |
+| Column | Description |
+|----|----|
+| `original_query` | Original species name as supplied to `arboretum_data()` |
+| `taxonName` | Accepted scientific name |
+| `family` | Botanical family |
+| `scientificNameAuthorship` | Scientific name authorship |
+| `FFB.vernacularName` | Vernacular names from Flora e Funga do Brasil |
+| `country` | Country-level distribution |
+| `endemism` | Endemism status |
+| `botanical_country` | POWO botanical-country distribution |
+| `introduced_to` | Introduced range from POWO |
+| `FFB.establishmentMeans` | Native, cultivated, naturalized, etc. |
+| `FFB.stateProvince` | Brazilian states |
+| `FFB.phytogeographicDomain` | Brazilian phytogeographic domains |
+| `FFB.vegetationType` | Vegetation types |
+| `IUCN.status` | IUCN status from POWO, when available |
+| `plant_uses_EN/PT/ES/FR` | Plant-use annotation fields (editable via HTML guide) |
+| `free_notes_EN/PT/ES/FR` | Free-text note fields (editable via HTML guide) |
+| `full_phrases_ADD_LANGUAGE` | Full phrase for the custom language set in `add_lang` |
+| `POWO.url` | POWO species page |
+| `FFB.url` | FFB species page |
 
 ## Browser requirements
 

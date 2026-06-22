@@ -11,7 +11,7 @@ arboretum_qrcodes(
   length = NULL,
   width = NULL,
   path_to_logo = NULL,
-  layout = c("minimalist", "complete"),
+  layout = c("minimalist", "classic", "modern", "botanical"),
   id_code = NULL,
   base_url = NULL,
   url = NULL,
@@ -36,35 +36,35 @@ to process. Values must match entries in the \code{taxonName} column. If
 \code{NULL}.}
 
 \item{printed_lang}{Character vector. Language code used for the endemism phrase
-in \code{"complete"} labels. Accepted values are \code{"pt"}, \code{"en"},
-\code{"fr"}, and \code{"es"}. When more than one language is supplied and
-\code{layout = "complete"}, the first valid value selected by
-\code{match.arg()} is used. This argument is ignored for
-\code{"minimalist"} labels. Default is \code{c("pt", "en", "fr", "es")}.}
+in detailed labels (\code{"classic"}, \code{"modern"}, \code{"botanical"}).
+Accepted values are \code{"pt"}, \code{"en"}, \code{"fr"}, and \code{"es"}.
+When more than one language is supplied, the first valid value selected by
+\code{match.arg()} is used. Ignored for \code{"minimalist"} labels. Default
+is \code{c("pt", "en", "fr", "es")}.}
 
 \item{length}{Numeric or \code{NULL}. Label height in centimetres. If
 \code{NULL}, the default is \code{2.5} cm for \code{"minimalist"} labels and
-\code{8.0} cm for \code{"complete"} labels.}
+\code{8.0} cm for detailed layouts. All text sizes scale proportionally.}
 
 \item{width}{Numeric or \code{NULL}. Label width in centimetres. If
 \code{NULL}, the default is \code{2.5} cm for \code{"minimalist"} labels and
-\code{6.0} cm for \code{"complete"} labels.}
+\code{6.0} cm for detailed layouts. All text sizes scale proportionally.}
 
 \item{path_to_logo}{Character string or \code{NULL}. Optional path to a PNG or
-JPEG logo file. The logo is shown only in \code{"complete"} labels, near the
-bottom-right of each label. The image aspect ratio is preserved. If the logo
-file is missing or unsupported, the function warns and continues without it.
-Default is \code{NULL}.}
+JPEG logo file. The logo is shown in \code{"classic"}, \code{"modern"}, and
+\code{"botanical"} labels, near the bottom-right corner. The image aspect
+ratio is preserved. If the logo file is missing or unsupported, the function
+warns and continues without it. Default is \code{NULL}.}
 
-\item{layout}{Character string. Label layout. One of \code{"minimalist"} or
-\code{"complete"}. Default is the first option, \code{"minimalist"}.}
+\item{layout}{Character string. Label layout. One of \code{"minimalist"}
+(default), \code{"classic"}, \code{"modern"}, or \code{"botanical"}.}
 
 \item{id_code}{Character vector or \code{NULL}. Optional specimen or collection
-identifier printed on \code{"complete"} labels. If a single value matching a
-column name in the input data is supplied, values are taken from that column.
-Otherwise, supplied values are recycled or used directly to match the selected
-species. Ignored visually for \code{"minimalist"} labels. Default is
-\code{NULL}.}
+identifier printed on detailed labels (\code{"classic"}, \code{"modern"},
+\code{"botanical"}). If a single value matching a column name in the input
+data is supplied, values are taken from that column. Otherwise, supplied
+values are recycled or used directly. Ignored for \code{"minimalist"} labels.
+Default is \code{NULL}.}
 
 \item{base_url}{Character string or \code{NULL}. Root URL of a published minisite
 containing species label pages. When supplied, each QR code is linked to a
@@ -115,15 +115,26 @@ specimens using a species data file, typically produced by
 or PNG files. If the number of labels exceeds the page capacity, the function
 automatically creates multiple output files, one per page.
 
-Two visual layouts are available:
+Four visual layouts are available:
 \itemize{
-\item \code{"minimalist"}: a compact label with a border, scientific name,
-optional first vernacular name, and QR code.
-\item \code{"complete"}: a larger botanical label with scientific name,
-authorship, family name, optional first vernacular name, optional
-language-specific endemism phrase, QR code, optional specimen identifier,
-and optional institutional logo.
+\item \code{"minimalist"} (default): a compact label with a thin border,
+scientific name in italic, optional first vernacular name, and QR code.
+All elements scale proportionally to the chosen label size.
+\item \code{"classic"}: a traditional botanical label with dark-green
+serif typography, scientific name, authorship, bold family name, optional
+vernacular name, optional language-specific endemism phrase, QR code,
+optional specimen identifier, and optional institutional logo.
+\item \code{"modern"}: a contemporary label with a slate-blue colour palette,
+clean sans-serif fonts throughout, a lightweight border, and the same
+information fields as \code{"classic"}.
+\item \code{"botanical"}: a warm parchment-background label with brown
+earth-tone serif typography, an ornamental double border, and the same
+information fields as \code{"classic"}.
 }
+
+In all \code{"classic"}, \code{"modern"}, and \code{"botanical"} layouts,
+all font sizes scale proportionally to both the label width and height, so
+the text remains readable at any custom size.
 
 QR codes can link to species pages in a published minisite, to a single shared
 URL, to POWO or FFB source pages from the input data, or, when no URL is
@@ -169,7 +180,7 @@ selected label dimensions.
 \item Display a QR code with a white quiet zone for scanning reliability.
 }
 
-\item \strong{Complete labels}
+\item \strong{Classic / Modern / Botanical labels}
 \itemize{
 \item Display scientific name, authorship, family, and first vernacular name
 when available.
@@ -178,6 +189,8 @@ when available.
 \item Display an optional specimen identifier from \code{id_code}.
 \item Display an optional logo when \code{path_to_logo} is supplied.
 \item Display a QR code with a white quiet zone for scanning reliability.
+\item All font sizes are computed from a single proportional scale factor
+\code{min(width / 6, height / 8)}, so text remains readable at any size.
 }
 }
 
@@ -214,11 +227,11 @@ data_path = "arboretum_data/arboretum_data.xlsx",
 base_url = "https://dboslab.github.io/jbrj-arboretum"
 )
 
-# Complete labels with specimen IDs and a logo
+# Classic labels with specimen IDs and a logo
 arboretum_qrcodes(
 data_path = "arboretum_data/arboretum_data.xlsx",
 species = c("Euterpe edulis", "Paubrasilia echinata"),
-layout = "complete",
+layout = "classic",
 printed_lang = "pt",
 base_url = "https://dboslab.github.io/jbrj-arboretum",
 id_code = c("JBRJ-001", "JBRJ-002"),
@@ -226,12 +239,21 @@ path_to_logo = "path/to/institution_logo.png",
 format = "pdf"
 )
 
-# Complete labels using specimen IDs stored in a data column
+# Modern labels using specimen IDs stored in a data column
 arboretum_qrcodes(
 data_path = "arboretum_data/arboretum_data.xlsx",
-layout = "complete",
+layout = "modern",
 id_code = "accession_id",
 printed_lang = "en"
+)
+
+# Botanical labels with warm parchment style
+arboretum_qrcodes(
+data_path = "arboretum_data/arboretum_data.xlsx",
+layout = "botanical",
+printed_lang = "pt",
+base_url = "https://dboslab.github.io/jbrj-arboretum",
+format = "pdf"
 )
 
 # Larger minimalist PNG labels with a custom QR colour
