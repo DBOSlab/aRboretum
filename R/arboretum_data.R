@@ -33,10 +33,10 @@
 #'   `"xlsx"`. Partial matching is allowed through \code{match.arg()}.
 #'   Default is `"csv"`.
 #' @param filename Character string. Base name for the output file, without extension.
-#'   Default is `"arboretum_mined_data"`.
+#'   Default is `"arboretum_data"`.
 #' @param dir Character string. Directory path where the output file will be saved.
 #'   Trailing slashes are automatically removed. The directory is created if it does
-#'   not exist. Default is `"arboretum_mined_data"`.
+#'   not exist. Default is `"arboretum_data"`.
 #'
 #' @return
 #' A dataframe combining data retrieved from FFB and POWO. The returned columns include:
@@ -585,7 +585,9 @@ arboretum_data <- function(spp_list = NULL,
     printed_lang = printed_lang,
     html_phrases = html_phrases,
     output_path = output_path,
-    verbose = verbose
+    verbose = verbose,
+    add_lang = add_lang,
+    data_filename = paste0(filename, ".", format)
   )
 
   return(result_merged)

@@ -900,7 +900,9 @@
                               printed_lang,
                               html_phrases,
                               output_path,
-                              verbose) {
+                              verbose,
+                              add_lang = NULL,
+                              data_filename = NULL) {
 
   if (function_use == "_data") {
     ui_strings <- lapply(ui_strings, function(x) {
@@ -922,10 +924,21 @@
 
   initial_lang <- printed_lang[1L]
   ui_strings_json <- jsonlite::toJSON(ui_strings[printed_lang], auto_unbox = TRUE)
+  species_data_json <- if (function_use == "_data") {
+    jsonlite::toJSON(df, na = "null", auto_unbox = TRUE)
+  } else {
+    "[]"
+  }
+  data_fn_js <- if (!is.null(data_filename) && nzchar(data_filename)) {
+    .escape_html(data_filename)
+  } else {
+    "arboretum_data.xlsx"
+  }
   lang_buttons_html <- .build_language_buttons(printed_lang, initial_lang, lang_button_label)
   index_html <- .build_species_index(df)
   cards_html <- .build_species_cards(function_use,
-                                     df, printed_lang, html_phrases, initial_lang)
+                                     df, printed_lang, html_phrases, initial_lang,
+                                     add_lang = add_lang)
 
   html <- paste0(
     '<!DOCTYPE html>
@@ -1144,6 +1157,114 @@ ifelse(function_use == "_audios",
   min-width: 80px;
 }'), paste0("\n")),
 
+ifelse(function_use == "_data", paste0(
+'.search-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.search-row .search-box {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+.edit-toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+.save-btn {
+  padding: 6px 11px;
+  border-radius: 9px;
+  border: 1px solid;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.save-btn-primary  { background: var(--accent); color: #fff; border-color: var(--accent); }
+.save-btn-secondary { background: #f0f7f0; color: var(--accent); border-color: #d4e4d4; }
+.save-btn-csv      { background: #f7f3f0; color: #6b5a3a; border-color: #e0d4c0; }
+.save-status {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-right: auto;
+  min-width: 60px;
+}
+.edit-toggle-btn {
+  display: block;
+  margin-top: 14px;
+  padding: 6px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.84rem;
+}
+.edit-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+.edit-panel {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  background: #fafaf8;
+}
+.edit-section { margin-bottom: 14px; }
+.edit-section:last-child { margin-bottom: 0; }
+.edit-section-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.edit-uses-header {
+  display: grid;
+  grid-template-columns: 52px 1fr 1fr;
+  gap: 8px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.edit-lang-row {
+  display: grid;
+  grid-template-columns: 52px 1fr 1fr;
+  gap: 8px;
+  align-items: start;
+  margin-bottom: 8px;
+}
+.edit-lang-label { font-size: 0.8rem; font-weight: 700; color: var(--accent); padding-top: 6px; }
+.edit-ta {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-size: 0.83rem;
+  font-family: inherit;
+  resize: vertical;
+  background: #fff;
+  color: var(--ink);
+  line-height: 1.5;
+  transition: border-color 0.15s;
+}
+.edit-ta:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(47,111,87,0.12); }
+.edit-hint { display: block; font-size: 0.75rem; color: #9ca3af; margin-top: 4px; }
+.phrase-base, .phrase-extra { display: inline; }
+'), paste0("\n")),
+
 '</style>
 </head>
 <body>
@@ -1164,8 +1285,17 @@ ifelse(function_use == "_audios",
     </div>'), paste0("\n")),
 '</section>
 
-  <div class="search-wrap">
-    <input id="searchInput" class="search-box" type="text" placeholder="', .escape_html(ui_strings[[initial_lang]]$search_placeholder), '">
+  <div class="search-wrap">',
+ifelse(function_use == "_data", paste0(
+'    <div id="editToolbar" class="edit-toolbar">
+      <span class="save-status" id="saveStatus"></span>
+      <button type="button" class="save-btn save-btn-csv" id="downloadCsvBtn">&#8681;&nbsp;CSV</button>
+      <button type="button" class="save-btn save-btn-secondary" id="downloadXlsxBtn">&#8681;&nbsp;XLSX</button>
+      <button type="button" class="save-btn save-btn-primary" id="saveXlsxBtn">&#128190;&nbsp;Save</button>
+    </div>'), ""),
+'    <div class="search-row">
+      <input id="searchInput" class="search-box" type="text" placeholder="', .escape_html(ui_strings[[initial_lang]]$search_placeholder), '">
+    </div>
   </div>
 
   <section class="index-panel">
@@ -1413,7 +1543,225 @@ ifelse(function_use == "_audios",
   });',
 
 'applyLanguage(currentLang);
-})();
+',
+ifelse(function_use == "_data", paste0(
+
+'  // ================================================================
+  // Data Editor
+  // ================================================================
+  let speciesData = ', species_data_json, ';
+  const dataFilename = "', data_fn_js, '";
+  let xlsxFileHandle = null;
+
+  function setUnsaved() {
+    const stat = document.getElementById("saveStatus");
+    if (stat) stat.textContent = "● Unsaved changes";
+  }
+  function setSaved(msg) {
+    const stat = document.getElementById("saveStatus");
+    if (stat) stat.textContent = msg || "✓ Saved";
+  }
+
+  // Toggle edit panels
+  document.querySelectorAll(".edit-toggle-btn").forEach(btn => {
+    btn.addEventListener("click", function () {
+      const panel = document.getElementById(this.dataset.target);
+      if (!panel) return;
+      if (panel.hasAttribute("hidden")) {
+        panel.removeAttribute("hidden");
+        this.innerHTML = "× Close editing";
+      } else {
+        panel.setAttribute("hidden", "");
+        this.innerHTML = "&#9998; Edit data fields";
+      }
+    });
+  });
+
+  // Live-update phrase spans when editable fields change
+  document.querySelectorAll(".edit-field").forEach(ta => {
+    ta.addEventListener("input", function () {
+      const row  = parseInt(this.dataset.row, 10);
+      const col  = this.dataset.col;
+      const lang = this.dataset.lang || "";
+      const kind = this.dataset.kind || "";
+      if (speciesData[row]) speciesData[row][col] = this.value;
+      setUnsaved();
+      if (kind === "plant" || kind === "notes") refreshExtraPhrase(row, lang);
+      else if (kind === "addlang") refreshAddLangPhrase(row, lang, this.value);
+    });
+  });
+
+  function normPhrase(s) {
+    s = (s || "").trim();
+    return s && !/[.!?;:]$/.test(s) ? s + "." : s;
+  }
+
+  function refreshExtraPhrase(row, lang) {
+    const plantTA = document.querySelector(`.edit-field[data-row="${row}"][data-lang="${lang}"][data-kind="plant"]`);
+    const notesTA = document.querySelector(`.edit-field[data-row="${row}"][data-lang="${lang}"][data-kind="notes"]`);
+    const parts = [];
+    if (plantTA && plantTA.value.trim()) parts.push(normPhrase(plantTA.value.trim()));
+    if (notesTA && notesTA.value.trim()) parts.push(normPhrase(notesTA.value.trim()));
+    const extraSpan = document.querySelector(`.phrase-extra[data-row="${row}"][data-lang="${lang}"]`);
+    if (!extraSpan) return;
+    const baseSpan = document.querySelector(`.phrase-base[data-row="${row}"][data-lang="${lang}"]`);
+    const hasBase  = baseSpan && baseSpan.textContent.trim().length > 0;
+    const newExtra = parts.join(" ");
+    extraSpan.textContent = (hasBase && newExtra) ? " " + newExtra : newExtra;
+  }
+
+  function refreshAddLangPhrase(row, lang, val) {
+    const span = document.querySelector(`.phrase-base[data-row="${row}"][data-lang="${lang}"]`);
+    if (span) span.textContent = val.trim();
+  }
+
+  function collectUpdates() {
+    const data = speciesData.map(r => Object.assign({}, r));
+    document.querySelectorAll(".edit-field").forEach(ta => {
+      const row = parseInt(ta.dataset.row, 10);
+      const col = ta.dataset.col;
+      if (data[row]) data[row][col] = ta.value.trim() || null;
+    });
+    return data;
+  }
+
+  function csvEscape(v) {
+    if (v == null) return "";
+    const s = String(v);
+    return (s.indexOf(",") >= 0 || s.indexOf(\'"\') >= 0 || s.indexOf("\\n") >= 0)
+      ? \'"\' + s.replace(/"/g, \'""\') + \'"\' : s;
+  }
+
+  function triggerDownload(blob, fname) {
+    const url = URL.createObjectURL(blob);
+    const a   = Object.assign(document.createElement("a"), { href: url, download: fname });
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function downloadCSV() {
+    const data    = collectUpdates();
+    if (!data.length) return;
+    const cols    = Object.keys(data[0]);
+    const lines   = [cols.map(csvEscape).join(","),
+                     ...data.map(r => cols.map(c => csvEscape(r[c])).join(","))];
+    const csvName = dataFilename.replace(/\\.xlsx$/i, ".csv");
+    triggerDownload(new Blob(["﻿" + lines.join("\\n")], { type: "text/csv;charset=utf-8;" }),
+                    csvName);
+    setSaved("✓ CSV downloaded");
+  }
+
+  function loadSheetJS(cb) {
+    if (window.XLSX) { cb(); return; }
+    const s = document.createElement("script");
+    s.src = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
+    s.onload = cb;
+    s.onerror = () => setSaved("⚠ XLSX unavailable — try CSV");
+    document.head.appendChild(s);
+  }
+
+  function buildWorkbook() {
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(collectUpdates()), "aRboretum");
+    return wb;
+  }
+
+  function downloadXLSX() {
+    loadSheetJS(() => {
+      XLSX.writeFile(buildWorkbook(), dataFilename);
+      setSaved("✓ XLSX downloaded");
+    });
+  }
+
+  // ----------------------------------------------------------------
+  // IndexedDB: persist FileSystemFileHandle across page reloads
+  // ----------------------------------------------------------------
+  const handleKey = "aRboretum_fh_" + dataFilename;
+
+  function _idbOpen() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open("aRboretum", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("fh");
+      r.onsuccess = () => res(r.result);
+      r.onerror   = () => rej(r.error);
+    });
+  }
+  function _idbPut(key, val) {
+    return _idbOpen().then(db => new Promise((res, rej) => {
+      const tx = db.transaction("fh", "readwrite");
+      tx.objectStore("fh").put(val, key);
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    }));
+  }
+  function _idbGet(key) {
+    return _idbOpen().then(db => new Promise((res, rej) => {
+      const tx  = db.transaction("fh", "readonly");
+      const req = tx.objectStore("fh").get(key);
+      req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error);
+    }));
+  }
+
+  // On page load: silently restore handle when permission is already granted
+  _idbGet(handleKey).then(h => {
+    if (!h || !h.queryPermission) return;
+    return h.queryPermission({ mode: "readwrite" }).then(p => {
+      if (p === "granted") xlsxFileHandle = h;
+    });
+  }).catch(() => {});
+
+  // Resolve to a writable handle (re-requesting permission inside a user
+  // gesture if needed), or null when no handle has been stored yet.
+  function _resolveHandle() {
+    if (!xlsxFileHandle) return Promise.resolve(null);
+    return xlsxFileHandle.queryPermission({ mode: "readwrite" }).then(p => {
+      if (p === "granted") return xlsxFileHandle;
+      if (!xlsxFileHandle.requestPermission) return null;
+      return xlsxFileHandle.requestPermission({ mode: "readwrite" }).then(r =>
+        r === "granted" ? xlsxFileHandle : null
+      );
+    }).catch(() => null);
+  }
+
+  function _writeBlob(blob) {
+    _resolveHandle().then(h => {
+      if (h) {
+        h.createWritable()
+          .then(w => w.write(blob).then(() => w.close()))
+          .then(() => setSaved("✓ Saved"))
+          .catch(() => { triggerDownload(blob, dataFilename); setSaved("✓ Downloaded"); });
+      } else if (window.showSaveFilePicker) {
+        // When opened as file://, the dialog starts in the same folder as
+        // this HTML file — i.e. the dir/ that arboretum_data() wrote to.
+        window.showSaveFilePicker({
+          suggestedName: dataFilename,
+          types: [{ description: "Excel Workbook", accept: { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] } }]
+        }).then(h2 => {
+          xlsxFileHandle = h2;
+          _idbPut(handleKey, h2).catch(() => {});
+          return h2.createWritable().then(w => w.write(blob).then(() => w.close()));
+        }).then(() => setSaved("✓ Saved"))
+          .catch(() => {});
+      } else {
+        triggerDownload(blob, dataFilename);
+        setSaved("✓ Downloaded");
+      }
+    });
+  }
+
+  function saveToFile() {
+    loadSheetJS(() => {
+      const wb  = buildWorkbook();
+      const out = XLSX.write(wb, { type: "array", bookType: "xlsx" });
+      _writeBlob(new Blob([out], { type: "application/octet-stream" }));
+    });
+  }
+
+  document.getElementById("downloadCsvBtn")?.addEventListener("click",  downloadCSV);
+  document.getElementById("downloadXlsxBtn")?.addEventListener("click", downloadXLSX);
+  document.getElementById("saveXlsxBtn")?.addEventListener("click",     saveToFile);
+'), ""),
+
+'})();
 </script>
 </body>
 </html>'
@@ -1430,15 +1778,20 @@ ifelse(function_use == "_audios",
                                  df,
                                  printed_lang,
                                  html_phrases,
-                                 initial_lang) {
+                                 initial_lang,
+                                 add_lang = NULL) {
   cards <- vector("character", length(df$taxonName))
 
+  std_langs <- intersect(printed_lang, c("pt", "en", "fr", "es"))
+  add_langs  <- setdiff(printed_lang, c("pt", "en", "fr", "es"))
+
   for (i in seq_along(df$taxonName)) {
-    species_name <- .normalize_text(df$taxonName[i])
-    family_name <- .normalize_text(df$family[i])
-    species_id <- .slugify(species_name)
+    species_name   <- .normalize_text(df$taxonName[i])
+    family_name    <- .normalize_text(df$family[i])
+    species_id     <- .slugify(species_name)
     folder_species <- .folder_species_name(species_name)
-    family_upper <- toupper(family_name)
+    family_upper   <- toupper(family_name)
+    row_idx        <- i - 1L
 
     lang_blocks <- character(0)
 
@@ -1456,7 +1809,25 @@ ifelse(function_use == "_audios",
       full_text <- .normalize_text(full_text, ensure_period = FALSE)
 
       hidden_class <- if (lang == initial_lang) "" else " hidden"
-      lang_suffix <- .lang_suffix(lang)
+      lang_suffix  <- .lang_suffix(lang)
+
+      # For _data: split phrase into base + extra spans for live editing
+      if (function_use == "_data") {
+        base_disp  <- if (!is.na(base_text)  && nzchar(base_text))  base_text  else ""
+        extra_disp <- if (!is.null(extra_text) && nzchar(extra_text)) extra_text else ""
+        sep        <- if (nzchar(base_disp) && nzchar(extra_disp)) " " else ""
+        phrase_p   <- paste0(
+          '<p>',
+          '<span class="phrase-base" data-row="', row_idx, '" data-lang="', .escape_html(lang), '">',
+          .escape_html(base_disp), '</span>',
+          sep,
+          '<span class="phrase-extra" data-row="', row_idx, '" data-lang="', .escape_html(lang), '">',
+          .escape_html(extra_disp), '</span>',
+          '</p>'
+        )
+      } else {
+        phrase_p <- paste0('<p>', .escape_html(if (!is.na(full_text)) full_text else ""), '</p>')
+      }
 
       lang_blocks <- c(
         lang_blocks,
@@ -1468,7 +1839,7 @@ ifelse(function_use == "_audios",
           'data-folder-species="', .escape_html(folder_species), '" ',
           'data-lang-suffix="', .escape_html(lang_suffix), '">',
           '<h3>', .escape_html(.lang_label(lang)), '</h3>',
-          '<p>', .escape_html(full_text), '</p>',
+          phrase_p,
           ifelse(function_use == "_audios",
                  paste0(
                    '<div class="record-controls">',
@@ -1481,6 +1852,77 @@ ifelse(function_use == "_audios",
       )
     }
 
+    # Build edit panel (only for _data function)
+    edit_panel_html <- ""
+    if (function_use == "_data") {
+      vern_val <- if (!.is_missing_text(df$FFB.vernacularName[i])) df$FFB.vernacularName[i] else ""
+
+      lang_field_rows <- paste(vapply(std_langs, function(lang) {
+        sfx  <- .lang_suffix(lang)
+        pcol <- paste0("plant_uses_", sfx)
+        ncol <- paste0("free_notes_",  sfx)
+        pval <- if (pcol %in% names(df) && !.is_missing_text(df[[pcol]][i])) df[[pcol]][i] else ""
+        nval <- if (ncol  %in% names(df) && !.is_missing_text(df[[ncol]][i]))  df[[ncol]][i]  else ""
+        paste0(
+          '<div class="edit-lang-row">',
+          '<span class="edit-lang-label">', .escape_html(.lang_label(lang)), '</span>',
+          '<div>',
+          '<textarea class="edit-field edit-ta" rows="3"',
+          ' data-row="', row_idx, '" data-col="', pcol, '"',
+          ' data-lang="', .escape_html(lang), '" data-kind="plant">',
+          .escape_html(pval), '</textarea></div>',
+          '<div>',
+          '<textarea class="edit-field edit-ta" rows="3"',
+          ' data-row="', row_idx, '" data-col="', ncol, '"',
+          ' data-lang="', .escape_html(lang), '" data-kind="notes">',
+          .escape_html(nval), '</textarea></div>',
+          '</div>'
+        )
+      }, character(1)), collapse = "\n")
+
+      # Show add_lang textarea when add_lang was specified, even if no phrases
+      # have been entered yet (all NA) — the user needs to type them here first
+      add_lang_html <- if (!is.null(add_lang) && "full_phrases_ADD_LANGUAGE" %in% names(df)) {
+        acol   <- "full_phrases_ADD_LANGUAGE"
+        aval   <- if (!.is_missing_text(df[[acol]][i])) df[[acol]][i] else ""
+        alabel <- .lang_label(add_lang)
+        paste0(
+          '<div class="edit-section">',
+          '<label class="edit-section-label">Full phrase (', .escape_html(alabel), ')</label>',
+          '<small class="edit-hint" style="margin-bottom:6px">',
+          '&#8505; Paste the complete translation for ', .escape_html(alabel), '. ',
+          'Changes will be used on the next arboretum_data() run.',
+          '</small>',
+          '<textarea class="edit-field edit-ta" rows="5"',
+          ' data-row="', row_idx, '" data-col="', acol, '"',
+          ' data-lang="', .escape_html(add_lang), '" data-kind="addlang">',
+          .escape_html(aval), '</textarea>',
+          '</div>'
+        )
+      } else ""
+
+      edit_panel_html <- paste0(
+        '<button type="button" class="edit-toggle-btn" data-target="edit-panel-', row_idx, '">',
+        '&#9998; Edit data fields</button>',
+        '<div class="edit-panel" id="edit-panel-', row_idx, '" hidden>',
+        '<div class="edit-section">',
+        '<label class="edit-section-label">Common names (FFB.vernacularName)</label>',
+        '<textarea class="edit-field edit-ta" rows="2"',
+        ' data-row="', row_idx, '" data-col="FFB.vernacularName" data-kind="vernacular">',
+        .escape_html(vern_val), '</textarea>',
+        '<small class="edit-hint">',
+        '&#8505; Vernacular name changes take effect on the next arboretum_data() run.',
+        '</small>',
+        '</div>',
+        '<div class="edit-section">',
+        '<div class="edit-uses-header"><span></span><span>Plant uses</span><span>Free notes</span></div>',
+        lang_field_rows,
+        '</div>',
+        add_lang_html,
+        '</div>'
+      )
+    }
+
     cards[i] <- paste0(
       '<article class="species-card" id="', species_id, '" data-name="', .escape_html(tolower(species_name)), '">',
       '<div class="species-header">',
@@ -1488,6 +1930,7 @@ ifelse(function_use == "_audios",
       '<p class="family"><span data-i18n="family">Family</span>: ', .escape_html(family_name), '</p>',
       '</div>',
       paste(lang_blocks, collapse = "\n"),
+      edit_panel_html,
       '<a class="back-top" href="#top" data-i18n="back_to_top">Back to top</a>',
       '</article>'
     )

@@ -43,11 +43,11 @@ Default is \code{TRUE}.}
 Default is \code{"csv"}.}
 
 \item{filename}{Character string. Base name for the output file, without extension.
-Default is \code{"arboretum_mined_data"}.}
+Default is \code{"arboretum_data"}.}
 
 \item{dir}{Character string. Directory path where the output file will be saved.
 Trailing slashes are automatically removed. The directory is created if it does
-not exist. Default is \code{"arboretum_mined_data"}.}
+not exist. Default is \code{"arboretum_data"}.}
 }
 \value{
 A dataframe combining data retrieved from FFB and POWO. The returned columns include:
