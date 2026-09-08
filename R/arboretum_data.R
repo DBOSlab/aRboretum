@@ -65,7 +65,6 @@
 #'   \item \code{FFB.phytogeographicDomain}: Brazilian phytogeographic domains from FFB,
 #'     translated into English when applicable and concatenated by `" | "`.
 #'   \item \code{FFB.vegetationType}: Vegetation types from FFB, concatenated by `" | "`.
-#'   \item \code{IUCN.status}: IUCN conservation status retrieved from POWO, when available.
 #'   \item \code{FFB.genusRichness}: Number of accepted species of the genus recorded in FFB.
 #'   \item \code{FFB.genusRank}: Rank of the genus by species richness in FFB, with 1
 #'     representing the richest genus.
@@ -225,6 +224,7 @@
 #' @importFrom dplyr arrange
 #' @importFrom stats na.omit setNames
 #' @importFrom stringi stri_trans_general
+#' @importFrom rWCVPdata wcvp_names wcvp_distributions
 #'
 #' @export
 
@@ -271,7 +271,7 @@ arboretum_data <- function(spp_list = NULL,
       country = NA_character_,
       botanical_country = NA_character_,
       introduced_to = NA_character_,
-      IUCN.status = NA_character_,
+      #IUCN.status = NA_character_,
       references = NA_character_
     )
 
@@ -331,8 +331,8 @@ arboretum_data <- function(spp_list = NULL,
 
       if (verbose) message(i, "/", length(spp_list), ": retrieving information from '", sp, "'")
 
-      # POWO data
-      result_POWO <- .extract_powo_data(result_POWO, sp, i)
+      # WCVP data
+      result_POWO <- .extract_wcvp_data(result_POWO, sp, i)
 
       # FFB data
       # Retrieve the taxonIDs corresponding to the exact name
@@ -622,55 +622,110 @@ arboretum_data <- function(spp_list = NULL,
 }
 
 
-# Side function to mine plant data from POWO ####
-.extract_powo_data <- function(result_POWO, sp, i){
+# Side function to mine plant data from WCVP ####
+.extract_wcvp_data <- function(result_POWO, sp, i){
 
-  tax <- taxize::pow_search(sci_com = sp)
-  pos <- which(tax[["data"]][["name"]] %in% sp)
+  # WCVP taxonomy data
+  names <- rWCVPdata::wcvp_names %>% filter(taxon_rank == "Species")
+  taxa <- paste(names$genus, names$species)
+  # WCVP distribution data
+  distributions <- rWCVPdata::wcvp_distributions
+
+  pos <- which(taxa %in% sp)
   if (length(pos) == 0) return(result_POWO)
+  names_pos <- names[pos, ]
 
-  if (any(!tax[["data"]][["accepted"]][pos])) {
-    accepted_name <- stats::na.omit(tax[["data"]][["synonymOf"]][["name"]])
-    if (length(accepted_name) == 0) return(result_POWO)
-    result_POWO$taxonName[i] <- accepted_name
-
-    # Search back in POWO with accepted name when the original search returns synonym
-    tax <- taxize::pow_search(sci_com = accepted_name)
-    pos <- which(tax[["data"]][["name"]] %in% accepted_name)
-    url <- tax$data$url[pos][tax[["data"]][["accepted"]][pos]]
-    id <- gsub(".*[/]taxon[/]", "", url)
-    pow <- taxize::pow_lookup(id = id,
-                              include = c("distribution", "descriptions"))
+  if (names_pos$taxon_status == "Synonym") {
+    accepted_pos <- which(names$plant_name_id %in% names_pos$accepted_plant_name_id)
+    accepted_names_pos <- names[accepted_pos, ]
+    accepted_name <- paste(accepted_names_pos$genus, accepted_names_pos$species)
+    taxonName <- accepted_name
+    scientificNameAuthorship <- accepted_names_pos$taxon_authors
+    family <- accepted_names_pos$family
+    id <- accepted_names_pos$powo_id
+    accepted_dist <- distributions[which(distributions$plant_name_id %in% accepted_names_pos$plant_name_id), ]
+    botanical_country <- paste(accepted_dist$area, collapse = " | ")
+    if (any(accepted_dist$introduced >= 1)) {
+      introduced_vec <- paste(accepted_dist$area[accepted_dist$introduced >= 1], collapse = " | ")
+    } else {
+      introduced_vec <- NA
+    }
   } else {
-    id <- gsub(".*[/]taxon[/]", "", tax$data$url)[pos]
-    pow <- taxize::pow_lookup(id = id,
-                              include = c("distribution", "descriptions"))
+    taxonName <- sp
+    scientificNameAuthorship <- names_pos$taxon_authors
+    family <- names_pos$family
+    id <- names_pos$powo_id
+    dist <- distributions[which(distributions$plant_name_id %in% names_pos$plant_name_id), ]
+    botanical_country <- paste(dist$area, collapse = " | ")
+    if (any(dist$introduced >= 1)) {
+      introduced_vec <- paste(dist$area[dist$introduced >= 1], collapse = " | ")
+    } else {
+      introduced_vec <- NA
+    }
   }
 
-  result_POWO$family[i] <- pow[["meta"]][["family"]]
-  result_POWO$taxonName[i] <- pow[["meta"]][["name"]]
-  result_POWO$scientificNameAuthorship[i] <- pow[["meta"]][["authors"]]
-
-  native_vec <- pow[["meta"]][["distribution"]][["natives"]][["name"]]
-  result_POWO$botanical_country[i] <- paste(native_vec, collapse = " | ")
+  result_POWO$family[i] <- family
+  result_POWO$taxonName[i] <- taxonName
+  result_POWO$scientificNameAuthorship[i] <- scientificNameAuthorship
+  result_POWO$botanical_country[i] <- botanical_country
   result_POWO$country[i] <- .botdiv_to_countries(result_POWO$botanical_country, i)
-
-  introduced_vec <- pow[["meta"]][["distribution"]][["introduced"]][["name"]]
-  if (length(pow[["meta"]][["distribution"]][["introduced"]][["name"]]) >= 1) {
-    result_POWO$introduced_to[i] <- paste(introduced_vec, collapse = " | ")
-  } else {
-    result_POWO$introduced_to[i] <- NA
-  }
-
-  iucn_status <- pow[["meta"]][["descriptions"]][["IUCN"]][["descriptions"]][["conservation"]][["description"]]
-  if (!is.null(iucn_status)) {
-    iucn_status <- paste0(strsplit(iucn_status, " - ")[[1]][2], " (",
-                          strsplit(iucn_status, " - ")[[1]][1], ")")
-    result_POWO$IUCN.status[i] <- iucn_status
-  }
+  result_POWO$introduced_to[i] <- introduced_vec
 
   # The references column shows the URL for each species in POWO
   result_POWO$references[i] <-  paste0("https://powo.science.kew.org/taxon/", id)
 
   return(result_POWO)
 }
+
+# # Side function to mine plant data from POWO ####
+# .extract_powo_data <- function(result_POWO, sp, i){
+#
+#   tax <- taxize::pow_search(sci_com = sp)
+#   pos <- which(tax[["data"]][["name"]] %in% sp)
+#   if (length(pos) == 0) return(result_POWO)
+#
+#   if (any(!tax[["data"]][["accepted"]][pos])) {
+#     accepted_name <- stats::na.omit(tax[["data"]][["synonymOf"]][["name"]])
+#     if (length(accepted_name) == 0) return(result_POWO)
+#     result_POWO$taxonName[i] <- accepted_name
+#
+#     # Search back in POWO with accepted name when the original search returns synonym
+#     tax <- taxize::pow_search(sci_com = accepted_name)
+#     pos <- which(tax[["data"]][["name"]] %in% accepted_name)
+#     url <- tax$data$url[pos][tax[["data"]][["accepted"]][pos]]
+#     id <- gsub(".*[/]taxon[/]", "", url)
+#     pow <- taxize::pow_lookup(id = id,
+#                               include = c("distribution", "descriptions"))
+#   } else {
+#     id <- gsub(".*[/]taxon[/]", "", tax$data$url)[pos]
+#     pow <- taxize::pow_lookup(id = id,
+#                               include = c("distribution", "descriptions"))
+#   }
+#
+#   result_POWO$family[i] <- pow[["meta"]][["family"]]
+#   result_POWO$taxonName[i] <- pow[["meta"]][["name"]]
+#   result_POWO$scientificNameAuthorship[i] <- pow[["meta"]][["authors"]]
+#
+#   native_vec <- pow[["meta"]][["distribution"]][["natives"]][["name"]]
+#   result_POWO$botanical_country[i] <- paste(native_vec, collapse = " | ")
+#   result_POWO$country[i] <- .botdiv_to_countries(result_POWO$botanical_country, i)
+#
+#   introduced_vec <- pow[["meta"]][["distribution"]][["introduced"]][["name"]]
+#   if (length(pow[["meta"]][["distribution"]][["introduced"]][["name"]]) >= 1) {
+#     result_POWO$introduced_to[i] <- paste(introduced_vec, collapse = " | ")
+#   } else {
+#     result_POWO$introduced_to[i] <- NA
+#   }
+#
+#   iucn_status <- pow[["meta"]][["descriptions"]][["IUCN"]][["descriptions"]][["conservation"]][["description"]]
+#   if (!is.null(iucn_status)) {
+#     iucn_status <- paste0(strsplit(iucn_status, " - ")[[1]][2], " (",
+#                           strsplit(iucn_status, " - ")[[1]][1], ")")
+#     result_POWO$IUCN.status[i] <- iucn_status
+#   }
+#
+#   # The references column shows the URL for each species in POWO
+#   result_POWO$references[i] <-  paste0("https://powo.science.kew.org/taxon/", id)
+#
+#   return(result_POWO)
+# }

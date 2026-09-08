@@ -73,7 +73,6 @@ introduced according to POWO.
 \item \code{FFB.phytogeographicDomain}: Brazilian phytogeographic domains from FFB,
 translated into English when applicable and concatenated by \code{" | "}.
 \item \code{FFB.vegetationType}: Vegetation types from FFB, concatenated by \code{" | "}.
-\item \code{IUCN.status}: IUCN conservation status retrieved from POWO, when available.
 \item \code{FFB.genusRichness}: Number of accepted species of the genus recorded in FFB.
 \item \code{FFB.genusRank}: Rank of the genus by species richness in FFB, with 1
 representing the richest genus.

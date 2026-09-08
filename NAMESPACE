@@ -7,56 +7,80 @@ export(arboretum_minisite)
 export(arboretum_photos)
 export(arboretum_qrcodes)
 importFrom(base64enc,dataURI)
-importFrom(dplyr,arrange)
-importFrom(dplyr,left_join)
+importFrom(dplyr,
+  arrange,
+  left_join
+)
 importFrom(geobr,read_state)
-importFrom(grDevices,as.raster)
-importFrom(grDevices,dev.off)
-importFrom(grDevices,pdf)
-importFrom(grDevices,png)
-importFrom(grid,gpar)
-importFrom(grid,grid.lines)
-importFrom(grid,grid.newpage)
-importFrom(grid,grid.raster)
-importFrom(grid,grid.rect)
-importFrom(grid,grid.text)
-importFrom(grid,popViewport)
-importFrom(grid,pushViewport)
-importFrom(grid,unit)
-importFrom(grid,viewport)
-importFrom(htmltools,HTML)
-importFrom(htmltools,as.tags)
-importFrom(htmltools,save_html)
-importFrom(htmltools,tags)
+importFrom(grDevices,
+  as.raster,
+  dev.off,
+  pdf,
+  png
+)
+importFrom(grid,
+  gpar,
+  grid.lines,
+  grid.newpage,
+  grid.raster,
+  grid.rect,
+  grid.text,
+  popViewport,
+  pushViewport,
+  unit,
+  viewport
+)
+importFrom(htmltools,
+  HTML,
+  as.tags,
+  save_html,
+  tags
+)
 importFrom(htmlwidgets,saveWidget)
-importFrom(jpeg,readJPEG)
-importFrom(jpeg,writeJPEG)
+importFrom(jpeg,
+  readJPEG,
+  writeJPEG
+)
 importFrom(jsonlite,toJSON)
-importFrom(leaflet,addPolygons)
-importFrom(leaflet,addProviderTiles)
-importFrom(leaflet,labelOptions)
-importFrom(leaflet,leaflet)
-importFrom(leaflet,providers)
-importFrom(leaflet,setView)
+importFrom(leaflet,
+  addPolygons,
+  addProviderTiles,
+  labelOptions,
+  leaflet,
+  providers,
+  setView
+)
 importFrom(magrittr,"%>%")
-importFrom(openxlsx,read.xlsx)
-importFrom(openxlsx,write.xlsx)
+importFrom(openxlsx,
+  read.xlsx,
+  write.xlsx
+)
 importFrom(plotly,as_widget)
-importFrom(png,readPNG)
-importFrom(png,writePNG)
+importFrom(png,
+  readPNG,
+  writePNG
+)
 importFrom(qrcode,qr_code)
 importFrom(sf,st_read)
-importFrom(stats,na.omit)
-importFrom(stats,setNames)
+importFrom(stats,
+  na.omit,
+  setNames
+)
 importFrom(stringi,stri_trans_general)
-importFrom(taxize,pow_lookup)
-importFrom(taxize,pow_search)
-importFrom(tibble,add_column)
-importFrom(tibble,tibble)
+importFrom(taxize,
+  pow_lookup,
+  pow_search
+)
+importFrom(tibble,
+  add_column,
+  tibble
+)
 importFrom(tidyr,replace_na)
 importFrom(tools,file_ext)
-importFrom(utils,download.file)
-importFrom(utils,read.csv)
-importFrom(utils,txtProgressBar)
-importFrom(utils,unzip)
-importFrom(utils,write.csv)
+importFrom(utils,
+  download.file,
+  read.csv,
+  txtProgressBar,
+  unzip,
+  write.csv
+)
