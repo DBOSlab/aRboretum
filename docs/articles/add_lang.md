@@ -17,7 +17,10 @@ This argument supports one additional language as a flexible
 accessibility layer, without requiring the full multilingual translation
 workflow used for the built-in package languages.
 
-In this example, we use **Tukano** as an additional language.
+In this example, we use **Tukano** as an additional language. If
+`aRboretum` is not installed yet, see the installation section of the
+[quickstart](https://DBOSlab.github.io/aRboretum/articles/quickstart.md)
+article.
 
 ## How `add_lang` works
 
@@ -49,8 +52,20 @@ also made available in a community language.
 
 Start from a dataset created with
 [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)
-and reviewed by you. Then generate the phrases with
-`add_lang = "TUKANO"`:
+and reviewed by you, for example in its data reviewing guide
+(`arboretum_data/__data_reviewing_guide.html`):
+
+\
+[`library`](https://rdrr.io/r/base/library.html)`(`[`aRboretum`](https://DBOSlab.github.io/aRboretum)`)`\
+\
+[`arboretum_data`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)`(`\
+`  spp_list ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Paubrasilia echinata"``, ``"Euterpe edulis"``)``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  format ``=`` ``"xlsx"``,`\
+`  dir ``=`` ``"arboretum_data"`\
+`)`
+
+Then generate the phrases with `add_lang = "TUKANO"`:
 
 \
 [`arboretum_phrases`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)`(`\
@@ -142,10 +157,8 @@ Use
 with `add_lang = "TUKANO"`:
 
 \
-[`library`](https://rdrr.io/r/base/library.html)`(`[`aRboretum`](https://DBOSlab.github.io/aRboretum)`)`\
-\
 [`arboretum_audios`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)`(`\
-`  data_path ``=`` ``"extracted_data/my_species_data.xlsx"``,`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
 `  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
 `  add_lang ``=`` ``"TUKANO"``,`\
 `  verbose ``=`` ``TRUE`\
@@ -167,8 +180,10 @@ arboretum_audios/
 └── __personal_audio_recording_guide.html
 ```
 
-The HTML guide can be used to help organize custom recordings for each
-species and language.
+The HTML recording guide shows, for each species and language, the
+phrase to be read, including the Tukano text entered in
+`full_phrases_ADD_LANGUAGE`. In Chromium-based browsers, it can also
+record directly into the species folders.
 
 ### Step 3. Add Tukano recordings if available
 
@@ -189,7 +204,7 @@ Now generate the labels with
 
 \
 [`arboretum_labels`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)`(`\
-`  data_path ``=`` ``"extracted_data/my_species_data.xlsx"``,`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
 `  audio_dir ``=`` ``"arboretum_audios"``,`\
 `  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
 `  add_lang ``=`` ``"TUKANO"``,`\
@@ -203,8 +218,9 @@ additional language option.
 
 In this workflow:
 
-- Portuguese and English are handled through the standard package
-  workflow.
+- Portuguese and English phrases come from the standard phrase
+  generation of
+  [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md).
 - Tukano text is read directly from `full_phrases_ADD_LANGUAGE`.
 - Tukano audio is used when a personal recording is present.
 - The rest of the website or minisite interface can remain in the
@@ -228,6 +244,9 @@ recorded audio directly.
 - The extra language text is not automatically translated by
   `aRboretum`.
 - If this column is empty for a species, that species will not have
-  meaningful custom-language text to display.
+  meaningful custom-language text to display, and if it is empty for
+  every species, the extra language is not added to the labels.
+- `arboretum_phrases(overwrite = TRUE)` regenerates the built-in
+  language phrases but never overwrites `full_phrases_ADD_LANGUAGE`.
 - For custom languages, personal audio recordings are strongly
   recommended.

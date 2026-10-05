@@ -6,7 +6,7 @@ output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Community-language accessibility}
   %\VignetteEngine{knitr::rmarkdown}
-  \usepackage[utf8]{inputenc}
+  %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
@@ -22,7 +22,7 @@ In some projects, a full translation of the website or minisite interface is not
 
 For this purpose, `aRboretum` provides the `add_lang` argument in `arboretum_phrases()`, `arboretum_audios()` and `arboretum_labels()`. This argument supports one additional language as a flexible accessibility layer, without requiring the full multilingual translation workflow used for the built-in package languages.
 
-In this example, we use **Tukano** as an additional language.
+In this example, we use **Tukano** as an additional language. If `aRboretum` is not installed yet, see the installation section of the [quickstart](quickstart.html) article.
 
 ## How `add_lang` works
 
@@ -40,7 +40,20 @@ This is particularly useful when the website interface can remain in Portuguese,
 
 ### Step 1. Prepare the dataset
 
-Start from a dataset created with `arboretum_data()` and reviewed by you. Then generate the phrases with `add_lang = "TUKANO"`:
+Start from a dataset created with `arboretum_data()` and reviewed by you, for example in its data reviewing guide (`arboretum_data/__data_reviewing_guide.html`):
+
+```{r tukano-data, eval = FALSE}
+library(aRboretum)
+
+arboretum_data(
+  spp_list = c("Paubrasilia echinata", "Euterpe edulis"),
+  printed_lang = c("pt", "en"),
+  format = "xlsx",
+  dir = "arboretum_data"
+)
+```
+
+Then generate the phrases with `add_lang = "TUKANO"`:
 
 ```{r tukano-phrases, eval = FALSE}
 arboretum_phrases(
@@ -110,10 +123,8 @@ tukano_example_extended
 Use `arboretum_audios()` with `add_lang = "TUKANO"`:
 
 ```{r tukano-audios, eval = FALSE}
-library(aRboretum)
-
 arboretum_audios(
-  data_path = "extracted_data/my_species_data.xlsx",
+  data_path = "arboretum_data/arboretum_data.xlsx",
   printed_lang = c("pt", "en"),
   add_lang = "TUKANO",
   verbose = TRUE
@@ -135,7 +146,7 @@ arboretum_audios/
 └── __personal_audio_recording_guide.html
 ```
 
-The HTML guide can be used to help organize custom recordings for each species and language.
+The HTML recording guide shows, for each species and language, the phrase to be read, including the Tukano text entered in `full_phrases_ADD_LANGUAGE`. In Chromium-based browsers, it can also record directly into the species folders.
 
 ### Step 3. Add Tukano recordings if available
 
@@ -149,7 +160,7 @@ Now generate the labels with `arboretum_labels()`:
 
 ```{r tukano-labels, eval = FALSE}
 arboretum_labels(
-  data_path = "extracted_data/my_species_data.xlsx",
+  data_path = "arboretum_data/arboretum_data.xlsx",
   audio_dir = "arboretum_audios",
   printed_lang = c("pt", "en"),
   add_lang = "TUKANO",
@@ -162,7 +173,7 @@ When `add_lang` is provided and `full_phrases_ADD_LANGUAGE` contains non-empty t
 
 In this workflow:
 
-- Portuguese and English are handled through the standard package workflow.
+- Portuguese and English phrases come from the standard phrase generation of `arboretum_phrases()`.
 - Tukano text is read directly from `full_phrases_ADD_LANGUAGE`.
 - Tukano audio is used when a personal recording is present.
 - The rest of the website or minisite interface can remain in the built-in package languages.
@@ -177,5 +188,6 @@ This can be especially useful in collaborative projects where local knowledge ho
 
 - `full_phrases_ADD_LANGUAGE` should contain the **complete final text** to be shown in the extra language.
 - The extra language text is not automatically translated by `aRboretum`.
-- If this column is empty for a species, that species will not have meaningful custom-language text to display.
+- If this column is empty for a species, that species will not have meaningful custom-language text to display, and if it is empty for every species, the extra language is not added to the labels.
+- `arboretum_phrases(overwrite = TRUE)` regenerates the built-in language phrases but never overwrites `full_phrases_ADD_LANGUAGE`.
 - For custom languages, personal audio recordings are strongly recommended.

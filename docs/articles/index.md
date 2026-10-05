@@ -7,7 +7,7 @@
 
 ### Guides
 
-- [How to add personnal audio with
+- [How to add personal audio with
   aRboretum](https://DBOSlab.github.io/aRboretum/articles/howto_audios.md):
 - [How to add photos with
   aRboretum](https://DBOSlab.github.io/aRboretum/articles/howto_photos.md):

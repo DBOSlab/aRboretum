@@ -86,52 +86,107 @@ Boucknooghe &amp; Domingos Cardoso</h4>
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
 <p>This vignette provides a concise overview of the core
-<code>aRboretum</code> workflow: preparing species data, generating
-interactive HTML labels, and building a searchable minisite for a living
-plant collection.</p>
-<p>If you have not already installed the package from GitHub:</p>
+<code>aRboretum</code> workflow: retrieving and reviewing species data,
+generating the species phrases, building interactive HTML labels, and
+creating a searchable minisite for a living plant collection.</p>
+<div class="section level3">
+<h3 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
+</h3>
+<p><code>aRboretum</code> depends on two packages that are not on CRAN,
+so install them first:</p>
+<ul>
+<li>
+<a href="https://github.com/matildabrown/rWCVPdata" class="external-link"><code>rWCVPdata</code></a>,
+which provides the World Checklist of Vascular Plants data and is
+distributed through its own repository;</li>
+<li>
+<a href="https://github.com/DBOSlab/floraR" class="external-link"><code>floraR</code></a>,
+which downloads and parses the Flora e Funga do Brasil dataset used by
+<code><a href="../reference/arboretum_data.html">arboretum_data()</a></code>.</li>
+</ul>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># Install from GitHub</span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">require</a></span><span class="op">(</span><span class="st"><a href="https://devtools.r-lib.org/" class="external-link">"devtools"</a></span><span class="op">)</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"devtools"</span><span class="op">)</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu"><a href="https://devtools.r-lib.org/reference/install-deprecated.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"DBOSlab/aRboretum"</span><span class="op">)</span></span></code></pre></div>
-<p>Then load it:</p>
+<code class="sourceCode R"><span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"rWCVPdata"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"rWCVPdata"</span>,</span>
+<span>                   repos <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
+<span>                     <span class="st">"https://matildabrown.github.io/drat"</span>,</span>
+<span>                     <span class="st">"https://cloud.r-project.org"</span></span>
+<span>                   <span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"BiocManager"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Install the development version of floraR from GitHub,</span></span>
+<span><span class="co"># together with its required dependencies</span></span>
+<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"DBOSlab/floraR"</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>Then install the development version of <code>aRboretum</code> from
+<a href="https://github.com/DBOSlab/aRboretum" class="external-link">GitHub</a>:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Install the development version of aRboretum from GitHub,</span></span>
+<span><span class="co"># together with its required dependencies</span></span>
+<span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"DBOSlab/aRboretum"</span>, dependencies <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<div class="section level4">
+<h4 id="optional-iucn-red-list-api-token">Optional: IUCN Red List API token<a class="anchor" aria-label="anchor" href="#optional-iucn-red-list-api-token"></a>
+</h4>
+<p>By default, IUCN Red List categories are retrieved from the IUCN Red
+List checklist mirrored by <a href="https://www.gbif.org/" class="external-link">GBIF</a>,
+which requires no registration. To query the official <a href="https://api.iucnredlist.org/" class="external-link">IUCN Red List API</a> instead,
+install the <a href="https://docs.ropensci.org/rredlist/" class="external-link"><code>rredlist</code></a>
+package, request a free API token, and store it in your
+<code>.Renviron</code> file:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"rredlist"</span><span class="op">)</span></span>
+<span><span class="fu">usethis</span><span class="fu">::</span><span class="fu"><a href="https://usethis.r-lib.org/reference/edit.html" class="external-link">edit_r_environ</a></span><span class="op">(</span><span class="op">)</span>   <span class="co"># add the line: IUCN_REDLIST_KEY=your_token</span></span></code></pre></div>
+<p>Then load it:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://DBOSlab.github.io/aRboretum">aRboretum</a></span><span class="op">)</span></span></code></pre></div>
 </div>
+</div>
+</div>
 <div class="section level2">
-<h2 id="step-1--prepare-species-data">Step 1. Prepare species data<a class="anchor" aria-label="anchor" href="#step-1--prepare-species-data"></a>
+<h2 id="step-1--retrieve-and-review-the-species-data">Step 1. Retrieve and review the species data<a class="anchor" aria-label="anchor" href="#step-1--retrieve-and-review-the-species-data"></a>
 </h2>
 <p>Start with a character vector containing the species names of
 interest.</p>
-<p>The function <code><a href="../reference/arboretum_data.html">arboretum_data()</a></code> queries <a href="https://reflora.jbrj.gov.br/reflora/listaBrasil/" class="external-link">Flora e Funga do
-Brasil (FFB)</a> and the <a href="https://powo.science.kew.org/" class="external-link">World
-Checklist of Vascular Plants (WCVP)</a>, adds the IUCN Red List status,
-resolves accepted names and synonyms, and compiles a structured dataset
-for downstream use in <code>aRboretum</code>.</p>
+<p>The function <code><a href="../reference/arboretum_data.html">arboretum_data()</a></code> queries <a href="https://floradobrasil.jbrj.gov.br/" class="external-link">Flora e Funga do Brasil
+(FFB)</a> and the <a href="https://powo.science.kew.org/" class="external-link">World
+Checklist of Vascular Plants (WCVP)</a>, resolves accepted names and
+synonyms, adds the <a href="https://www.iucnredlist.org/" class="external-link">IUCN Red
+List</a> status of each species, and compiles a structured dataset for
+downstream use in <code>aRboretum</code>.</p>
 <p>Both <code>.csv</code> and <code>.xlsx</code> outputs are
 supported.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">species_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Luetzelburgia bahiensis"</span>, <span class="st">"Paubrasilia echinata"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/arboretum_data.html">arboretum_data</a></span><span class="op">(</span></span>
 <span>  spp_list <span class="op">=</span> <span class="va">species_list</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span>,</span>
 <span>  save <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  format <span class="op">=</span> <span class="st">"xlsx"</span>,</span>
 <span>  dir <span class="op">=</span> <span class="st">"arboretum_data"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>This saves a data file inside <code>arboretum_data/</code>, together
+<p>This saves <code>arboretum_data/arboretum_data.xlsx</code> together
 with <code>arboretum_data/__data_reviewing_guide.html</code>. Review the
-data before going further, either in the spreadsheet or in that guide,
-which lets you edit the retrieved fields, plant uses and notes in your
-browser and save or export the corrected file. The
-<code>printed_lang</code> argument sets the languages of the guide.</p>
+data before going further, either in the spreadsheet or in the guide,
+which lets you edit the retrieved fields (vernacular names,
+distribution, endemism in Brazil, establishment means, IUCN status, and
+so on) and the optional plant uses and notes in your browser, then save
+or export the corrected file. <code>printed_lang</code> sets the
+languages of the guide.</p>
+<p>The FFB dataset is downloaded once into a
+<code>flora_download/</code> folder and reused by later runs, so they
+also work offline (see the <code>ffb_dir</code> argument). Running
+<code><a href="../reference/arboretum_data.html">arboretum_data()</a></code> again on the same <code>dir</code> reads
+the existing data file instead of querying the databases again.</p>
 </div>
 <div class="section level2">
 <h2 id="step-2--generate-the-species-phrases">Step 2. Generate the species phrases<a class="anchor" aria-label="anchor" href="#step-2--generate-the-species-phrases"></a>
 </h2>
 <p>Once you agree with the data, generate the natural-language species
 descriptions:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_phrases.html">arboretum_phrases</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span></span>
@@ -147,12 +202,36 @@ phrases are used as they are by the labels and audio guides; running
 <code>overwrite = TRUE</code> to regenerate them all).</p>
 </div>
 <div class="section level2">
+<h2 id="optional-step--add-personal-photos-and-audio-recordings">Optional step. Add personal photos and audio recordings<a class="anchor" aria-label="anchor" href="#optional-step--add-personal-photos-and-audio-recordings"></a>
+</h2>
+<p>Personal photos and recordings must be in place before the labels are
+generated.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># One folder per species for photos</span></span>
+<span><span class="fu"><a href="../reference/arboretum_photos.html">arboretum_photos</a></span><span class="op">(</span></span>
+<span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># One folder per species and language for recordings, plus a recording guide</span></span>
+<span><span class="fu"><a href="../reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
+<span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Add images to the <code>arboretum_photos/</code> folders and
+recordings to the <code>arboretum_audios/</code> folders; the recording
+guide
+<code>arboretum_audios/__personal_audio_recording_guide.html</code>
+shows the phrase to read for each species and language. See the <a href="howto_photos.html">howto_photos</a> and <a href="howto_audios.html">howto_audios</a> articles for details.</p>
+</div>
+<div class="section level2">
 <h2 id="step-3--generate-html-labels">Step 3. Generate HTML labels<a class="anchor" aria-label="anchor" href="#step-3--generate-html-labels"></a>
 </h2>
 <p>Use the data file, now completed with phrases, to create one
 interactive HTML label per species. The labels only read the stored
-phrases and never generate them.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+phrases and never generate them, so every language in
+<code>printed_lang</code> must have been included in
+<code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code>.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_labels.html">arboretum_labels</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span>,</span>
@@ -165,7 +244,7 @@ phrases and never generate them.</p>
 <li>world and Brazil distribution maps;</li>
 <li>conservation status and source links;</li>
 <li>browser-based text-to-speech;</li>
-<li>optional personal audio recordings and photos when available.</li>
+<li>personal audio recordings and photos when available.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -173,33 +252,19 @@ phrases and never generate them.</p>
 </h2>
 <p>Create a searchable <code>index.html</code> page linking all
 generated species labels.</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_minisite.html">arboretum_minisite</a></span><span class="op">(</span></span>
 <span>  labels_dir <span class="op">=</span> <span class="st">"arboretum_labels"</span>,</span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  site_title <span class="op">=</span> <span class="st">"My Plant Collection"</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span>,</span>
 <span>  group_by_family <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>This creates a minisite homepage inside
-<code>arboretum_labels/</code>. You may want to open it in your browser
-by just clicking on the <code>index.html</code> file.</p>
-</div>
-<div class="section level2">
-<h2 id="optional-step--add-personal-audio-recordings">Optional step. Add personal audio recordings<a class="anchor" aria-label="anchor" href="#optional-step--add-personal-audio-recordings"></a>
-</h2>
-<p>If you want to provide recorded audio instead of relying only on
-browser text-to-speech, first create the folder structure for
-recordings:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
-<span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
-<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span></code></pre></div>
-<p>This creates an <code>arboretum_audios/</code> directory and a
-recording guide named:</p>
-<p><code>arboretum_audios/__personal_audio_recording_guide.html</code></p>
-<p>If audio files are added to the expected folders,
-<code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code> will automatically use them.</p>
+<p>This writes <code>index.html</code> into the labels folder and then
+renames that folder after the site title, here
+<code>My_Plant_Collection_minisite/</code>. Open its
+<code>index.html</code> in your browser to explore the collection
+homepage. The whole folder can be published as is.</p>
 </div>
 <div class="section level2">
 <h2 id="optional-step--add-one-community-or-local-language">Optional step. Add one community or local language<a class="anchor" aria-label="anchor" href="#optional-step--add-one-community-or-local-language"></a>
@@ -222,7 +287,7 @@ language, in the guide or directly in the
 audio-folder workflow and in the final labels.</li>
 </ol>
 <p>Example with Tukano:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_phrases.html">arboretum_phrases</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span><span class="op">)</span>,</span>
@@ -244,23 +309,29 @@ audio-folder workflow and in the final labels.</li>
 <span><span class="op">)</span></span></code></pre></div>
 <p>In this workflow:</p>
 <ul>
-<li>Portuguese and English are handled through the standard package
-workflow;</li>
-<li>Panará text is read directly from
+<li>Portuguese and English phrases come from the standard phrase
+generation;</li>
+<li>Tukano text is read directly from
 <code>full_phrases_ADD_LANGUAGE</code>;</li>
-<li>Panará does not need to pass through the full translation
-pipeline;</li>
+<li>Tukano does not need to pass through the translation pipeline;</li>
 <li>personal recordings in the <code>TUKANO</code> folders are used when
 available.</li>
 </ul>
-<p>After running the steps above, the <code>arboretum_labels/</code>
-folder will typically contain:</p>
+<p>See the <a href="add_lang.html">add_lang</a> article for a complete
+example.</p>
+</div>
+<div class="section level2">
+<h2 id="what-you-get">What you get<a class="anchor" aria-label="anchor" href="#what-you-get"></a>
+</h2>
+<p>After running the steps above, the minisite folder
+(<code>My_Plant_Collection_minisite/</code> in this example)
+contains:</p>
 <ol style="list-style-type: decimal">
-<li>One HTML file per species, for example:</li>
-</ol>
-<p><code>FABACEAE_Paubrasilia_echinata_label.html</code></p>
-<ol start="2" style="list-style-type: decimal">
+<li>One HTML file per species, for example
+<code>FABACEAE_Paubrasilia_echinata_label.html</code>.</li>
 <li>One <code>index.html</code> file for the minisite homepage.</li>
+<li>Supporting folders with maps, icons, and any personal photos and
+recordings.</li>
 </ol>
 <p>Open the species label files in your browser to explore:</p>
 <ul>
@@ -268,14 +339,14 @@ folder will typically contain:</p>
 <li>text and audio for each species;</li>
 <li>interactive maps;</li>
 <li>logos and source links;</li>
-<li>optional personal photos.</li>
+<li>personal photos, when provided.</li>
 </ul>
 <p>Open <code>index.html</code> to explore the collection homepage,
 including:</p>
 <ul>
 <li>search tools;</li>
 <li>grouped species listings;</li>
-<li>summary cards and dashboard elements when data are available.</li>
+<li>summary cards and dashboard charts built from the species data.</li>
 </ul>
 </div>
 <div class="section level2">
@@ -283,12 +354,10 @@ including:</p>
 </h2>
 <p>To continue customizing your project:</p>
 <ul>
-<li>add your own photos with the workflow described in the <a href="https://dboslab.github.io/InNOutBT/articles/howto_photos.html" class="external-link">howto_photos</a>
-vignette;</li>
-<li>add personal audio recordings with the workflow described in the <a href="https://dboslab.github.io/InNOutBT/articles/howto_audios.html" class="external-link">howto_audios</a>
-vignette;</li>
+<li>add your own photos with the workflow described in the <a href="howto_photos.html">howto_photos</a> article;</li>
+<li>add personal audio recordings with the workflow described in the <a href="howto_audios.html">howto_audios</a> article;</li>
 <li>generate QR-code labels for printing with
-<code><a href="../reference/arboretum_qrcodes.html">arboretum_qrcodes()</a></code>.</li>
+<code><a href="../reference/arboretum_qrcodes.html">arboretum_qrcodes()</a></code> (see the <a href="aRboretum.html">aRboretum</a> article).</li>
 </ul>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

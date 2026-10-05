@@ -1,4 +1,4 @@
-# How to add personnal audio with aRboretum
+# How to add personal audio with aRboretum
 
 ## Introduction
 
@@ -16,7 +16,7 @@ interface.
 
 This vignette shows you how to:
 
-- prepare a species dataset for label generation;
+- prepare a species dataset and its phrases for label generation;
 - create the folder structure for personal audio recordings with
   [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md);
 - optionally add one extra language with `add_lang`;
@@ -29,9 +29,13 @@ This vignette shows you how to:
 
 Before starting, make sure you have:
 
+- `aRboretum` installed (see the installation section of the
+  [quickstart](https://DBOSlab.github.io/aRboretum/articles/quickstart.md)
+  article);
 - a species dataset generated with
   [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)
-  or your own formatted input file;
+  and completed with phrases by
+  [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md);
 - a phone or microphone to record audio;
 - optional recording/editing software such as Audacity or QuickTime;
 - species label text prepared in any additional community language if
@@ -55,15 +59,17 @@ with
 `  dir ``=`` ``"arboretum_data"`\
 `)`
 
-This creates a folder containing your input spreadsheet, for example:
+This creates a folder containing your input spreadsheet and a data
+reviewing guide:
 
 ```
 arboretum_data/
-└── arboretum_data.xlsx
+├── arboretum_data.xlsx
+└── __data_reviewing_guide.html
 ```
 
-Review and enrich this file, then generate the species phrases, which
-are the texts you will record:
+Review and enrich the data, in the spreadsheet or in the guide, then
+generate the species phrases, which are the texts you will record:
 
 \
 [`arboretum_phrases`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)`(`\
@@ -103,7 +109,14 @@ with `add_lang`, which creates the column `full_phrases_ADD_LANGUAGE` in
 your dataset and an editable field for it in the phrase guide. Fill it
 with the complete final text to be shown in the extra language.
 
-For example:
+\
+[`arboretum_phrases`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  add_lang ``=`` ``"TUKANO"`\
+`)`
+
+The relevant columns then look like this:
 
 \
 `example_df`` ``<-`` `[`data.frame`](https://rdrr.io/r/base/data.frame.html)`(`\
@@ -165,7 +178,10 @@ Important: The recording guide is rewritten every time you run
 [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md),
 from the phrases currently stored by
 [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md).
-Audio files you already placed in the folders are never overwritten.
+The species folders are only created when `arboretum_audios/` does not
+exist yet, so audio files you already placed in them are never
+overwritten. To add folders for new species or languages, rename or
+remove the existing `arboretum_audios/` folder first.
 
 ## Record your audio files
 
@@ -175,17 +191,34 @@ Open the recording guide:
 arboretum_audios/__personal_audio_recording_guide.html
 ```
 
-![Photo folder tree](figures/txt_sp_phrases.png)
+![Species phrases to record](figures/txt_sp_phrases.png)
 
-*Example of the text file containing species phrases (here for
-Paubrasilia echinata (en; pt))*
+*Example of species phrases to record (here for Paubrasilia echinata
+(en; pt))*
 
-This guide helps you browse the available species and language folders
-while preparing recordings.
+The guide shows, for each species and language, the phrase to read,
+followed by the plant uses and notes, exactly as they will appear in the
+labels. Use the search field and the index to move between species.
+
+### Recording from the guide
+
+In Chromium-based browsers (Chrome, Edge), the guide can record directly
+into the species folders:
+
+1.  click **Choose audio folder** and select the `arboretum_audios/`
+    folder;
+2.  click **Record** under a phrase, read it aloud, and click **Stop**.
+
+The recording is saved as a `.webm` file in the matching species and
+language folder. Browsers may only allow this when the page is opened
+from `localhost` or an HTTPS address; otherwise, record with another
+application and copy the files as described below.
+
+### Adding audio files yourself
 
 For each species and language you want to support, place one audio file
 inside the matching folder. Accepted file formats include MP3, WAV, M4A,
-OGG, and FLAC.
+OGG, FLAC, and WEBM.
 
 Example:
 
@@ -205,7 +238,9 @@ and point it to the audio folder using `audio_dir`.
 
 The function will:
 
-- generate one HTML label per species;
+- generate one HTML label per species, using the phrases stored by
+  [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)
+  (every language in `printed_lang` must have its phrases);
 - copy the personal audio folder into the label output directory;
 - use personal recordings when they exist;
 - fall back to browser TTS when no personal recording is available;
@@ -216,7 +251,7 @@ The function will:
 [`arboretum_labels`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)`(`\
 `  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
 `  audio_dir ``=`` ``"arboretum_audios"``,`\
-`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``, ``"fr"``)``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
 `  add_lang ``=`` ``"TUKANO"``,`\
 `  dir ``=`` ``"arboretum_labels"``,`\
 `  verbose ``=`` ``TRUE`\
@@ -227,8 +262,8 @@ The function will:
 After running
 [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md):
 
-- Portuguese and English are generated through the standard package
-  workflow;
+- Portuguese and English texts are the phrases stored by
+  [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md);
 - Tukano text is read directly from `full_phrases_ADD_LANGUAGE`;
 - Tukano appears as an additional language option in the HTML labels
   when that column contains text;
@@ -258,7 +293,7 @@ arboretum_labels/
 │   │   └── minha_gravacao.wav
 │   └── ...
 ├── FABACEAE_Paubrasilia_echinata_label.html
-└── PAPILIONACEAE_Luetzelburgia_bahiensis_label.html
+└── FABACEAE_Luetzelburgia_bahiensis_label.html
 ```
 
 The leading `__` in the copied audio folder helps avoid conflicts with
@@ -310,5 +345,10 @@ accessibility may be more important than full interface translation.
 
 ## Next steps
 
-You can combine this workflow with custom photos and a searchable index
-page to build a richer collection of digital species labels.
+You can combine this workflow with custom photos (see the
+[howto_photos](https://DBOSlab.github.io/aRboretum/articles/howto_photos.md)
+article) and a searchable minisite built with
+[`arboretum_minisite()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_minisite.md)
+(see the
+[quickstart](https://DBOSlab.github.io/aRboretum/articles/quickstart.md)
+article) to build a richer collection of digital species labels.
