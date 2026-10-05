@@ -5,9 +5,11 @@
 #'
 #' @description
 #' This function queries both [Flora e Funga do Brasil (FFB)](https://floradobrasil.jbrj.gov.br/consulta/)
-#' and [Plants of the World Online (POWO)](https://powo.science.kew.org/) to retrieve
-#' taxonomic, distributional, vernacular, conservation, and occurrence-related information
-#' for a given list of plant species. It standardizes input names, handles synonyms,
+#' and the [World Checklist of Vascular Plants (WCVP)](https://powo.science.kew.org/), the
+#' backbone of Plants of the World Online (POWO), to retrieve taxonomic, distributional,
+#' vernacular, and occurrence-related information for a given list of plant species. The
+#' global conservation status of each species is retrieved from the
+#' [IUCN Red List](https://www.iucnredlist.org/). It standardizes input names, handles synonyms,
 #' merges data from both sources, and returns a single dataframe that can optionally be
 #' saved as a CSV or Excel file. The output also includes genus-level richness and rank
 #' information derived from FFB. When \code{save = TRUE}, the function also writes a
@@ -76,6 +78,14 @@
 #'     \code{free_notes_FR}: Free-text note fields in English, Portuguese, Spanish, and
 #'     French, intended for user annotation via the HTML phrase guide or direct editing
 #'     of the saved file.
+#'   \item \code{IUCN.status}: Global IUCN Red List category, for example
+#'     `"Endangered (EN)"`, or `NA` when the species has not been assessed.
+#'   \item \code{full_phrases_EN}, \code{full_phrases_PT}, \code{full_phrases_ES},
+#'     \code{full_phrases_FR}: Natural-language species descriptions automatically
+#'     generated for each language in \code{printed_lang}. Phrases stored in these
+#'     columns are reused as they are on later runs, so they can be manually edited in
+#'     the saved file or in the HTML phrase guide; clearing a cell makes the phrase be
+#'     generated again. Plant uses and free notes are appended after the phrase.
 #'   \item \code{full_phrases_ADD_LANGUAGE}: Reserved field for a complete phrase
 #'     translation in the custom language specified by \code{add_lang}. Always present
 #'     in the output; populated by the user via the HTML phrase guide or direct editing.
@@ -86,14 +96,13 @@
 #' If a species is found in only one database, fields from the missing database are
 #' returned as `NA`. Species not found in either database are omitted from the final
 #' dataframe. For overlapping fields, FFB data generally take precedence, except for
-#' selected POWO-derived fields such as botanical country, introduced range, IUCN status,
-#' and POWO URL.
+#' selected WCVP-derived fields such as botanical country, introduced range, and POWO URL.
 #'
 #' When \code{save = TRUE}, the function also writes a standalone HTML phrase guide
 #' (\code{__phrase_generating_guide.html}) to \code{dir}. This file embeds the full
 #' dataframe and allows users to review generated phrases, edit annotation fields
 #' (\code{FFB.vernacularName}, \code{plant_uses_*}, \code{free_notes_*},
-#' \code{full_phrases_ADD_LANGUAGE}), and export the updated data as CSV or XLSX
+#' \code{full_phrases_*}), and export the updated data as CSV or XLSX
 #' without rerunning the function.
 #'
 #' @details
@@ -114,14 +123,15 @@
 #'       vegetation types, and FFB reference URLs.
 #'   }
 #'
-#'   \item \strong{POWO data extraction}
+#'   \item \strong{WCVP data extraction}
 #'   \itemize{
-#'     \item Searches POWO using \code{taxize::pow_search()}.
+#'     \item Loads the WCVP names and distribution tables once from
+#'       \pkg{rWCVPdata}, so no per-species web requests are needed.
 #'     \item Resolves synonyms to accepted names when possible.
-#'     \item Retrieves detailed information using \code{taxize::pow_lookup()}, including
-#'       taxonomy, distribution, introduced range, IUCN status, and POWO URL.
-#'     \item Converts POWO botanical countries to standard country names using an internal
-#'       helper function.
+#'     \item Retrieves family, authorship, native distribution (botanical countries),
+#'       introduced range, and the POWO URL.
+#'     \item Converts WCVP botanical countries to standard country names using an
+#'       internal helper function.
 #'   }
 #'
 #'   \item \strong{Data merging}
@@ -143,11 +153,23 @@
 #'       when available.
 #'   }
 #'
+#'   \item \strong{IUCN Red List status}
+#'   \itemize{
+#'     \item If the \pkg{rredlist} package is installed and an IUCN Red List API token
+#'       is stored in the \code{IUCN_REDLIST_KEY} environment variable (a free token
+#'       can be requested at \url{https://api.iucnredlist.org}), the latest global
+#'       assessment is retrieved from the official IUCN Red List API.
+#'     \item Otherwise, the status is retrieved without a token from the IUCN Red List
+#'       checklist mirrored by GBIF (\url{https://www.gbif.org}).
+#'   }
+#'
 #'   \item \strong{HTML phrase guide generation}
 #'   \itemize{
 #'     \item Generates natural-language species descriptions for each
-#'       \code{printed_lang} and, if \code{add_lang} is supplied, includes a
-#'       dedicated editable field for the custom language.
+#'       \code{printed_lang} and stores them in the \code{full_phrases_*} columns.
+#'       Phrases already present in these columns are kept, so manual edits are
+#'       never overwritten. If \code{add_lang} is supplied, a dedicated editable
+#'       field is included for the custom language.
 #'     \item Saves a standalone \code{__phrase_generating_guide.html} to \code{dir}
 #'       when \code{save = TRUE}. The guide embeds the full dataframe and provides
 #'       browser-based editing and export functionality.
@@ -158,6 +180,10 @@
 #' Leading and trailing whitespace are removed, names are standardized, and each element
 #' is checked to ensure that it contains a space. The function stops with an error if
 #' any element appears not to be a binomial species name.
+#'
+#' If \code{dir} already contains a CSV or XLSX data file, the species data are read
+#' from that file instead of being retrieved again, and only empty \code{full_phrases_*}
+#' cells are filled; the file is rewritten only when new phrases were generated.
 #'
 #' If \code{save = TRUE}, the function creates the output directory if needed and saves
 #' the resulting dataframe either as a CSV file using \code{utils::write.csv()} or as
@@ -171,7 +197,9 @@
 #' \itemize{
 #'   \item The \pkg{floraR} package is required to download and parse the FFB Darwin Core
 #'     Archive.
-#'   \item The \pkg{taxize} package is required to query POWO.
+#'   \item The \pkg{rWCVPdata} package is required to access WCVP data.
+#'   \item The \pkg{rredlist} package is optional and only used when an IUCN Red
+#'     List API token is available.
 #'   \item The \pkg{openxlsx} package is required only when \code{format = "xlsx"}.
 #'   \item The function queries both FFB and POWO; there is currently no argument to select
 #'     only one database.
@@ -185,8 +213,7 @@
 #' @seealso
 #' \code{\link[floraR]{flora_download}},
 #' \code{\link[floraR]{flora_parse}},
-#' \code{\link[taxize]{pow_search}},
-#' \code{\link[taxize]{pow_lookup}}
+#' \code{\link[rredlist]{rl_species}}
 #'
 #' @examples
 #' \dontrun{
@@ -216,7 +243,6 @@
 #' )
 #' }
 #'
-#' @importFrom taxize pow_search pow_lookup
 #' @importFrom openxlsx write.xlsx
 #' @importFrom utils write.csv
 #' @importFrom tibble add_column tibble
@@ -224,7 +250,6 @@
 #' @importFrom dplyr arrange
 #' @importFrom stats na.omit setNames
 #' @importFrom stringi stri_trans_general
-#' @importFrom rWCVPdata wcvp_names wcvp_distributions
 #'
 #' @export
 
@@ -271,7 +296,6 @@ arboretum_data <- function(spp_list = NULL,
       country = NA_character_,
       botanical_country = NA_character_,
       introduced_to = NA_character_,
-      #IUCN.status = NA_character_,
       references = NA_character_
     )
 
@@ -325,6 +349,9 @@ arboretum_data <- function(spp_list = NULL,
     genus_counts <- stats::setNames(genus_richness_br$Freq, genus_richness_br$Var1)
     rank_by_genus <- stats::setNames(genus_ranked$rank, genus_ranked$Var1)
 
+    # Load WCVP names and distributions once for all queried species
+    wcvp <- .load_wcvp()
+
     # Collection of data for each species ####
     for (i in seq_along(spp_list)) {
       sp <- spp_list[i]
@@ -332,7 +359,7 @@ arboretum_data <- function(spp_list = NULL,
       if (verbose) message(i, "/", length(spp_list), ": retrieving information from '", sp, "'")
 
       # WCVP data
-      result_POWO <- .extract_wcvp_data(result_POWO, sp, i)
+      result_POWO <- .extract_wcvp_data(result_POWO, sp, i, wcvp)
 
       # FFB data
       # Retrieve the taxonIDs corresponding to the exact name
@@ -405,7 +432,7 @@ arboretum_data <- function(spp_list = NULL,
     tf <- is.na(result_FFB$taxonName)
     if (any(tf)) {
       result_FFB <- result_FFB[!tf, ]
-      row.names(result_FFB) <- 1:nrow(result_FFB)
+      row.names(result_FFB) <- seq_len(nrow(result_FFB))
       if (verbose) {
         message()
       }
@@ -414,7 +441,7 @@ arboretum_data <- function(spp_list = NULL,
     tf <- is.na(result_POWO$taxonName)
     if (any(tf)) {
       result_POWO <- result_POWO[!tf, ]
-      row.names(result_POWO) <- 1:nrow(result_POWO)
+      row.names(result_POWO) <- seq_len(nrow(result_POWO))
       if (verbose) {
         message()
       }
@@ -423,7 +450,7 @@ arboretum_data <- function(spp_list = NULL,
     tf <- duplicated(result_POWO$taxonName)
     if (any(tf)) {
       result_POWO <- result_POWO[!tf, ]
-      row.names(result_POWO) <- 1:nrow(result_POWO)
+      row.names(result_POWO) <- seq_len(nrow(result_POWO))
       if (verbose) {
         message()
       }
@@ -442,10 +469,11 @@ arboretum_data <- function(spp_list = NULL,
         introduced_to = result_POWO$introduced_to,
         FFB.establishmentMeans = NA_character_,
         FFB.stateProvince = NA_character_,
+        FFB.phytogeographicDomain = NA_character_,
         FFB.vegetationType = NA_character_,
         FFB.genusRichness = NA_character_,
         FFB.genusRank = NA_character_,
-        IUCN.status = result_POWO$IUCN.status,
+        IUCN.status = NA_character_,
         plant_uses_EN = NA_character_,
         plant_uses_PT = NA_character_,
         plant_uses_ES = NA_character_,
@@ -454,8 +482,13 @@ arboretum_data <- function(spp_list = NULL,
         free_notes_PT = NA_character_,
         free_notes_ES = NA_character_,
         free_notes_FR = NA_character_,
+        full_phrases_EN = NA_character_,
+        full_phrases_PT = NA_character_,
+        full_phrases_ES = NA_character_,
+        full_phrases_FR = NA_character_,
         full_phrases_ADD_LANGUAGE = NA_character_,
-        POWO.url = result_POWO$references
+        POWO.url = result_POWO$references,
+        FFB.url = NA_character_
       )
     } else {
       result_merged <- data.frame(
@@ -483,6 +516,10 @@ arboretum_data <- function(spp_list = NULL,
         free_notes_PT = NA_character_,
         free_notes_ES = NA_character_,
         free_notes_FR = NA_character_,
+        full_phrases_EN = NA_character_,
+        full_phrases_PT = NA_character_,
+        full_phrases_ES = NA_character_,
+        full_phrases_FR = NA_character_,
         full_phrases_ADD_LANGUAGE = NA_character_,
         POWO.url = NA_character_,
         FFB.url = NA_character_
@@ -511,7 +548,6 @@ arboretum_data <- function(spp_list = NULL,
           result_merged$scientificNameAuthorship[tf] <- result_POWO$scientificNameAuthorship[i]
           result_merged$botanical_country[tf] <- result_POWO$botanical_country[i]
           result_merged$introduced_to[tf] <- result_POWO$introduced_to[i]
-          result_merged$IUCN.status[tf] <- result_POWO$IUCN.status[i]
           result_merged$POWO.url[tf] <- result_POWO$references[i]
           if (result_merged$endemism[tf] %in% "Non-endemic" | is.na(result_merged$country[tf])) {
             result_merged$country[tf] <- result_POWO$country[i]
@@ -527,8 +563,7 @@ arboretum_data <- function(spp_list = NULL,
             result_merged$scientificNameAuthorship[tf] <- result_POWO$scientificNameAuthorship[i]
             result_merged$botanical_country[tf] <- result_POWO$botanical_country[i]
             result_merged$introduced_to[tf] <- result_POWO$introduced_to[i]
-            result_merged$IUCN.status[tf] <- result_POWO$IUCN.status[i]
-            result_merged$POWO.url[tf] <- result_POWO$references[i]
+              result_merged$POWO.url[tf] <- result_POWO$references[i]
             if (result_merged$endemism[tf] %in% "Non-endemic") {
               result_merged$country[tf] <- result_POWO$country[i]
               result_merged$endemism[tf] <- ifelse(grepl("\\s[|]\\s", result_POWO$country[i]),
@@ -558,41 +593,24 @@ arboretum_data <- function(spp_list = NULL,
       n_max_genera = n_max_genera
     )
 
-    if (save) {
-      if (format == "csv") {
-        .save_csv(df = result_merged,
-                  verbose = verbose,
-                  filename = filename,
-                  dir = dir)
-      } else if (format == "xlsx") {
-        .save_xlsx(df = result_merged,
-                   verbose = verbose,
-                   filename = filename,
-                   dir = dir)
-      }
-    }
+    # IUCN Red List status ####
+    result_merged$IUCN.status <- .get_iucn_status(result_merged$taxonName,
+                                                  verbose = verbose)
+
+    file_exists <- FALSE
 
   } else {
 
-    data_path <- file.path(dir, files[grepl("[.]xlsx$|[.]csv$", files)])
+    data_path <- file.path(dir, files[grepl("[.]xlsx$|[.]csv$", files)][1])
     result_merged <- .read_species_data(data_path, verbose)
+    format <- tolower(tools::file_ext(data_path))
+    filename <- tools::file_path_sans_ext(basename(data_path))
+    file_exists <- TRUE
   }
 
-  # Generate phrases for each requested language
-  ui_strings <- .ui_strings()
-
-  lang_button_label <- c(
-    en = "English",
-    pt = "Português",
-    fr = "Français",
-    es = "Español"
-  )
-
-  missing_langs <- setdiff(printed_lang, names(lang_button_label))
-  if (length(missing_langs) > 0) {
-    lang_button_label[missing_langs] <- toupper(missing_langs)
-  }
-
+  # Generate phrases for each requested language ####
+  # Phrases already stored in the full_phrases_* columns (e.g. manually edited
+  # by the user) are kept; only empty cells are filled with generated phrases
   phrases_out <- .build_arboretum_phrases(
     data_path = NULL,
     df = result_merged,
@@ -601,78 +619,117 @@ arboretum_data <- function(spp_list = NULL,
     verbose = verbose
   )
 
+  result_merged <- phrases_out$df
   printed_lang <- phrases_out$printed_lang
   html_phrases <- phrases_out$html_phrases
 
-  output_path <- file.path(dir, "__phrase_generating_guide.html")
-  .save_phrase_html(
-    df = result_merged,
-    function_use = "_data",
-    ui_strings = ui_strings,
-    lang_button_label = lang_button_label,
-    printed_lang = printed_lang,
-    html_phrases = html_phrases,
-    output_path = output_path,
-    verbose = verbose,
-    add_lang = add_lang,
-    data_filename = paste0(filename, ".", format)
+  # Save the data with the stored phrases. An existing data file is only
+  # rewritten when new phrases were generated for it
+  if (save && (!file_exists || phrases_out$n_generated > 0)) {
+    if (format == "csv") {
+      .save_csv(df = result_merged,
+                verbose = verbose,
+                filename = filename,
+                dir = dir)
+    } else if (format == "xlsx") {
+      .save_xlsx(df = result_merged,
+                 verbose = verbose,
+                 filename = filename,
+                 dir = dir)
+    }
+  }
+
+  ui_strings <- .ui_strings()
+
+  lang_button_label <- c(
+    en = "English",
+    pt = "Portugu\u00eas",
+    fr = "Fran\u00e7ais",
+    es = "Espa\u00f1ol"
   )
+
+  missing_langs <- setdiff(printed_lang, names(lang_button_label))
+  if (length(missing_langs) > 0) {
+    lang_button_label[missing_langs] <- toupper(missing_langs)
+  }
+
+  if (save) {
+    output_path <- file.path(dir, "__phrase_generating_guide.html")
+    .save_phrase_html(
+      df = result_merged,
+      function_use = "_data",
+      ui_strings = ui_strings,
+      lang_button_label = lang_button_label,
+      printed_lang = printed_lang,
+      html_phrases = html_phrases,
+      output_path = output_path,
+      verbose = verbose,
+      add_lang = add_lang,
+      data_filename = paste0(filename, ".", format)
+    )
+  }
 
   return(result_merged)
 }
 
+# Side function to load the WCVP tables once per run ####
+# Only species-rank names are kept for matching queried binomials, while the
+# full names table is kept to resolve synonyms whose accepted name may sit at
+# another rank.
+.load_wcvp <- function() {
+  wcvp_names <- rWCVPdata::wcvp_names
+  wcvp_dist <- rWCVPdata::wcvp_distributions
+  wcvp_dist <- wcvp_dist[!is.na(wcvp_dist$area), ]
+
+  list(
+    names = wcvp_names,
+    species = wcvp_names[wcvp_names$taxon_rank %in% "Species", ],
+    distributions = wcvp_dist
+  )
+}
 
 # Side function to mine plant data from WCVP ####
-.extract_wcvp_data <- function(result_POWO, sp, i){
+.extract_wcvp_data <- function(result_POWO, sp, i, wcvp){
 
-  # WCVP taxonomy data
-  names <- rWCVPdata::wcvp_names %>% filter(taxon_rank == "Species")
-  taxa <- paste(names$genus, names$species)
-  # WCVP distribution data
-  distributions <- rWCVPdata::wcvp_distributions
+  matches <- wcvp$species[wcvp$species$taxon_name %in% sp, ]
+  if (nrow(matches) == 0) return(result_POWO)
 
-  pos <- which(taxa %in% sp)
-  if (length(pos) == 0) return(result_POWO)
-  names_pos <- names[pos, ]
-
-  if (names_pos$taxon_status == "Synonym") {
-    accepted_pos <- which(names$plant_name_id %in% names_pos$accepted_plant_name_id)
-    accepted_names_pos <- names[accepted_pos, ]
-    accepted_name <- paste(accepted_names_pos$genus, accepted_names_pos$species)
-    taxonName <- accepted_name
-    scientificNameAuthorship <- accepted_names_pos$taxon_authors
-    family <- accepted_names_pos$family
-    id <- accepted_names_pos$powo_id
-    accepted_dist <- distributions[which(distributions$plant_name_id %in% accepted_names_pos$plant_name_id), ]
-    botanical_country <- paste(accepted_dist$area, collapse = " | ")
-    if (any(accepted_dist$introduced >= 1)) {
-      introduced_vec <- paste(accepted_dist$area[accepted_dist$introduced >= 1], collapse = " | ")
-    } else {
-      introduced_vec <- NA
-    }
+  # The same binomial may appear more than once in WCVP (e.g. an accepted name
+  # plus illegitimate homonyms), so prefer the accepted record, then a synonym
+  # pointing to an accepted name
+  if (any(matches$taxon_status %in% "Accepted")) {
+    accepted <- matches[matches$taxon_status %in% "Accepted", ][1, ]
   } else {
-    taxonName <- sp
-    scientificNameAuthorship <- names_pos$taxon_authors
-    family <- names_pos$family
-    id <- names_pos$powo_id
-    dist <- distributions[which(distributions$plant_name_id %in% names_pos$plant_name_id), ]
-    botanical_country <- paste(dist$area, collapse = " | ")
-    if (any(dist$introduced >= 1)) {
-      introduced_vec <- paste(dist$area[dist$introduced >= 1], collapse = " | ")
-    } else {
-      introduced_vec <- NA
-    }
+    syn <- matches[matches$taxon_status %in% "Synonym" &
+                     !is.na(matches$accepted_plant_name_id), ]
+    if (nrow(syn) == 0) return(result_POWO)
+    accepted <- wcvp$names[wcvp$names$plant_name_id %in% syn$accepted_plant_name_id[1], ]
+    if (nrow(accepted) == 0) return(result_POWO)
+    accepted <- accepted[1, ]
   }
 
-  result_POWO$family[i] <- family
-  result_POWO$taxonName[i] <- taxonName
-  result_POWO$scientificNameAuthorship[i] <- scientificNameAuthorship
-  result_POWO$botanical_country[i] <- botanical_country
+  dist <- wcvp$distributions[wcvp$distributions$plant_name_id %in% accepted$plant_name_id, ]
+  native <- unique(dist$area[dist$introduced %in% 0])
+  introduced <- unique(dist$area[dist$introduced >= 1])
+
+  result_POWO$family[i] <- accepted$family
+  result_POWO$taxonName[i] <- accepted$taxon_name
+  result_POWO$scientificNameAuthorship[i] <- accepted$taxon_authors
+  result_POWO$botanical_country[i] <- if (length(native) > 0) {
+    paste(native, collapse = " | ")
+  } else {
+    NA_character_
+  }
   result_POWO$country[i] <- .botdiv_to_countries(result_POWO$botanical_country, i)
-  result_POWO$introduced_to[i] <- introduced_vec
+  result_POWO$introduced_to[i] <- if (length(introduced) > 0) {
+    paste(introduced, collapse = " | ")
+  } else {
+    NA_character_
+  }
 
   # The references column shows the URL for each species in POWO
-  result_POWO$references[i] <-  paste0("https://powo.science.kew.org/taxon/", id)
+  result_POWO$references[i] <- paste0("https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:",
+                                      accepted$powo_id)
 
   return(result_POWO)
 }

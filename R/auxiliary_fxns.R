@@ -42,7 +42,8 @@
                    filename, "' within '",
                    dir, "' folder on disk."))
   }
-  utils::write.csv(df, file = paste0(dir, "/", filename), rowNames = FALSE)
+  utils::write.csv(df, file = paste0(dir, "/", filename), row.names = FALSE,
+                   fileEncoding = "UTF-8")
 }
 
 # Function to save xlsx file ####
@@ -99,8 +100,29 @@
     stop("Missing required columns: ", paste(missing_cols, collapse = ", "), call. = FALSE)
   }
 
+  # Columns left empty in the file are read as logical; text columns must stay
+  # character for the phrase generator
+  is_lgl <- vapply(df, is.logical, logical(1))
+  df[is_lgl] <- lapply(df[is_lgl], as.character)
+
+  # Phrase columns are optional so that data files created before they were
+  # introduced can still be read
+  for (col in .phrase_cols()) {
+    if (!col %in% names(df)) {
+      df[[col]] <- NA_character_
+    } else {
+      df[[col]] <- as.character(df[[col]])
+    }
+  }
+
   if (verbose) message("Loaded data with ", nrow(df), " species and ", ncol(df), " columns.")
   return(df)
+}
+
+# Names of the columns storing full phrases per language ####
+.phrase_cols <- function() {
+  c("full_phrases_EN", "full_phrases_PT", "full_phrases_ES", "full_phrases_FR",
+    "full_phrases_ADD_LANGUAGE")
 }
 
 # Upper case function ####
@@ -152,17 +174,36 @@
 
   html_phrases <- list()
   base_langs <- setdiff(printed_lang, add_lang)
+  n_generated <- 0L
 
   for (lang in base_langs) {
-    html_phrases[[lang]] <- .phrase_generator(
-      df = df,
-      dict = dict,
-      lang = lang,
-      verbose = verbose
-    )
-    if (verbose) {
-      message("Generated phrases for language: ", toupper(lang))
+    col <- paste0("full_phrases_", .lang_suffix(lang))
+    if (!col %in% names(df)) {
+      df[[col]] <- NA_character_
     }
+    stored <- as.character(df[[col]])
+    missing <- is.na(stored) | !nzchar(trimws(stored))
+
+    # Only generate phrases for species without a stored phrase, so manual
+    # edits made in the data file are preserved across runs
+    if (any(missing)) {
+      generated <- .phrase_generator(
+        df = df[missing, , drop = FALSE],
+        dict = dict,
+        lang = lang,
+        verbose = verbose
+      )
+      stored[missing] <- trimws(unlist(generated, use.names = FALSE))
+      n_generated <- n_generated + sum(missing)
+      if (verbose) {
+        message("Generated phrases for language: ", toupper(lang))
+      }
+    } else if (verbose) {
+      message("Using stored phrases for language: ", toupper(lang))
+    }
+
+    df[[col]] <- stored
+    html_phrases[[lang]] <- stats::setNames(as.list(stored), df$taxonName)
   }
 
   if (has_add_lang_phrases) {
@@ -184,7 +225,8 @@
     df = df,
     printed_lang = printed_lang,
     html_phrases = html_phrases,
-    has_add_lang_phrases = has_add_lang_phrases
+    has_add_lang_phrases = has_add_lang_phrases,
+    n_generated = n_generated
   )
 }
 
@@ -273,7 +315,7 @@
                              ver_name[1], ". ")
 
       } else {
-        and <- paste(" ", .tr_dict("and", lang, dict),  " ")
+        and <- paste0(" ", .tr_dict("and", lang, dict), " ")
         alt_name <- paste0(sample(strsplit(ver_name, " \\| ")[[1]], 2), collapse = and)
         phrase_ver <- paste0(.tr_dict("commonly_known", lang, dict),
                              " ",
@@ -298,6 +340,7 @@
     n_cntr <- lengths(strsplit(country, "\\|"))
     n_btcl_cntr <- lengths(strsplit(botanical_country, "\\|"))
     n_state <- lengths(strsplit(state, "\\|"))
+    n_phyto <- if (is.na(phyto)) 0L else lengths(strsplit(phyto, "\\|"))
 
     if (is.na(endemism)) {
       phrase_dis <- ""
@@ -305,15 +348,19 @@
     } else {
       if (endemism == "Endemic") {
         if (n_btcl_cntr == 1) {
-          if (country == "Brazil") {
-            temp_keys <- dict$key[dict$en == botanical_country]
+          endemic_area <- botanical_country
+          if (country %in% "Brazil") {
+            temp_keys <- dict$key[dict$en %in% botanical_country]
+            if (length(temp_keys) > 0) {
+              endemic_area <- .tr_dict(temp_keys[1], lang, dict)
+            }
           }
           if (n_state == 1) {
             phrase_dis <- paste0(.capitalize(.tr_dict("endemic", lang, dict)),
                                  " ",
                                  .tr_dict("to", lang, dict),
                                  " ",
-                                 ifelse(country == "Brazil", .tr_dict(temp_keys, lang, dict), botanical_country),
+                                 endemic_area,
                                  ", ",
                                  .tr_dict("it_is_only_found_in", lang, dict),
                                  " ",
@@ -331,7 +378,7 @@
               , " ",
               .tr_dict("to", lang, dict),
               " ",
-              ifelse(country == "Brazil", .tr_dict(temp_keys, lang, dict), botanical_country), ".", " "
+              endemic_area, ".", " "
             )
           }
         } else if (n_btcl_cntr > 1) {
@@ -345,15 +392,12 @@
         }
 
       } else {
-        temp_keys <- vector()
         temp <- strsplit(country, " \\| ")[[1]]
-        for (l in seq_along(temp)) {
-          temp_keys[l] <- country_dict$key[which(country_dict$en %in% temp[l])]
-        }
-        alt_country <- .tr_dict_vec(temp_keys, lang, country_dict)
+        alt_country <- .tr_or_raw(temp, lang, country_dict)
 
-        or <- paste(" ", .tr_dict("or", lang, dict),  " ")
-        alt_country <- paste0(sample(alt_country, 2), collapse = or)
+        or <- paste0(" ", .tr_dict("or", lang, dict), " ")
+        alt_country <- paste0(sample(alt_country, min(2, length(alt_country))),
+                              collapse = or)
         phrase_dis <- paste0(
           .tr_dict("this_species_is_found_in", lang, dict), " ",
           alt_country,
@@ -370,18 +414,18 @@
     if (is.na(origins)) {
       phrase_est <- ""
 
-    } else if (endemism == "Endemic") {
+    } else if (endemism %in% "Endemic") {
       phrase_est <- paste0(
         .tr_dict("only_place_earth", lang, dict),
         ".", " "
       )
-    } else if (origins == "Native" & endemism == "Non-endemic") {
+    } else if (origins %in% "Native" && endemism %in% "Non-endemic") {
       phrase_est <- paste0(
         .tr_dict("native_brazil_explanation", lang, dict),
         ".", " "
       )
 
-    } else if (origins == "Naturalized") {
+    } else if (origins %in% "Naturalized") {
       phrase_est <- paste0(
         .tr_dict("cultivated_brazil_explanation", lang, dict),
         ".", " "
@@ -407,19 +451,15 @@
         phrase_int <- paste0(
           .tr_dict("this_plant_has_also_been_introduced_to_single", lang, dict),
           " ",
-          .tr_dict(introduced, lang, bot_cntr_dict),
+          .tr_or_raw(introduced, lang, bot_cntr_dict),
           ".", " "
         )
       } else {
 
-        temp_keys <- vector()
         temp <- strsplit(introduced, " \\| ")[[1]]
-        for (l in seq_along(temp)) {
-          temp_keys[l] <- bot_cntr_dict$key[which(bot_cntr_dict$en %in% temp[l])]
-        }
-        alt_introduced <- .tr_dict_vec(temp_keys, lang, bot_cntr_dict)
+        alt_introduced <- .tr_or_raw(temp, lang, bot_cntr_dict)
 
-        and <- paste(" ", .tr_dict("and", lang, dict),  " ")
+        and <- paste0(" ", .tr_dict("and", lang, dict), " ")
         alt_introduced <- paste0(sample(alt_introduced, 2), collapse = and)
 
         phrase_int <- paste0(
@@ -448,7 +488,7 @@
         )
       } else if (n_phyto %in% 2:5) {
 
-        and <- paste(" ", .tr_dict("and", lang, dict),  " ")
+        and <- paste0(" ", .tr_dict("and", lang, dict), " ")
 
         temp_keys <- vector()
         temp <- strsplit(phyto, " \\| ")[[1]]
@@ -499,7 +539,7 @@
           .tr_dict(temp_keys, lang, dict), ".", " "
         )
       } else {
-        or <- paste(" ", .tr_dict("or", lang, dict),  " ")
+        or <- paste0(" ", .tr_dict("or", lang, dict), " ")
 
         temp_keys <- vector()
         temp <- strsplit(vege_type, " \\| ")[[1]]
@@ -528,8 +568,11 @@
       }
     }
 
+    # Upper-case only the first letter, keeping proper names such as
+    # vegetation types intact
     if (phrase_biom == "" | n_phyto == 6) {
-      phrase_veg <- .capitalize(phrase_veg)
+      phrase_veg <- paste0(toupper(substr(phrase_veg, 1, 1)),
+                           substr(phrase_veg, 2, nchar(phrase_veg)))
     }
 
     # ============================================================
@@ -537,11 +580,13 @@
     # ============================================================
     # e.g., ""
 
-    if (is.na(status)) {
+    # Status is stored as e.g. "Endangered (EN)"; the category code is the key
+    iucn_code <- .iucn_code(status)
+    if (is.na(iucn_code) || !iucn_code %in% dict$key) {
       phrase_IUCN <- ""
 
     } else {
-      temp_keys <- dict$key[dict$en == status]
+      temp_keys <- iucn_code
       phrase_IUCN <- paste0(
         .tr_dict("iucn_classified_as", lang, dict),
         " ",
@@ -848,6 +893,17 @@
   result <- dict[dict$key == key, lang, drop = TRUE]
 
   return(as.character(result))
+}
+
+# Translate English names through a geographic dictionary, keeping the
+# original name when it is missing from the dictionary ####
+.tr_or_raw <- function(values, lang = "en", dict) {
+  vapply(values, function(v) {
+    key <- dict$key[dict$en %in% v]
+    if (length(key) == 0) return(v)
+    tr <- .tr_dict(key[1], lang, dict)
+    if (length(tr) == 0 || is.na(tr[1])) v else tr[1]
+  }, character(1), USE.NAMES = FALSE)
 }
 
 .tr_dict_vec <- function(keys, lang = "en",
@@ -1246,6 +1302,7 @@ ifelse(function_use == "_data", paste0(
   align-items: start;
   margin-bottom: 8px;
 }
+.edit-phrase-row { grid-template-columns: 52px 1fr; }
 .edit-lang-label { font-size: 0.8rem; font-weight: 700; color: var(--accent); padding-top: 6px; }
 .edit-ta {
   width: 100%;
@@ -1587,7 +1644,7 @@ ifelse(function_use == "_data", paste0(
       if (speciesData[row]) speciesData[row][col] = this.value;
       setUnsaved();
       if (kind === "plant" || kind === "notes") refreshExtraPhrase(row, lang);
-      else if (kind === "addlang") refreshAddLangPhrase(row, lang, this.value);
+      else if (kind === "addlang" || kind === "fullphrase") refreshBasePhrase(row, lang, this.value);
     });
   });
 
@@ -1610,9 +1667,10 @@ ifelse(function_use == "_data", paste0(
     extraSpan.textContent = (hasBase && newExtra) ? " " + newExtra : newExtra;
   }
 
-  function refreshAddLangPhrase(row, lang, val) {
+  function refreshBasePhrase(row, lang, val) {
     const span = document.querySelector(`.phrase-base[data-row="${row}"][data-lang="${lang}"]`);
-    if (span) span.textContent = val.trim();
+    if (span) span.textContent = val.replace(/<\\/?i>/g, "").trim();
+    refreshExtraPhrase(row, lang);
   }
 
   function collectUpdates() {
@@ -1880,6 +1938,41 @@ ifelse(function_use == "_data", paste0(
         )
       }, character(1)), collapse = "\n")
 
+      # Editable full phrase per built-in language; stored in full_phrases_*
+      full_phrase_rows <- paste(vapply(std_langs, function(lang) {
+        fcol <- paste0("full_phrases_", .lang_suffix(lang))
+        fval <- if (fcol %in% names(df) && !.is_missing_text(df[[fcol]][i])) {
+          df[[fcol]][i]
+        } else if (!.is_missing_text(html_phrases[[lang]][[species_name]])) {
+          html_phrases[[lang]][[species_name]]
+        } else {
+          ""
+        }
+        paste0(
+          '<div class="edit-lang-row edit-phrase-row">',
+          '<span class="edit-lang-label">', .escape_html(.lang_label(lang)), '</span>',
+          '<textarea class="edit-field edit-ta" rows="4"',
+          ' data-row="', row_idx, '" data-col="', fcol, '"',
+          ' data-lang="', .escape_html(lang), '" data-kind="fullphrase">',
+          .escape_html(fval), '</textarea>',
+          '</div>'
+        )
+      }, character(1)), collapse = "\n")
+
+      full_phrase_html <- if (length(std_langs) > 0) {
+        paste0(
+          '<div class="edit-section">',
+          '<label class="edit-section-label">Full phrases (full_phrases_*)</label>',
+          '<small class="edit-hint" style="margin-bottom:6px">',
+          '&#8505; Automatically generated phrases. Edit them freely; stored phrases ',
+          'are kept on the next runs. Clear a field to regenerate it. ',
+          'Plant uses and free notes are appended after the phrase.',
+          '</small>',
+          full_phrase_rows,
+          '</div>'
+        )
+      } else ""
+
       # Show add_lang textarea when add_lang was specified, even if no phrases
       # have been entered yet (all NA) — the user needs to type them here first
       add_lang_html <- if (!is.null(add_lang) && "full_phrases_ADD_LANGUAGE" %in% names(df)) {
@@ -1918,6 +2011,7 @@ ifelse(function_use == "_data", paste0(
         '<div class="edit-uses-header"><span></span><span>Plant uses</span><span>Free notes</span></div>',
         lang_field_rows,
         '</div>',
+        full_phrase_html,
         add_lang_html,
         '</div>'
       )
@@ -2252,3 +2346,147 @@ subtitle_html <- function(ui_strings, lang) {
   return(result_merged)
 }
 
+
+# IUCN Red List categories, keyed by category code ####
+# Old Lower Risk subcategories (pre-2001 assessments) are mapped onto their
+# current equivalents
+.iucn_categories <- function() {
+  c(EX = "Extinct",
+    EW = "Extinct in the Wild",
+    RE = "Regionally Extinct",
+    CR = "Critically Endangered",
+    EN = "Endangered",
+    VU = "Vulnerable",
+    NT = "Near Threatened",
+    LC = "Least Concern",
+    DD = "Data Deficient",
+    NE = "Not Evaluated",
+    `LR/cd` = "Near Threatened",
+    `LR/nt` = "Near Threatened",
+    `LR/lc` = "Least Concern")
+}
+
+# Extract the category code from a stored status such as "Endangered (EN)",
+# a bare code such as "EN", or a label such as "endangered" ####
+.iucn_code <- function(x) {
+  cats <- .iucn_categories()
+  vapply(as.character(x), function(s) {
+    if (is.na(s) || !nzchar(trimws(s))) return(NA_character_)
+    s <- trimws(s)
+    in_parens <- regmatches(s, regexpr("(?<=\\()[A-Za-z/]+(?=\\)\\s*$)", s, perl = TRUE))
+    code <- if (length(in_parens) == 1) in_parens else s
+    if (toupper(code) %in% toupper(names(cats))) {
+      code <- names(cats)[toupper(names(cats)) %in% toupper(code)][1]
+    } else if (tolower(s) %in% tolower(cats)) {
+      code <- names(cats)[tolower(cats) %in% tolower(s)][1]
+    } else {
+      return(NA_character_)
+    }
+    if (grepl("^LR/", code)) {
+      code <- names(cats)[match(cats[[code]], cats)]
+    }
+    code
+  }, character(1), USE.NAMES = FALSE)
+}
+
+# Format a category code as it is stored in the IUCN.status column ####
+.iucn_label <- function(code) {
+  code <- .iucn_code(code)
+  cats <- .iucn_categories()
+  ifelse(is.na(code), NA_character_, paste0(cats[code], " (", code, ")"))
+}
+
+# Retrieve the global IUCN Red List status for a vector of taxon names ####
+# Two sources are supported:
+#   - "redlist": the official IUCN Red List API v4 through the rredlist package,
+#     which requires a free API token (https://api.iucnredlist.org) stored in
+#     the IUCN_REDLIST_KEY environment variable;
+#   - "gbif": the IUCN Red List checklist mirrored by GBIF, which needs no token.
+# With source = "auto", the Red List API is used whenever a token is available.
+.get_iucn_status <- function(taxa,
+                             source = c("auto", "redlist", "gbif"),
+                             key = Sys.getenv("IUCN_REDLIST_KEY"),
+                             verbose = TRUE) {
+  source <- match.arg(source)
+  if (source == "auto") {
+    source <- if (nzchar(key) && .has_rredlist()) "redlist" else "gbif"
+  }
+  if (source == "redlist" && !.has_rredlist()) {
+    stop("Package 'rredlist' is required to query the IUCN Red List API. Please install it.",
+         call. = FALSE)
+  }
+
+  status <- rep(NA_character_, length(taxa))
+  uniq <- unique(taxa[!is.na(taxa)])
+  if (length(uniq) == 0) return(status)
+
+  if (verbose) {
+    message("Retrieving IUCN Red List status for ", length(uniq), " species from ",
+            if (source == "redlist") "the IUCN Red List API" else "GBIF (IUCN Red List checklist)",
+            "...")
+  }
+
+  codes <- vapply(uniq, function(taxon) {
+    tryCatch(
+      if (source == "redlist") .iucn_from_redlist(taxon, key) else .iucn_from_gbif(taxon),
+      error = function(e) NA_character_
+    )
+  }, character(1), USE.NAMES = FALSE)
+
+  labels <- .iucn_label(codes)
+  status <- labels[match(taxa, uniq)]
+
+  if (verbose) {
+    message("IUCN status found for ", sum(!is.na(labels)), " of ", length(uniq), " species.")
+  }
+  status
+}
+
+# Thin wrappers so availability and web requests can be mocked in tests ####
+.has_rredlist <- function() {
+  requireNamespace("rredlist", quietly = TRUE)
+}
+
+# Thin wrapper around the GBIF API so it can be mocked in tests ####
+.gbif_get <- function(url) {
+  jsonlite::fromJSON(url, simplifyVector = TRUE)
+}
+
+.iucn_from_gbif <- function(taxon) {
+  match <- .gbif_get(paste0(
+    "https://api.gbif.org/v1/species/match?kingdom=Plantae&strict=true&name=",
+    utils::URLencode(taxon, reserved = TRUE)
+  ))
+  if (is.null(match$usageKey) || !identical(match$matchType, "EXACT")) {
+    return(NA_character_)
+  }
+  res <- .gbif_get(paste0("https://api.gbif.org/v1/species/", match$usageKey,
+                          "/iucnRedListCategory"))
+  code <- res$code
+  if (is.null(code) || length(code) == 0) NA_character_ else .iucn_code(code[1])
+}
+
+.iucn_from_redlist <- function(taxon, key) {
+  parts <- strsplit(trimws(taxon), "\\s+")[[1]]
+  if (length(parts) < 2) return(NA_character_)
+
+  res <- rredlist::rl_species(genus = parts[1], species = parts[2], key = key)
+  assessments <- as.data.frame(res$assessments)
+  if (nrow(assessments) == 0 || !"red_list_category_code" %in% names(assessments)) {
+    return(NA_character_)
+  }
+
+  # Keep the latest global assessment (scope code "1")
+  if ("latest" %in% names(assessments)) {
+    assessments <- assessments[assessments$latest %in% TRUE, , drop = FALSE]
+  }
+  if ("scopes" %in% names(assessments) && nrow(assessments) > 1) {
+    is_global <- vapply(assessments$scopes, function(sc) {
+      "1" %in% unlist(sc$code)
+    }, logical(1))
+    if (any(is_global)) assessments <- assessments[is_global, , drop = FALSE]
+  }
+  if (nrow(assessments) == 0) return(NA_character_)
+
+  .iucn_code(assessments$red_list_category_code[1])
+}

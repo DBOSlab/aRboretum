@@ -84,6 +84,14 @@ saved file.
 \code{free_notes_FR}: Free-text note fields in English, Portuguese, Spanish, and
 French, intended for user annotation via the HTML phrase guide or direct editing
 of the saved file.
+\item \code{IUCN.status}: Global IUCN Red List category, for example
+\code{"Endangered (EN)"}, or \code{NA} when the species has not been assessed.
+\item \code{full_phrases_EN}, \code{full_phrases_PT}, \code{full_phrases_ES},
+\code{full_phrases_FR}: Natural-language species descriptions automatically
+generated for each language in \code{printed_lang}. Phrases stored in these
+columns are reused as they are on later runs, so they can be manually edited in
+the saved file or in the HTML phrase guide; clearing a cell makes the phrase be
+generated again. Plant uses and free notes are appended after the phrase.
 \item \code{full_phrases_ADD_LANGUAGE}: Reserved field for a complete phrase
 translation in the custom language specified by \code{add_lang}. Always present
 in the output; populated by the user via the HTML phrase guide or direct editing.
@@ -94,21 +102,22 @@ in the output; populated by the user via the HTML phrase guide or direct editing
 If a species is found in only one database, fields from the missing database are
 returned as \code{NA}. Species not found in either database are omitted from the final
 dataframe. For overlapping fields, FFB data generally take precedence, except for
-selected POWO-derived fields such as botanical country, introduced range, IUCN status,
-and POWO URL.
+selected WCVP-derived fields such as botanical country, introduced range, and POWO URL.
 
 When \code{save = TRUE}, the function also writes a standalone HTML phrase guide
 (\code{__phrase_generating_guide.html}) to \code{dir}. This file embeds the full
 dataframe and allows users to review generated phrases, edit annotation fields
 (\code{FFB.vernacularName}, \code{plant_uses_*}, \code{free_notes_*},
-\code{full_phrases_ADD_LANGUAGE}), and export the updated data as CSV or XLSX
+\code{full_phrases_*}), and export the updated data as CSV or XLSX
 without rerunning the function.
 }
 \description{
 This function queries both \href{https://floradobrasil.jbrj.gov.br/consulta/}{Flora e Funga do Brasil (FFB)}
-and \href{https://powo.science.kew.org/}{Plants of the World Online (POWO)} to retrieve
-taxonomic, distributional, vernacular, conservation, and occurrence-related information
-for a given list of plant species. It standardizes input names, handles synonyms,
+and the \href{https://powo.science.kew.org/}{World Checklist of Vascular Plants (WCVP)}, the
+backbone of Plants of the World Online (POWO), to retrieve taxonomic, distributional,
+vernacular, and occurrence-related information for a given list of plant species. The
+global conservation status of each species is retrieved from the
+\href{https://www.iucnredlist.org/}{IUCN Red List}. It standardizes input names, handles synonyms,
 merges data from both sources, and returns a single dataframe that can optionally be
 saved as a CSV or Excel file. The output also includes genus-level richness and rank
 information derived from FFB. When \code{save = TRUE}, the function also writes a
@@ -134,14 +143,15 @@ endemism, establishment means, Brazilian states, phytogeographic domains,
 vegetation types, and FFB reference URLs.
 }
 
-\item \strong{POWO data extraction}
+\item \strong{WCVP data extraction}
 \itemize{
-\item Searches POWO using \code{taxize::pow_search()}.
+\item Loads the WCVP names and distribution tables once from
+\pkg{rWCVPdata}, so no per-species web requests are needed.
 \item Resolves synonyms to accepted names when possible.
-\item Retrieves detailed information using \code{taxize::pow_lookup()}, including
-taxonomy, distribution, introduced range, IUCN status, and POWO URL.
-\item Converts POWO botanical countries to standard country names using an internal
-helper function.
+\item Retrieves family, authorship, native distribution (botanical countries),
+introduced range, and the POWO URL.
+\item Converts WCVP botanical countries to standard country names using an
+internal helper function.
 }
 
 \item \strong{Data merging}
@@ -163,11 +173,23 @@ are unavailable.
 when available.
 }
 
+\item \strong{IUCN Red List status}
+\itemize{
+\item If the \pkg{rredlist} package is installed and an IUCN Red List API token
+is stored in the \code{IUCN_REDLIST_KEY} environment variable (a free token
+can be requested at \url{https://api.iucnredlist.org}), the latest global
+assessment is retrieved from the official IUCN Red List API.
+\item Otherwise, the status is retrieved without a token from the IUCN Red List
+checklist mirrored by GBIF (\url{https://www.gbif.org}).
+}
+
 \item \strong{HTML phrase guide generation}
 \itemize{
 \item Generates natural-language species descriptions for each
-\code{printed_lang} and, if \code{add_lang} is supplied, includes a
-dedicated editable field for the custom language.
+\code{printed_lang} and stores them in the \code{full_phrases_*} columns.
+Phrases already present in these columns are kept, so manual edits are
+never overwritten. If \code{add_lang} is supplied, a dedicated editable
+field is included for the custom language.
 \item Saves a standalone \code{__phrase_generating_guide.html} to \code{dir}
 when \code{save = TRUE}. The guide embeds the full dataframe and provides
 browser-based editing and export functionality.
@@ -178,6 +200,10 @@ Before processing, \code{spp_list} is cleaned using internal helper functions.
 Leading and trailing whitespace are removed, names are standardized, and each element
 is checked to ensure that it contains a space. The function stops with an error if
 any element appears not to be a binomial species name.
+
+If \code{dir} already contains a CSV or XLSX data file, the species data are read
+from that file instead of being retrieved again, and only empty \code{full_phrases_*}
+cells are filled; the file is rewritten only when new phrases were generated.
 
 If \code{save = TRUE}, the function creates the output directory if needed and saves
 the resulting dataframe either as a CSV file using \code{utils::write.csv()} or as
@@ -191,7 +217,9 @@ function exits.
 \itemize{
 \item The \pkg{floraR} package is required to download and parse the FFB Darwin Core
 Archive.
-\item The \pkg{taxize} package is required to query POWO.
+\item The \pkg{rWCVPdata} package is required to access WCVP data.
+\item The \pkg{rredlist} package is optional and only used when an IUCN Red
+List API token is available.
 \item The \pkg{openxlsx} package is required only when \code{format = "xlsx"}.
 \item The function queries both FFB and POWO; there is currently no argument to select
 only one database.
@@ -234,8 +262,7 @@ result <- arboretum_data(
 \seealso{
 \code{\link[floraR]{flora_download}},
 \code{\link[floraR]{flora_parse}},
-\code{\link[taxize]{pow_search}},
-\code{\link[taxize]{pow_lookup}}
+\code{\link[rredlist]{rl_species}}
 }
 \author{
 Martin Boucknooghe & Domingos Cardoso

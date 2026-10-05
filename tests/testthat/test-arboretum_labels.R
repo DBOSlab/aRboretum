@@ -22,6 +22,7 @@ testthat::test_that("arboretum_labels does not add custom language when custom p
                        world,
                        br_states,
                        printed_lang,
+                       add_lang,
                        path_to_logo,
                        logo_url,
                        output_dir,
@@ -46,7 +47,6 @@ testthat::test_that("arboretum_labels does not add custom language when custom p
     .copy_folder_progress = function(from, to, verbose) invisible(NULL),
     .phrase_generator = phrase_stub,
     .dict = function() list(),
-    .get_world_map = function() data.frame(LEVEL3_NAM = character(0), stringsAsFactors = FALSE),
     .generate_species_html = gen_stub,
     .package = "aRboretum"
   )
@@ -128,8 +128,8 @@ testthat::test_that("mk_map_dist returns world-only or world-plus-brazil branche
   testthat::local_mocked_bindings(
     .get_pr_ab_world = function(df_sp, world) "world-data",
     .ggplot_map = function(world_plant) paste("world-plot", world_plant),
-    .get_pr_ab_br = function(df_sp, br_states) "br-data",
-    .ggplot_map_br = function(br_plant, df_sp) paste("br-plot", br_plant),
+    .get_pr_ab_br = function(df_sp, br_states) data.frame(Freq = c(0, 1)),
+    .ggplot_map_br = function(br_plant, df_sp) paste("br-plot", sum(br_plant$Freq)),
     .package = "aRboretum"
   )
 
@@ -147,7 +147,7 @@ testthat::test_that("mk_map_dist returns world-only or world-plus-brazil branche
   testthat::expect_identical(world_only$world_map, "world-plot world-data")
   testthat::expect_null(world_only$brazil_map)
   testthat::expect_identical(both_maps$world_map, "world-plot world-data")
-  testthat::expect_identical(both_maps$brazil_map, "br-plot br-data")
+  testthat::expect_identical(both_maps$brazil_map, "br-plot 1")
 })
 
 

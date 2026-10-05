@@ -107,6 +107,124 @@ testthat::test_that("read_species_data reads csv and xlsx and validates required
   )
 })
 
+testthat::test_that("read_species_data adds missing phrase columns as character", {
+  df <- data.frame(
+    family = "Fabaceae", taxonName = "Paubrasilia echinata",
+    scientificNameAuthorship = "Lam.", FFB.vernacularName = NA, country = "Brazil",
+    endemism = "Endemic", FFB.establishmentMeans = "Native", FFB.stateProvince = "BA",
+    FFB.phytogeographicDomain = "Atlantic Forest", FFB.vegetationType = NA,
+    botanical_country = "Brazil Northeast", introduced_to = NA, IUCN.status = NA,
+    plant_uses_EN = NA, plant_uses_PT = NA, plant_uses_ES = NA, plant_uses_FR = NA,
+    free_notes_EN = NA, free_notes_PT = NA, free_notes_ES = NA, free_notes_FR = NA,
+    full_phrases_EN = NA,
+    POWO.url = NA, FFB.url = NA,
+    stringsAsFactors = FALSE
+  )
+  csv_file <- tempfile(fileext = ".csv")
+  utils::write.csv(df, csv_file, row.names = FALSE)
+
+  out <- aRboretum:::.read_species_data(csv_file, verbose = FALSE)
+
+  for (col in aRboretum:::.phrase_cols()) {
+    testthat::expect_true(col %in% names(out), info = col)
+    testthat::expect_type(out[[col]], "character")
+  }
+})
+
+testthat::test_that("save_csv writes a UTF-8 csv without row names", {
+  dir <- file.path(tempdir(), "aux-save-csv")
+  unlink(dir, recursive = TRUE)
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+
+  df <- data.frame(taxonName = "Euterpe edulis", FFB.vernacularName = "juçara",
+                   stringsAsFactors = FALSE)
+  aRboretum:::.save_csv(df, verbose = FALSE, filename = "out", dir = dir)
+
+  out <- utils::read.csv(file.path(dir, "out.csv"), stringsAsFactors = FALSE, encoding = "UTF-8")
+  testthat::expect_identical(names(out), names(df))
+  testthat::expect_identical(out$FFB.vernacularName, "juçara")
+})
+
+testthat::test_that("build_arboretum_phrases stores generated phrases and keeps stored ones", {
+  testthat::skip_if_not_installed("aRboretum")
+
+  df <- data.frame(
+    taxonName = c("Paubrasilia echinata", "Euterpe edulis"),
+    family = c("Fabaceae", "Arecaceae"),
+    full_phrases_EN = c("Manual phrase.", "  "),
+    full_phrases_PT = c(NA, NA),
+    full_phrases_ADD_LANGUAGE = c("Texto 1", NA),
+    stringsAsFactors = FALSE
+  )
+  seen <- list()
+
+  testthat::local_mocked_bindings(
+    .dict = function() list(),
+    .phrase_generator = function(df, dict, lang, verbose) {
+      seen[[lang]] <<- df$taxonName
+      stats::setNames(as.list(paste("Generated", lang, df$taxonName)), df$taxonName)
+    },
+    .package = "aRboretum"
+  )
+
+  out <- aRboretum:::.build_arboretum_phrases(
+    df = df,
+    printed_lang = c("en", "pt"),
+    add_lang = "PANARA",
+    verbose = FALSE
+  )
+
+  # Only rows without a stored phrase are generated
+  testthat::expect_identical(seen$en, "Euterpe edulis")
+  testthat::expect_identical(seen$pt, c("Paubrasilia echinata", "Euterpe edulis"))
+  testthat::expect_identical(out$n_generated, 3L)
+
+  testthat::expect_identical(out$df$full_phrases_EN,
+                             c("Manual phrase.", "Generated en Euterpe edulis"))
+  testthat::expect_identical(out$df$full_phrases_PT,
+                             c("Generated pt Paubrasilia echinata", "Generated pt Euterpe edulis"))
+  testthat::expect_identical(out$html_phrases$en[["Paubrasilia echinata"]], "Manual phrase.")
+  testthat::expect_identical(out$html_phrases$PANARA[["Paubrasilia echinata"]], "Texto 1")
+  testthat::expect_identical(out$printed_lang, c("en", "pt", "PANARA"))
+
+  # A second pass with everything stored generates nothing
+  again <- aRboretum:::.build_arboretum_phrases(
+    df = out$df, printed_lang = c("en", "pt"), verbose = FALSE
+  )
+  testthat::expect_identical(again$n_generated, 0L)
+  testthat::expect_identical(again$df$full_phrases_EN, out$df$full_phrases_EN)
+})
+
+testthat::test_that("phrase_generator handles species without Brazilian data and adds IUCN status", {
+  testthat::skip_if_not_installed("aRboretum")
+
+  df <- data.frame(
+    family = c("Rubiaceae", "Fabaceae"),
+    taxonName = c("Coffea arabica", "Paubrasilia echinata"),
+    FFB.vernacularName = c(NA, NA),
+    country = c("Ethiopia | Kenya", "Brazil"),
+    botanical_country = c("Ethiopia | Kenya", "Brazil Northeast"),
+    endemism = c("Non-endemic", "Endemic"),
+    FFB.establishmentMeans = c(NA, "Native"),
+    FFB.stateProvince = c(NA, "BA | PE"),
+    FFB.phytogeographicDomain = c(NA, "Atlantic Forest"),
+    FFB.vegetationType = c(NA, NA),
+    introduced_to = c(NA, NA),
+    IUCN.status = c("Endangered (EN)", "EN"),
+    stringsAsFactors = FALSE
+  )
+
+  out <- aRboretum:::.phrase_generator(df, aRboretum:::.dict(), lang = "en", verbose = FALSE)
+
+  testthat::expect_named(out, df$taxonName)
+  testthat::expect_match(out[["Coffea arabica"]], "Rubiaceae family")
+  testthat::expect_match(out[["Coffea arabica"]], "endangered \\(EN\\)")
+  testthat::expect_match(out[["Paubrasilia echinata"]], "endangered \\(EN\\)")
+
+  out_pt <- aRboretum:::.phrase_generator(df, aRboretum:::.dict(), lang = "pt", verbose = FALSE)
+  testthat::expect_match(out_pt[["Coffea arabica"]], "IUCN")
+})
+
 testthat::test_that("capitalize formats the first letter only", {
   testthat::skip_if_not_installed("aRboretum")
 
@@ -313,3 +431,155 @@ testthat::test_that("convert_acronym_br_state converts acronyms and names and pr
 #   )
 #   testthat::expect_true(file.exists(file.path(out_dir, "species.xlsx")))
 # })
+
+# Phrase generator branches ---------------------------------------------------------
+
+.phrase_df <- function(...) {
+  base <- list(
+    family = "Fabaceae", taxonName = "Testus specius", FFB.vernacularName = NA,
+    country = "Brazil", botanical_country = "Brazil Northeast", endemism = NA,
+    FFB.establishmentMeans = NA, FFB.stateProvince = "BA", FFB.phytogeographicDomain = NA,
+    FFB.vegetationType = NA, introduced_to = NA, IUCN.status = NA
+  )
+  args <- list(...)
+  base[names(args)] <- args
+  as.data.frame(base, stringsAsFactors = FALSE)
+}
+
+.phrase <- function(df, lang = "en") {
+  aRboretum:::.phrase_generator(df, aRboretum:::.dict(), lang = lang, verbose = FALSE)[[1]]
+}
+
+testthat::test_that("phrase_generator describes endemism across several botanical countries", {
+  testthat::skip_if_not_installed("aRboretum")
+
+  out <- .phrase(.phrase_df(endemism = "Endemic", country = "Brazil",
+                            botanical_country = "Brazil Northeast | Brazil Southeast"))
+  testthat::expect_match(out, "This species is endemic to Brazil.", fixed = TRUE)
+})
+
+testthat::test_that("phrase_generator explains naturalized species", {
+  testthat::skip_if_not_installed("aRboretum")
+
+  out <- .phrase(.phrase_df(endemism = "Non-endemic", country = "Brazil | Peru",
+                            FFB.establishmentMeans = "Naturalized"))
+  expl <- aRboretum:::.tr_dict("cultivated_brazil_explanation", "en", aRboretum:::.dict())
+  testthat::expect_match(out, expl, fixed = TRUE)
+})
+
+testthat::test_that("phrase_generator covers several biomes, all biomes and vegetation types", {
+  testthat::skip_if_not_installed("aRboretum")
+
+  several <- .phrase(.phrase_df(FFB.phytogeographicDomain = "Amazon | Atlantic Forest",
+                                FFB.vegetationType = "Carrasco | Floresta Ombrófila"))
+  testthat::expect_match(several, "colonizes various habitats such as", fixed = TRUE)
+  testthat::expect_match(several, "where it grows mainly in particular vegetation layers such as",
+                         fixed = TRUE)
+
+  all_six <- .phrase(.phrase_df(
+    FFB.phytogeographicDomain = "Amazon | Atlantic Forest | Caatinga | Cerrado | Pampa | Pantanal",
+    FFB.vegetationType = "Carrasco"
+  ))
+  testthat::expect_match(all_six,
+                         aRboretum:::.tr_dict("found_in_every_biome_in_brazil", "en",
+                                              aRboretum:::.dict()),
+                         fixed = TRUE)
+  testthat::expect_match(all_six, "shrubland Carrasco", fixed = TRUE)
+
+  no_biome <- .phrase(.phrase_df(FFB.vegetationType = "Carrasco | Floresta Ciliar ou Galeria"),
+                      lang = "pt")
+  testthat::expect_match(no_biome, " ou ", fixed = TRUE)
+
+  one_veg <- .phrase(.phrase_df(FFB.vegetationType = "Carrasco"), lang = "fr")
+  testthat::expect_match(one_veg, "^<i>Testus specius</i> appartient")
+  testthat::expect_match(one_veg, "Elle pousse", fixed = TRUE)
+})
+
+testthat::test_that("tr_or_raw keeps names missing from the dictionary", {
+  dict <- data.frame(key = c("a", "b"), en = c("Alpha", "Beta"), pt = c("Alfa", NA),
+                     es = NA, fr = NA, stringsAsFactors = FALSE)
+  testthat::expect_identical(aRboretum:::.tr_or_raw(c("Alpha", "Beta", "Gamma"), "pt", dict),
+                             c("Alfa", "Beta", "Gamma"))
+})
+
+testthat::test_that("botdiv_to_countries handles truncated and multi-country divisions", {
+  testthat::skip_if_not_installed("aRboretum")
+
+  testthat::expect_true(is.na(aRboretum:::.botdiv_to_countries(list(NA), 1)))
+  out <- aRboretum:::.botdiv_to_countries(list("Transcaucasus | Central American Pac"), 1)
+  testthat::expect_match(out, "Armenia")
+  testthat::expect_match(out, "Georgia")
+  testthat::expect_no_match(out, "Central American Pac", fixed = TRUE)
+})
+
+testthat::test_that("save_csv reports the written file when verbose", {
+  dir <- file.path(tempdir(), "aux-save-csv-verbose")
+  on.exit(unlink(dir, recursive = TRUE), add = TRUE)
+  testthat::expect_message(
+    aRboretum:::.save_csv(data.frame(a = 1), verbose = TRUE, filename = "x", dir = dir),
+    "Writing the csv-formatted spreadsheet 'x.csv'"
+  )
+})
+
+# IUCN helpers -------------------------------------------------------------------------
+
+testthat::test_that("get_iucn_status reports progress and handles empty input", {
+  testthat::local_mocked_bindings(
+    .iucn_from_gbif = function(taxon) "LC",
+    .package = "aRboretum"
+  )
+
+  testthat::expect_identical(
+    aRboretum:::.get_iucn_status(c(NA, NA), source = "gbif", verbose = FALSE),
+    c(NA_character_, NA_character_)
+  )
+
+  msgs <- testthat::capture_messages(
+    out <- aRboretum:::.get_iucn_status("Euterpe edulis", source = "gbif", verbose = TRUE)
+  )
+  testthat::expect_identical(out, "Least Concern (LC)")
+  testthat::expect_true(any(grepl("from GBIF", msgs)))
+  testthat::expect_true(any(grepl("IUCN status found for 1 of 1 species", msgs)))
+})
+
+testthat::test_that("get_iucn_status requires rredlist for the Red List API", {
+  testthat::local_mocked_bindings(
+    .has_rredlist = function() FALSE,
+    .package = "aRboretum"
+  )
+  testthat::expect_error(
+    aRboretum:::.get_iucn_status("Euterpe edulis", source = "redlist", verbose = FALSE),
+    "Package 'rredlist' is required"
+  )
+})
+
+testthat::test_that("gbif_get parses JSON responses", {
+  json <- tempfile(fileext = ".json")
+  writeLines('{"usageKey": 5, "matchType": "EXACT"}', json)
+  out <- aRboretum:::.gbif_get(json)
+  testthat::expect_identical(out$usageKey, 5L)
+  testthat::expect_identical(out$matchType, "EXACT")
+})
+
+testthat::test_that("iucn_from_redlist returns NA for incomplete names or assessments", {
+  testthat::skip_if_not_installed("rredlist")
+
+  testthat::expect_identical(aRboretum:::.iucn_from_redlist("Euterpe", key = "k"), NA_character_)
+
+  responses <- list(
+    list(assessments = data.frame()),
+    list(assessments = data.frame(latest = FALSE, red_list_category_code = "EN"))
+  )
+  k <- 0
+  testthat::local_mocked_bindings(
+    rl_species = function(genus, species, key, ...) {
+      k <<- k + 1
+      responses[[k]]
+    },
+    .package = "rredlist"
+  )
+  testthat::expect_identical(aRboretum:::.iucn_from_redlist("Euterpe edulis", key = "k"),
+                             NA_character_)
+  testthat::expect_identical(aRboretum:::.iucn_from_redlist("Euterpe edulis", key = "k"),
+                             NA_character_)
+})

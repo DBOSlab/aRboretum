@@ -168,8 +168,9 @@ testthat::test_that("language helper functions return expected labels and suffix
   testthat::expect_identical(aRboretum:::.lang_label("en"), "English")
   testthat::expect_identical(aRboretum:::.lang_suffix("fr"), "FR")
   testthat::expect_identical(aRboretum:::.lang_suffix("es"), "ES")
-  testthat::expect_null(aRboretum:::.lang_label("PANARA"))
-  testthat::expect_null(aRboretum:::.lang_suffix("PANARA"))
+  # Custom languages (add_lang) fall back to their upper-case code
+  testthat::expect_identical(aRboretum:::.lang_label("PANARA"), "PANARA")
+  testthat::expect_identical(aRboretum:::.lang_suffix("panara"), "PANARA")
 })
 
 testthat::test_that("build_language_buttons returns empty for one language and active state for many", {
@@ -224,6 +225,7 @@ testthat::test_that("build_species_cards renders visible and hidden language blo
   )
 
   out <- aRboretum:::.build_species_cards(
+    function_use = "_audios",
     df = df,
     printed_lang = c("en", "pt"),
     html_phrases = html_phrases,
@@ -236,6 +238,50 @@ testthat::test_that("build_species_cards renders visible and hidden language blo
   testthat::expect_match(out, 'lang-content hidden')
   testthat::expect_match(out, "Tree species")
   testthat::expect_match(out, "Wood use\\. Endemic\\.")
+  testthat::expect_match(out, 'class="record-btn"')
+  testthat::expect_no_match(out, "edit-panel")
+})
+
+testthat::test_that("build_species_cards adds editable full-phrase fields for the data guide", {
+  testthat::skip_if_not_installed("aRboretum")
+
+  df <- data.frame(
+    taxonName = "Paubrasilia echinata",
+    family = "Fabaceae",
+    FFB.vernacularName = "pau-brasil",
+    plant_uses_EN = "Wood use",
+    free_notes_EN = NA,
+    full_phrases_EN = "Stored <i>English</i> phrase.",
+    full_phrases_PT = NA,
+    full_phrases_ADD_LANGUAGE = NA,
+    stringsAsFactors = FALSE
+  )
+
+  html_phrases <- list(
+    en = list("Paubrasilia echinata" = "Stored <i>English</i> phrase."),
+    pt = list("Paubrasilia echinata" = "Frase gerada.")
+  )
+
+  out <- aRboretum:::.build_species_cards(
+    function_use = "_data",
+    df = df,
+    printed_lang = c("en", "pt"),
+    html_phrases = html_phrases,
+    initial_lang = "en",
+    add_lang = "PANARA"
+  )
+
+  testthat::expect_match(out, 'data-col="full_phrases_EN"', fixed = TRUE)
+  testthat::expect_match(out, 'data-col="full_phrases_PT"', fixed = TRUE)
+  testthat::expect_match(out, 'data-kind="fullphrase"', fixed = TRUE)
+  testthat::expect_match(out, 'data-col="full_phrases_ADD_LANGUAGE"', fixed = TRUE)
+  # Stored phrase is editable as-is, while the card shows it without tags
+  testthat::expect_match(out, "Stored &lt;i&gt;English&lt;/i&gt; phrase.", fixed = TRUE)
+  testthat::expect_match(out, '<span class="phrase-base" data-row="0" data-lang="en">Stored English phrase.</span>',
+                         fixed = TRUE)
+  # Empty stored phrase falls back to the generated one
+  testthat::expect_match(out, ">Frase gerada.</textarea>", fixed = TRUE)
+  testthat::expect_match(out, "Wood use.", fixed = TRUE)
 })
 
 testthat::test_that("save_phrase_html writes a complete HTML file", {
@@ -249,11 +295,11 @@ testthat::test_that("save_phrase_html writes a complete HTML file", {
     stringsAsFactors = FALSE
   )
 
-  audio_ui_strings <- list(
+  ui_strings <- list(
     en = list(
       html_lang = "en",
-      title = "Personal Audio Recording Guide",
-      subtitle = "Use this file to record species audios.",
+      title_audios = "Personal Audio Recording Guide",
+      subtitle_audios = "Use this file to record species audios.",
       search_placeholder = "Search species...",
       index_title = "Index",
       no_results = "No matches",
@@ -264,8 +310,8 @@ testthat::test_that("save_phrase_html writes a complete HTML file", {
     ),
     pt = list(
       html_lang = "pt",
-      title = "Guia",
-      subtitle = "Use este arquivo.",
+      title_audios = "Guia",
+      subtitle_audios = "Use este arquivo.",
       search_placeholder = "Pesquisar...",
       index_title = "Índice",
       no_results = "Sem resultados",
@@ -288,7 +334,8 @@ testthat::test_that("save_phrase_html writes a complete HTML file", {
 
   aRboretum:::.save_phrase_html(
     df = df,
-    audio_ui_strings = audio_ui_strings,
+    function_use = "_audios",
+    ui_strings = ui_strings,
     lang_button_label = c(en = "English", pt = "Português"),
     printed_lang = c("en", "pt"),
     html_phrases = html_phrases,

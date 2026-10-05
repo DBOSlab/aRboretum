@@ -552,8 +552,7 @@ arboretum_labels <- function(data_path = NULL,
 
     png::writePNG(
       image = img_scaled,
-      target = out_path,
-      compression = 9
+      target = out_path
     )
 
     if (file.exists(out_path) && file.info(out_path)$size <= size_limit) {
@@ -1644,18 +1643,6 @@ arboretum_labels <- function(data_path = NULL,
 #   return(world)
 # }
 
-.mk_map_dist <- function(df_sp = NULL, world, br_states){
-  world_plant <- .get_pr_ab_world(df_sp, world)
-  p_world <- .ggplot_map(world_plant)
-  if (!is.na(df_sp$FFB.stateProvince)) {
-    br_plant <- .get_pr_ab_br(df_sp, br_states)
-    p_br <- .ggplot_map_br(br_plant, df_sp)
-    return(list(world_map = p_world, brazil_map = p_br))
-  } else {
-    return(list(world_map = p_world))
-  }
-}
-
 .get_pr_ab_world <- function(df_sp, world){
   native_string <- df_sp$botanical_country
   if (is.na(native_string) || native_string == "" || native_string == "NA") {
@@ -1797,7 +1784,7 @@ arboretum_labels <- function(data_path = NULL,
 
   if (!is.null(highlight_data) && nrow(highlight_data) > 0) {
 
-    fill_col <- if (df_sp$FFB.establishmentMeans == "Native") "#2c5f2d"
+    fill_col <- if (df_sp$FFB.establishmentMeans[1] %in% "Native") "#2c5f2d"
     else "#905795"
 
     map <- leaflet::addPolygons(map,

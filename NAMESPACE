@@ -67,10 +67,6 @@ importFrom(stats,
   setNames
 )
 importFrom(stringi,stri_trans_general)
-importFrom(taxize,
-  pow_lookup,
-  pow_search
-)
 importFrom(tibble,
   add_column,
   tibble

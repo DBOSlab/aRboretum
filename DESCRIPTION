@@ -18,8 +18,8 @@ Authors@R:
 Description: Creates interactive HTML labels for botanical and living plant 
     collections with built-in text-to-speech capabilities in multiple languages 
     (Portuguese, English, French, Spanish). The package extracts species data 
-    from taxonomic databases (Flora e Funga do Brasil and Plants of the World 
-    Online), handles synonym resolution, generates natural language descriptions, 
+    from taxonomic databases (Flora e Funga do Brasil and the World Checklist 
+    of Vascular Plants) and the IUCN Red List, handles synonym resolution, generates natural language descriptions, 
     and produces standalone HTML files with audio playback controls. Users can 
     optionally provide personal audio recordings that automatically take priority 
     over synthesized speech. The package includes interactive maps showing species 
@@ -48,7 +48,6 @@ Imports:
     rWCVPdata,
     sf,
     stats,
-    taxize,
     tibble,
     tidyr,
     tools,
@@ -62,9 +61,12 @@ Suggests:
     covr,
     knitr,
     rmarkdown,
+    floraR,
+    rredlist,
     testthat (>= 3.0.0)
 Remotes:
-    DBOSlab/floraR
+    DBOSlab/floraR,
+    matildabrown/rWCVPdata
 VignetteBuilder: knitr
 URL: https://DBOSlab.github.io/aRboretum,
     https://github.com/DBOSlab/aRboretum,

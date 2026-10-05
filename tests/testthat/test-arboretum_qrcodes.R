@@ -41,7 +41,7 @@ testthat::test_that("arboretum_qrcodes creates output dir and saves minimalist P
       )
       invisible(NULL)
     },
-    .draw_complete_qr = function(...) stop("complete layout should not be used"),
+    .draw_detailed_qr = function(...) stop("detailed layout should not be used"),
     .package = "aRboretum"
   )
   testthat::local_mocked_bindings(

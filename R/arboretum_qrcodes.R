@@ -265,7 +265,8 @@ arboretum_qrcodes <- function(data_path = NULL,
   format <- match.arg(format)
   detailed <- layout %in% c("classic", "modern", "botanical")
   if (detailed) {
-    printed_lang <- match.arg(printed_lang, choices = c("en", "pt", "es", "fr"))
+    # Detailed layouts print a single language: the first one supplied
+    printed_lang <- match.arg(printed_lang[1], choices = c("en", "pt", "es", "fr"))
   }
   dir <- .arg_check_dir(dir)
 
@@ -680,6 +681,7 @@ arboretum_qrcodes <- function(data_path = NULL,
   endem_val  <- if (!is.null(endemism) && !is.na(endemism)) as.character(endemism) else ""
   cntr_val   <- if (!is.null(country)  && !is.na(country))  as.character(country)  else ""
   cntr_first <- trimws(strsplit(cntr_val, "|", fixed = TRUE)[[1L]][1L])
+  if (is.na(cntr_first)) cntr_first <- ""
   endemic_text <- ""
   if (endem_val == "Endemic" && nzchar(cntr_first)) {
     endemic_text <- switch(printed_lang,
