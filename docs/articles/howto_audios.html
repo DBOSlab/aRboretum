@@ -141,8 +141,18 @@ with <code><a href="../reference/arboretum_data.html">arboretum_data()</a></code
 example:</p>
 <pre class="text"><code>arboretum_data/
 └── arboretum_data.xlsx</code></pre>
-<p>You can then review and enrich this file before generating
-labels.</p>
+<p>Review and enrich this file, then generate the species phrases, which
+are the texts you will record:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_phrases.html">arboretum_phrases</a></span><span class="op">(</span></span>
+<span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The phrases are stored in the <code>full_phrases_*</code> columns of
+the data file and can be edited there or in
+<code>arboretum_data/__phrase_generating_guide.html</code>. Finish
+editing them before recording, because the recording guide shows exactly
+these stored phrases.</p>
 </div>
 <div class="section level2">
 <h2 id="optional-add-one-extra-community-language">Optional: add one extra community language<a class="anchor" aria-label="anchor" href="#optional-add-one-extra-community-language"></a>
@@ -152,18 +162,20 @@ English (<code>"en"</code>), French (<code>"fr"</code>), and Spanish
 (<code>"es"</code>). In some projects, however, you may want to include
 species text and audio in one additional community or local language
 without translating the full interface.</p>
-<p>For this purpose, both <code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code> and
-<code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code> support the argument
-<code>add_lang</code>.</p>
+<p>For this purpose, <code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code>,
+<code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code> and <code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code>
+support the argument <code>add_lang</code>.</p>
 <p>A typical example is collaboration with Indigenous peoples, where the
 website can remain in one of the built-in interface languages, but the
 species label itself should also be available in a language such as
 Panará or Tukano.</p>
-<p>To do this, add a column named <code>full_phrases_ADD_LANGUAGE</code>
-to your dataset. This column should contain the complete final text to
-be shown in the extra language.</p>
+<p>To do this, run <code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code> with
+<code>add_lang</code>, which creates the column
+<code>full_phrases_ADD_LANGUAGE</code> in your dataset and an editable
+field for it in the phrase guide. Fill it with the complete final text
+to be shown in the extra language.</p>
 <p>For example:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">example_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  taxonName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Paubrasilia echinata"</span>, <span class="st">"Euterpe edulis"</span><span class="op">)</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Fabaceae"</span>, <span class="st">"Arecaceae"</span><span class="op">)</span>,</span>
@@ -193,7 +205,7 @@ species and languages during recording;</li>
 <li>optionally create one extra folder per species for the language
 supplied in <code>add_lang</code>.</li>
 </ul>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span><span class="op">)</span>,</span>
@@ -211,9 +223,10 @@ supplied in <code>add_lang</code>.</li>
 └── __personal_audio_recording_guide.html</code></pre>
 <p>The extra <code>TUKANO</code> folders are created only because
 <code>add_lang = "TUKANO"</code> was supplied.</p>
-<p>Important: The phrase file is regenerated every time you run
-arboretum_personal_audios(). If you already placed audio files, the
-folders are not overwritten; only missing folders are created.</p>
+<p>Important: The recording guide is rewritten every time you run
+<code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code>, from the phrases currently stored by
+<code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code>. Audio files you already placed in the
+folders are never overwritten.</p>
 </div>
 <div class="section level2">
 <h2 id="record-your-audio-files">Record your audio files<a class="anchor" aria-label="anchor" href="#record-your-audio-files"></a>
@@ -254,7 +267,7 @@ available;</li>
 <li>add the extra language when <code>add_lang</code> is supplied and
 <code>full_phrases_ADD_LANGUAGE</code> contains non-empty text.</li>
 </ul>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_labels.html">arboretum_labels</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  audio_dir <span class="op">=</span> <span class="st">"arboretum_audios"</span>,</span>
@@ -313,7 +326,7 @@ conflicts with the generated label files.</p>
 <code>add_lang = "TUKANO"</code>, the most important requirement is a
 column named <code>full_phrases_ADD_LANGUAGE</code>.</p>
 <p>A minimal toy example is:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tukano_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  taxonName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Paubrasilia echinata"</span>, <span class="st">"Euterpe edulis"</span><span class="op">)</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Fabaceae"</span>, <span class="st">"Arecaceae"</span><span class="op">)</span>,</span>
@@ -325,7 +338,7 @@ column named <code>full_phrases_ADD_LANGUAGE</code>.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>A more realistic file may also include built-in language notes and
 uses:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tukano_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  taxonName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Paubrasilia echinata"</span>, <span class="st">"Euterpe edulis"</span><span class="op">)</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Fabaceae"</span>, <span class="st">"Arecaceae"</span><span class="op">)</span>,</span>

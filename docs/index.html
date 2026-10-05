@@ -139,10 +139,12 @@
 <div class="section level2">
 <h2 id="usage">Usage<a class="anchor" aria-label="anchor" href="#usage"></a>
 </h2>
-<p>The package provides six main functions:</p>
+<p>The package provides seven main functions, used in this order:</p>
 <ul>
 <li>
-<code><a href="reference/arboretum_data.html">arboretum_data()</a></code> — retrieves and merges species data from Flora e Funga do Brasil and the World Checklist of Vascular Plants, adds IUCN Red List status, and generates editable multilingual species phrases.</li>
+<code><a href="reference/arboretum_data.html">arboretum_data()</a></code> — retrieves and merges species data from Flora e Funga do Brasil and the World Checklist of Vascular Plants, adds IUCN Red List status, and writes an HTML guide to review and correct the data.</li>
+<li>
+<code><a href="reference/arboretum_phrases.html">arboretum_phrases()</a></code> — once the data have been reviewed, generates the editable multilingual species phrases and an HTML guide to review and edit them.</li>
 <li>
 <code><a href="reference/arboretum_audios.html">arboretum_audios()</a></code> — creates folders and an HTML recording guide for custom personal audio files, including one optional extra community or local language.</li>
 <li>
@@ -167,31 +169,53 @@
 <span></span>
 <span><span class="va">species_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/arboretum_data.html">arboretum_data</a></span><span class="op">(</span></span>
 <span>  spp_list <span class="op">=</span> <span class="va">spp_list</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  save <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  format <span class="op">=</span> <span class="st">"xlsx"</span>,</span>
 <span>  filename <span class="op">=</span> <span class="st">"my_species_data"</span>,</span>
 <span>  dir <span class="op">=</span> <span class="st">"extracted_data"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The resulting dataframe includes taxonomic information, distribution data, Brazilian states, phytogeographic domains, vegetation types, endemism, establishment means, IUCN Red List status (e.g. <code>"Endangered (EN)"</code>) when the species has been assessed, genus-level richness summaries, and links to FFB and POWO species pages. When <code>save = TRUE</code>, the function also writes a standalone HTML phrase guide (<code>__phrase_generating_guide.html</code>) to <code>dir</code>, allowing you to review generated phrases, fill in annotation fields (<code>FFB.vernacularName</code>, <code>plant_uses_*</code>, <code>free_notes_*</code>, <code>full_phrases_*</code>), and export the updated data as CSV or XLSX directly from the browser.</p>
+<p>The resulting dataframe includes taxonomic information, distribution data, Brazilian states, phytogeographic domains, vegetation types, endemism, establishment means, IUCN Red List status (e.g. <code>"Endangered (EN)"</code>) when the species has been assessed, genus-level richness summaries, empty annotation columns (<code>plant_uses_*</code>, <code>free_notes_*</code>), and links to FFB and POWO species pages.</p>
+<p>Review this file before going further: correct anything you disagree with and fill in the plant uses and notes you want to show on the labels. No phrase is generated at this step.</p>
+<p>When <code>save = TRUE</code>, the function also writes <code>__data_reviewing_guide.html</code> to <code>dir</code>. Open it in a browser to review and edit, species by species, the vernacular names, country, endemism in Brazil, botanical countries, introduced range, establishment means, Brazilian states, phytogeographic domains, vegetation types, IUCN status, plant uses and free notes, then save or export the corrected data as CSV or XLSX. Endemism, establishment means and IUCN status are drop-down menus restricted to the values used to build the phrases. <code>printed_lang</code> sets the languages of the guide interface and which plant-use and note fields it shows; the data file always keeps the columns of all four languages. Running <code><a href="reference/arboretum_data.html">arboretum_data()</a></code> again on a <code>dir</code> that already contains the data file reads that file instead of querying the databases again; delete or move it to retrieve the data again.</p>
 <div class="section level5">
-<h5 id="editing-the-species-phrases">Editing the species phrases<a class="anchor" aria-label="anchor" href="#editing-the-species-phrases"></a>
+<h5 id="reusing-a-downloaded-flora-e-funga-do-brasil-dataset">Reusing a downloaded Flora e Funga do Brasil dataset<a class="anchor" aria-label="anchor" href="#reusing-a-downloaded-flora-e-funga-do-brasil-dataset"></a>
 </h5>
-<p>The natural-language species descriptions are generated automatically and stored in the columns <code>full_phrases_EN</code>, <code>full_phrases_PT</code>, <code>full_phrases_ES</code>, and <code>full_phrases_FR</code>. You can rewrite any of them, either directly in the saved CSV/XLSX file or in the phrase guide, and your text is then used as is by <code><a href="reference/arboretum_audios.html">arboretum_audios()</a></code> and <code><a href="reference/arboretum_labels.html">arboretum_labels()</a></code>:</p>
-<ul>
-<li>Phrases already stored in these columns are never overwritten.</li>
-<li>If you clear a cell, a new phrase is generated for that species on the next <code><a href="reference/arboretum_data.html">arboretum_data()</a></code> run with the same <code>dir</code>.</li>
-<li>Text in <code>plant_uses_*</code> and <code>free_notes_*</code> is appended after the phrase, so there is no need to repeat it there.</li>
-</ul>
-<p>Running <code><a href="reference/arboretum_data.html">arboretum_data()</a></code> again on a <code>dir</code> that already contains the data file reuses that file instead of querying the databases again, and only fills in empty phrase cells.</p>
+<p>The Flora e Funga do Brasil (FFB) dataset is downloaded with <a href="https://github.com/DBOSlab/floraR" class="external-link"><code>floraR</code></a> into the folder given by <code>ffb_dir</code> (default <code>"flora_download"</code>) and kept there. Later runs always use the most recent version already downloaded in <code>ffb_dir</code>, without contacting the FFB server, so <code><a href="reference/arboretum_data.html">arboretum_data()</a></code> also works offline. The latest version is only downloaded when <code>ffb_dir</code> holds no version yet; to update it, run <code>floraR::flora_download(dir = ffb_dir)</code>. You can also point <code>ffb_dir</code> to one specific version folder to use it as is:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">species_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/arboretum_data.html">arboretum_data</a></span><span class="op">(</span></span>
+<span>  spp_list <span class="op">=</span> <span class="va">spp_list</span>,</span>
+<span>  ffb_dir <span class="op">=</span> <span class="st">"~/data/flora_download/dwca_ffb_v393_430_latest"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
 <div class="section level4">
-<h4 id="id_2-arboretum_audios-prepare-folders-for-personal-audio-recordings">
-<em>2. <code>arboretum_audios</code>: Prepare folders for personal audio recordings</em><a class="anchor" aria-label="anchor" href="#id_2-arboretum_audios-prepare-folders-for-personal-audio-recordings"></a>
+<h4 id="id_2-arboretum_phrases-generating-editable-species-phrases">
+<em>2. <code>arboretum_phrases</code>: Generating editable species phrases</em><a class="anchor" aria-label="anchor" href="#id_2-arboretum_phrases-generating-editable-species-phrases"></a>
 </h4>
-<p>Create folder structure and phrase files for personal audio recordings:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<p>Once you agree with the retrieved data, generate the natural-language species descriptions. The phrases are written into the data file itself, in new columns that are created at this step only: <code>full_phrases_EN</code>, <code>full_phrases_PT</code>, <code>full_phrases_ES</code>, <code>full_phrases_FR</code>, and <code>full_phrases_ADD_LANGUAGE</code>.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/arboretum_phrases.html">arboretum_phrases</a></span><span class="op">(</span></span>
+<span>  data_path <span class="op">=</span> <span class="st">"extracted_data/my_species_data.xlsx"</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span>,</span>
+<span>  add_lang <span class="op">=</span> <span class="st">"TUKANO"</span>   <span class="co"># optional</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The function also writes <code>__phrase_generating_guide.html</code> next to the data file. Open it in a browser to read the phrases and edit them, together with the vernacular names, plant uses and free notes (and the full text of the extra language set in <code>add_lang</code>), then export the updated data as CSV or XLSX.</p>
+<p>You can also edit the phrases directly in the CSV/XLSX file. Your text is then used as is by <code><a href="reference/arboretum_audios.html">arboretum_audios()</a></code> and <code><a href="reference/arboretum_labels.html">arboretum_labels()</a></code>, which only read the stored phrases and never generate them:</p>
+<ul>
+<li>Running <code><a href="reference/arboretum_phrases.html">arboretum_phrases()</a></code> again keeps every stored phrase and only fills empty cells, so clearing a cell makes that phrase be generated again.</li>
+<li>
+<code>overwrite = TRUE</code> generates all phrases again, for example after correcting the data (<code>full_phrases_ADD_LANGUAGE</code> is never overwritten).</li>
+<li>Text in <code>plant_uses_*</code> and <code>free_notes_*</code> is appended after the phrase on the labels, so there is no need to repeat it there.</li>
+</ul>
+</div>
+<div class="section level4">
+<h4 id="id_3-arboretum_audios-prepare-folders-for-personal-audio-recordings">
+<em>3. <code>arboretum_audios</code>: Prepare folders for personal audio recordings</em><a class="anchor" aria-label="anchor" href="#id_3-arboretum_audios-prepare-folders-for-personal-audio-recordings"></a>
+</h4>
+<p>Create folder structure and a recording guide for personal audio recordings. The guide shows the phrases stored by <code><a href="reference/arboretum_phrases.html">arboretum_phrases()</a></code>, so your recordings match the label texts:</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://DBOSlab.github.io/aRboretum">aRboretum</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Create folders for personal audio recordings</span></span>
@@ -207,10 +231,10 @@
 <p>The optional add_lang argument is especially useful when collaborating with Indigenous peoples or other local communities. It allows you to prepare one additional language for personal audio recording without requiring translation of the full package interface or minisite.</p>
 </div>
 <div class="section level4">
-<h4 id="id_3-arboretum_photos-prepare-folders-for-personal-photos">
-<em>3. <code>arboretum_photos</code>: Prepare folders for personal photos</em><a class="anchor" aria-label="anchor" href="#id_3-arboretum_photos-prepare-folders-for-personal-photos"></a>
+<h4 id="id_4-arboretum_photos-prepare-folders-for-personal-photos">
+<em>4. <code>arboretum_photos</code>: Prepare folders for personal photos</em><a class="anchor" aria-label="anchor" href="#id_4-arboretum_photos-prepare-folders-for-personal-photos"></a>
 </h4>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://DBOSlab.github.io/aRboretum">aRboretum</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/arboretum_photos.html">arboretum_photos</a></span><span class="op">(</span>data_path <span class="op">=</span> <span class="st">"extracted_data/my_species_data.xlsx"</span>, </span>
@@ -218,11 +242,11 @@
 <p>This creates the <code>arboretum_photos/</code> folder with one species-specific folder per taxon. Add JPG, PNG, WebP, SVG, or other supported image files to the corresponding folders. When photos are found, <code><a href="reference/arboretum_labels.html">arboretum_labels()</a></code> can include them as a slideshow.</p>
 </div>
 <div class="section level4">
-<h4 id="id_4-arboretum_labels-generating-audio-enhanced-html-labels">
-<em>4. <code>arboretum_labels</code>: Generating audio-enhanced HTML labels</em><a class="anchor" aria-label="anchor" href="#id_4-arboretum_labels-generating-audio-enhanced-html-labels"></a>
+<h4 id="id_5-arboretum_labels-generating-audio-enhanced-html-labels">
+<em>5. <code>arboretum_labels</code>: Generating audio-enhanced HTML labels</em><a class="anchor" aria-label="anchor" href="#id_5-arboretum_labels-generating-audio-enhanced-html-labels"></a>
 </h4>
-<p>Once you have your species data (either from <code>arboretum_data</code> or your own prepared dataframe), you can generate interactive HTML labels with text-to-speech functionality, or automatically use personal recordings when available:</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<p>Once your species data and phrases are ready (from <code><a href="reference/arboretum_data.html">arboretum_data()</a></code> and <code><a href="reference/arboretum_phrases.html">arboretum_phrases()</a></code>), you can generate interactive HTML labels with text-to-speech functionality, or automatically use personal recordings when available. The labels only read the stored <code>full_phrases_*</code> columns; if they are missing, <code><a href="reference/arboretum_labels.html">arboretum_labels()</a></code> stops and asks you to run <code><a href="reference/arboretum_phrases.html">arboretum_phrases()</a></code> first:</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://DBOSlab.github.io/aRboretum">aRboretum</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Generate HTML labels (will use personal recordings if found)</span></span>
@@ -253,16 +277,17 @@
 <em>Working with one additional community language</em><a class="anchor" aria-label="anchor" href="#working-with-one-additional-community-language"></a>
 </h4>
 <p>In some projects, a full translation of the website interface is not necessary, but it is still important to make species information accessible in a local or community language. This can be especially relevant when co-developing interpretive materials with Indigenous peoples.</p>
-<p>For this reason, <code>aRboretum</code> provides an intermediate workflow through the <code>add_lang</code> argument in <code><a href="reference/arboretum_audios.html">arboretum_audios()</a></code> and <code><a href="reference/arboretum_labels.html">arboretum_labels()</a></code>.</p>
+<p>For this reason, <code>aRboretum</code> provides an intermediate workflow through the <code>add_lang</code> argument in <code><a href="reference/arboretum_phrases.html">arboretum_phrases()</a></code>, <code><a href="reference/arboretum_audios.html">arboretum_audios()</a></code> and <code><a href="reference/arboretum_labels.html">arboretum_labels()</a></code>.</p>
 <ul>
+<li>In <code><a href="reference/arboretum_phrases.html">arboretum_phrases()</a></code>, <code>add_lang</code> adds an editable field to the phrase guide where the full label text in the extra language can be entered.</li>
 <li>In <code><a href="reference/arboretum_audios.html">arboretum_audios()</a></code>, <code>add_lang</code> creates one additional folder per species for personal audio recording.</li>
 <li>In <code><a href="reference/arboretum_labels.html">arboretum_labels()</a></code>, <code>add_lang</code> adds one extra text option to the species label when the input data includes non-empty values in the column <code>full_phrases_ADD_LANGUAGE</code>.</li>
 <li>This extra language bypasses the standard multilingual phrase-generation workflow and is therefore ideal for curated, community-provided text.</li>
 </ul>
 <p>A typical workflow is:</p>
 <ol style="list-style-type: decimal">
-<li>Prepare your species dataset with the usual columns.</li>
-<li>Add a column named <code>full_phrases_ADD_LANGUAGE</code> containing the full label text in the extra language.</li>
+<li>Retrieve and review your species data with <code><a href="reference/arboretum_data.html">arboretum_data()</a></code>.</li>
+<li>Run <code>arboretum_phrases(..., add_lang = "TUKANO")</code> and enter the full label text in the extra language, either in the phrase guide or directly in the <code>full_phrases_ADD_LANGUAGE</code> column.</li>
 <li>Run <code>arboretum_audios(..., add_lang = "TUKANO")</code> to create folders for optional personal recordings.</li>
 <li>Add audio files to the corresponding species folders if desired.</li>
 <li>Run <code>arboretum_labels(..., add_lang = "TUKANO")</code> to include the extra language in the generated labels.</li>
@@ -270,11 +295,11 @@
 <p>This approach allows the package to support meaningful multilingual accessibility before a full interface translation is implemented.</p>
 </div>
 <div class="section level4">
-<h4 id="id_5-arboretum_minisite-creating-a-searchable-multilingual-minisite-index">
-<em>5. <code>arboretum_minisite</code>: Creating a searchable multilingual minisite index</em><a class="anchor" aria-label="anchor" href="#id_5-arboretum_minisite-creating-a-searchable-multilingual-minisite-index"></a>
+<h4 id="id_6-arboretum_minisite-creating-a-searchable-multilingual-minisite-index">
+<em>6. <code>arboretum_minisite</code>: Creating a searchable multilingual minisite index</em><a class="anchor" aria-label="anchor" href="#id_6-arboretum_minisite-creating-a-searchable-multilingual-minisite-index"></a>
 </h4>
 <p>After generating your species labels, create a beautiful, searchable index page that lists all species with real-time filtering and multilingual interface:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create an index page for all your species labels</span></span>
 <span><span class="fu"><a href="reference/arboretum_minisite.html">arboretum_minisite</a></span><span class="op">(</span></span>
 <span>  labels_dir <span class="op">=</span> <span class="st">"html_species_labels"</span>,</span>
@@ -294,11 +319,11 @@
 🔗 Direct links — Click any card to open its full species label<br></p>
 </div>
 <div class="section level4">
-<h4 id="id_6-arboretum_qrcodes-generate-printable-qr-code-labels">
-<em>6. <code>arboretum_qrcodes</code>: Generate printable QR-code labels</em><a class="anchor" aria-label="anchor" href="#id_6-arboretum_qrcodes-generate-printable-qr-code-labels"></a>
+<h4 id="id_7-arboretum_qrcodes-generate-printable-qr-code-labels">
+<em>7. <code>arboretum_qrcodes</code>: Generate printable QR-code labels</em><a class="anchor" aria-label="anchor" href="#id_7-arboretum_qrcodes-generate-printable-qr-code-labels"></a>
 </h4>
 <p>Generate print-ready QR code labels arranged on A4 pages and saved as PDF or PNG. Four visual layouts are available: <code>"minimalist"</code> (default), <code>"classic"</code>, <code>"modern"</code>, and <code>"botanical"</code>. Each layout differs in typography, colour palette, and border style.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Minimalist QR codes (default) using POWO/FFB URLs from the mined data</span></span>
 <span><span class="fu"><a href="reference/arboretum_qrcodes.html">arboretum_qrcodes</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"extracted_data/my_species_data.xlsx"</span></span>
@@ -321,7 +346,7 @@
 <h2 id="complete-workflow-example">Complete workflow example<a class="anchor" aria-label="anchor" href="#complete-workflow-example"></a>
 </h2>
 <p>Here’s a complete example from data extraction to custom audio labels:</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Step 1: Extract species data</span></span>
 <span><span class="va">my_species</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"Euterpe edulis"</span>,</span>
@@ -339,25 +364,32 @@
 <span>  dir <span class="op">=</span> <span class="st">"data"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Step 2: Create folder structure for personal audio</span></span>
+<span><span class="co"># Step 2: Review data/my_garden_plants.xlsx, then generate the phrases.</span></span>
+<span><span class="co"># Edit them in data/__phrase_generating_guide.html or in the xlsx file</span></span>
+<span><span class="fu"><a href="reference/arboretum_phrases.html">arboretum_phrases</a></span><span class="op">(</span></span>
+<span>  data_path <span class="op">=</span> <span class="st">"data/my_garden_plants.xlsx"</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Step 3: Create folder structure for personal audio</span></span>
 <span><span class="fu"><a href="reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"data/my_garden_plants.xlsx"</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Step 3: Add your own recordings!</span></span>
+<span><span class="co"># Step 4: Add your own recordings!</span></span>
 <span><span class="co"># Place files like:</span></span>
 <span><span class="co">#   arboretum_audios/ARECACEAE_Euterpe_edulis_EN/my_recording.mp3</span></span>
 <span><span class="co">#   arboretum_audios/ARECACEAE_Euterpe_edulis_PT/gravacao_pessoal.wav</span></span>
 <span></span>
-<span><span class="co"># Step 4: Prepare personal photo folders </span></span>
+<span><span class="co"># Step 5: Prepare personal photo folders </span></span>
 <span><span class="fu"><a href="reference/arboretum_photos.html">arboretum_photos</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"data/my_garden_plants.xlsx"</span>, </span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Step 5: Generate HTML labels (automatically uses your recordings)</span></span>
+<span><span class="co"># Step 6: Generate HTML labels (automatically uses your recordings)</span></span>
 <span><span class="fu"><a href="reference/arboretum_labels.html">arboretum_labels</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"data/my_garden_plants.xlsx"</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span><span class="op">)</span>,</span>
@@ -365,7 +397,7 @@
 <span>  dir <span class="op">=</span> <span class="st">"labels"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Step 6: Create a multilingual minisite index</span></span>
+<span><span class="co"># Step 7: Create a multilingual minisite index</span></span>
 <span><span class="fu"><a href="reference/arboretum_minisite.html">arboretum_minisite</a></span><span class="op">(</span></span>
 <span>  labels_dir <span class="op">=</span> <span class="st">"labels"</span>,</span>
 <span>  site_title <span class="op">=</span> <span class="st">"My Botanical Garden Collection"</span>,</span>
@@ -375,7 +407,7 @@
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Step 7: Generate QR-code labels linked to the published minisite </span></span>
+<span><span class="co"># Step 8: Generate QR-code labels linked to the published minisite </span></span>
 <span><span class="fu"><a href="reference/arboretum_qrcodes.html">arboretum_qrcodes</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"data/my_garden_plants.xlsx"</span>,</span>
 <span>  base_url <span class="op">=</span> <span class="st">"https://myinstitution.org/my-collection"</span>,</span>
@@ -386,7 +418,7 @@
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Step 8: Deploy to an internet pages</span></span>
+<span><span class="co"># Step 9: Deploy to an internet pages</span></span>
 <span><span class="co"># Copy the entire 'minisite' folder to your internet page repository</span></span>
 <span><span class="co"># The index.html file will automatically show all species!</span></span>
 <span></span>
@@ -428,7 +460,7 @@ For QR codes at your botanical garden:</p>
 <div class="section level2">
 <h2 id="input-data-requirements">Input data requirements<a class="anchor" aria-label="anchor" href="#input-data-requirements"></a>
 </h2>
-<p>The input data for <code><a href="reference/arboretum_labels.html">arboretum_labels()</a></code> must include the following columns (as produced by <code><a href="reference/arboretum_data.html">arboretum_data()</a></code>):</p>
+<p>The input data for <code><a href="reference/arboretum_labels.html">arboretum_labels()</a></code> must include the following columns (as produced by <code><a href="reference/arboretum_data.html">arboretum_data()</a></code> and completed by <code><a href="reference/arboretum_phrases.html">arboretum_phrases()</a></code>):</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -501,11 +533,12 @@ For QR codes at your botanical garden:</p>
 </tr>
 <tr>
 <td><code>full_phrases_EN/PT/ES/FR</code></td>
-<td>Generated species phrases; optional, editable, and filled in automatically when empty</td>
+<td>Species phrases created by <code><a href="reference/arboretum_phrases.html">arboretum_phrases()</a></code>; editable, and required for every language in <code>printed_lang</code>
+</td>
 </tr>
 <tr>
 <td><code>full_phrases_ADD_LANGUAGE</code></td>
-<td>Full phrase for the custom language set in <code>add_lang</code>
+<td>Full phrase for the custom language set in <code>add_lang</code>, created by <code><a href="reference/arboretum_phrases.html">arboretum_phrases()</a></code>
 </td>
 </tr>
 <tr>

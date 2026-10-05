@@ -62,7 +62,20 @@ arboretum_data/
 └── arboretum_data.xlsx
 ```
 
-You can then review and enrich this file before generating labels.
+Review and enrich this file, then generate the species phrases, which
+are the texts you will record:
+
+\
+[`arboretum_phrases`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)`\
+`)`
+
+The phrases are stored in the `full_phrases_*` columns of the data file
+and can be edited there or in
+`arboretum_data/__phrase_generating_guide.html`. Finish editing them
+before recording, because the recording guide shows exactly these stored
+phrases.
 
 ## Optional: add one extra community language
 
@@ -72,7 +85,8 @@ however, you may want to include species text and audio in one
 additional community or local language without translating the full
 interface.
 
-For this purpose, both
+For this purpose,
+[`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md),
 [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)
 and
 [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)
@@ -83,9 +97,11 @@ website can remain in one of the built-in interface languages, but the
 species label itself should also be available in a language such as
 Panará or Tukano.
 
-To do this, add a column named `full_phrases_ADD_LANGUAGE` to your
-dataset. This column should contain the complete final text to be shown
-in the extra language.
+To do this, run
+[`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)
+with `add_lang`, which creates the column `full_phrases_ADD_LANGUAGE` in
+your dataset and an editable field for it in the phrase guide. Fill it
+with the complete final text to be shown in the extra language.
 
 For example:
 
@@ -145,9 +161,11 @@ arboretum_audios/
 The extra `TUKANO` folders are created only because
 `add_lang = "TUKANO"` was supplied.
 
-Important: The phrase file is regenerated every time you run
-arboretum_personal_audios(). If you already placed audio files, the
-folders are not overwritten; only missing folders are created.
+Important: The recording guide is rewritten every time you run
+[`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md),
+from the phrases currently stored by
+[`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md).
+Audio files you already placed in the folders are never overwritten.
 
 ## Record your audio files
 

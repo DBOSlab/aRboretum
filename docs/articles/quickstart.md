@@ -25,10 +25,10 @@ Start with a character vector containing the species names of interest.
 The function
 [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)
 queries [Flora e Funga do Brasil
-(FFB)](https://reflora.jbrj.gov.br/reflora/listaBrasil/) and [Plants of
-the World Online (POWO)](https://powo.science.kew.org/), resolves
-accepted names and synonyms, and compiles a structured dataset for
-downstream use in `aRboretum`.
+(FFB)](https://reflora.jbrj.gov.br/reflora/listaBrasil/) and the [World
+Checklist of Vascular Plants (WCVP)](https://powo.science.kew.org/),
+adds the IUCN Red List status, resolves accepted names and synonyms, and
+compiles a structured dataset for downstream use in `aRboretum`.
 
 Both `.csv` and `.xlsx` outputs are supported.
 
@@ -42,14 +42,39 @@ Both `.csv` and `.xlsx` outputs are supported.
 `  dir ``=`` ``"arboretum_data"`\
 `)`
 
-This saves a data file inside `arboretum_data/`, which can then be used
-to generate labels, optional personal audio folders, QR codes, and the
-minisite.
+This saves a data file inside `arboretum_data/`, together with
+`arboretum_data/__data_reviewing_guide.html`. Review the data before
+going further, either in the spreadsheet or in that guide, which lets
+you edit the retrieved fields, plant uses and notes in your browser and
+save or export the corrected file. The `printed_lang` argument sets the
+languages of the guide.
 
-## Step 2. Generate HTML labels
+## Step 2. Generate the species phrases
 
-Use the saved data file to create one interactive HTML label per
-species.
+Once you agree with the data, generate the natural-language species
+descriptions:
+
+\
+[`arboretum_phrases`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``, ``"fr"``, ``"es"``)`\
+`)`
+
+The phrases are stored in the data file, in the new columns
+`full_phrases_EN`, `full_phrases_PT`, `full_phrases_ES`,
+`full_phrases_FR`, and `full_phrases_ADD_LANGUAGE`. The function also
+writes `arboretum_data/__phrase_generating_guide.html`, where you can
+read and edit the phrases and export the updated data. Edited phrases
+are used as they are by the labels and audio guides; running
+[`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)
+again only fills empty phrases (use `overwrite = TRUE` to regenerate
+them all).
+
+## Step 3. Generate HTML labels
+
+Use the data file, now completed with phrases, to create one interactive
+HTML label per species. The labels only read the stored phrases and
+never generate them.
 
 \
 [`arboretum_labels`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)`(`\
@@ -67,7 +92,7 @@ Each label can include:
 - browser-based text-to-speech;
 - optional personal audio recordings and photos when available.
 
-## Step 3. Build a multilingual minisite
+## Step 4. Build a multilingual minisite
 
 Create a searchable `index.html` page linking all generated species
 labels.
@@ -111,22 +136,32 @@ species labels without translating the full website or minisite
 interface. This can be especially relevant in collaborative work with
 Indigenous peoples or other local communities.
 
-For this purpose, `aRboretum` provides the `add_lang` argument in both
+For this purpose, `aRboretum` provides the `add_lang` argument in
+[`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md),
 [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)
 and
 [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md).
 
 To use this workflow:
 
-1.  Add a column named `full_phrases_ADD_LANGUAGE` to your input
-    dataset.
-2.  Fill this column with the complete label text for each species in
-    the additional language.
+1.  Run
+    [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)
+    with `add_lang`: it adds an editable field for the extra language to
+    the phrase guide.
+2.  Enter the complete label text for each species in the additional
+    language, in the guide or directly in the
+    `full_phrases_ADD_LANGUAGE` column of the data file.
 3.  Use `add_lang` to include the extra language in the audio-folder
     workflow and in the final labels.
 
 Example with Tukano:
 
+\
+[`arboretum_phrases`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  add_lang ``=`` ``"TUKANO"`\
+`)`\
 \
 [`arboretum_audios`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)`(`\
 `  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\

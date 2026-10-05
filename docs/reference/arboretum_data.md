@@ -12,9 +12,11 @@ handles synonyms, merges data from both sources, and returns a single
 dataframe that can optionally be saved as a CSV or Excel file. The
 output also includes genus-level richness and rank information derived
 from FFB. When `save = TRUE`, the function also writes a standalone HTML
-phrase guide (`__phrase_generating_guide.html`) to `dir`, which allows
-users to review, edit annotation fields, and export the updated data
-directly from the browser.
+data reviewing guide (`__data_reviewing_guide.html`) to `dir`, in which
+the retrieved data can be reviewed, corrected, and exported back to the
+data file directly from the browser. Once the data have been reviewed,
+the species phrases used by the labels are generated with
+[`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md).
 
 ## Usage
 
@@ -22,12 +24,12 @@ directly from the browser.
 arboretum_data(
   spp_list = NULL,
   printed_lang = c("pt", "en", "fr", "es"),
-  add_lang = NULL,
   verbose = TRUE,
   save = TRUE,
   format = c("csv", "xlsx"),
   filename = "arboretum_data",
-  dir = "arboretum_data"
+  dir = "arboretum_data",
+  ffb_dir = "flora_download"
 )
 ```
 
@@ -44,20 +46,12 @@ arboretum_data(
 
 - printed_lang:
 
-  Character vector. Built-in language(s) for which phrases are generated
-  in the HTML guide. Accepted values are `"pt"`, `"en"`, `"fr"`, and
-  `"es"`. Default is `c("pt", "en", "fr", "es")`.
-
-- add_lang:
-
-  Character string or `NULL`. Optional code for one additional language,
-  for example `"PANARA"` or `"TUKANO"`. When supplied, the HTML phrase
-  guide includes a dedicated editable field for entering a full phrase
-  translation for the specified custom language. The content entered
-  there is stored in the `full_phrases_ADD_LANGUAGE` column and can be
-  used on subsequent runs of
-  [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)
-  to include that language in the species labels. Default is `NULL`.
+  Character vector. Language(s) of the HTML data reviewing guide: the
+  guide interface can be switched between them, and the plant-use and
+  free-note fields of these languages (`plant_uses_*`, `free_notes_*`)
+  are shown for editing. Accepted values are `"pt"`, `"en"`, `"fr"`, and
+  `"es"`. The data file always includes the plant-use and free-note
+  columns of all four languages. Default is `c("pt", "en", "fr", "es")`.
 
 - verbose:
 
@@ -66,8 +60,8 @@ arboretum_data(
 
 - save:
 
-  Logical. If `TRUE`, the resulting dataframe is saved to disk. Default
-  is `TRUE`.
+  Logical. If `TRUE`, the resulting dataframe is saved to disk and the
+  HTML data reviewing guide is written to `dir`. Default is `TRUE`.
 
 - format:
 
@@ -87,13 +81,33 @@ arboretum_data(
   Trailing slashes are automatically removed. The directory is created
   if it does not exist. Default is `"arboretum_data"`.
 
+- ffb_dir:
+
+  Character string. Path to the folder where Flora e Funga do Brasil
+  (FFB) Darwin Core Archives are downloaded and kept between runs, as in
+  [`floraR::flora_download()`](https://rdrr.io/pkg/floraR/man/flora_download.html).
+  Two kinds of paths are accepted:
+
+  - A folder holding one or more downloaded versions (for example
+    `"flora_download"`). The most recent version already downloaded
+    there is always used, without contacting the FFB server, so the
+    function also works offline. The latest version is only downloaded,
+    with
+    [`floraR::flora_download()`](https://rdrr.io/pkg/floraR/man/flora_download.html),
+    when the folder holds no downloaded version yet. To update a
+    previously downloaded dataset, run
+    `floraR::flora_download(dir = ffb_dir)`.
+
+  - A single version folder (for example
+    `"flora_download/dwca_ffb_v393_430_latest"`), which is used as is,
+    without any download.
+
+  Default is `"flora_download"`.
+
 ## Value
 
 A dataframe combining data retrieved from FFB and POWO. The returned
 columns include:
-
-- `original_query`: The species name as originally supplied in
-  `spp_list`.
 
 - `family`: Family name of the accepted taxon.
 
@@ -139,29 +153,18 @@ columns include:
 
 - `plant_uses_EN`, `plant_uses_PT`, `plant_uses_ES`, `plant_uses_FR`:
   Plant-use fields in English, Portuguese, Spanish, and French, intended
-  for user annotation via the HTML phrase guide or direct editing of the
-  saved file.
+  for user annotation by direct editing of the saved file or via the
+  HTML phrase guide of
+  [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md).
 
 - `free_notes_EN`, `free_notes_PT`, `free_notes_ES`, `free_notes_FR`:
   Free-text note fields in English, Portuguese, Spanish, and French,
-  intended for user annotation via the HTML phrase guide or direct
-  editing of the saved file.
+  intended for user annotation by direct editing of the saved file or
+  via the HTML phrase guide of
+  [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md).
 
 - `IUCN.status`: Global IUCN Red List category, for example
   `"Endangered (EN)"`, or `NA` when the species has not been assessed.
-
-- `full_phrases_EN`, `full_phrases_PT`, `full_phrases_ES`,
-  `full_phrases_FR`: Natural-language species descriptions automatically
-  generated for each language in `printed_lang`. Phrases stored in these
-  columns are reused as they are on later runs, so they can be manually
-  edited in the saved file or in the HTML phrase guide; clearing a cell
-  makes the phrase be generated again. Plant uses and free notes are
-  appended after the phrase.
-
-- `full_phrases_ADD_LANGUAGE`: Reserved field for a complete phrase
-  translation in the custom language specified by `add_lang`. Always
-  present in the output; populated by the user via the HTML phrase guide
-  or direct editing.
 
 - `POWO.url`: URL to the species page in POWO.
 
@@ -173,12 +176,22 @@ omitted from the final dataframe. For overlapping fields, FFB data
 generally take precedence, except for selected WCVP-derived fields such
 as botanical country, introduced range, and POWO URL.
 
-When `save = TRUE`, the function also writes a standalone HTML phrase
-guide (`__phrase_generating_guide.html`) to `dir`. This file embeds the
-full dataframe and allows users to review generated phrases, edit
-annotation fields (`FFB.vernacularName`, `plant_uses_*`, `free_notes_*`,
-`full_phrases_*`), and export the updated data as CSV or XLSX without
-rerunning the function.
+The phrase columns (`full_phrases_*`) are not part of this output: they
+are added by
+[`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)
+once the data have been reviewed.
+
+When `save = TRUE`, the function also writes a standalone HTML data
+reviewing guide (`__data_reviewing_guide.html`) to `dir`. It embeds the
+data and provides, for each species, editable fields for
+`FFB.vernacularName`, `country`, `endemism`, `botanical_country`,
+`introduced_to`, `FFB.establishmentMeans`, `FFB.stateProvince`,
+`FFB.phytogeographicDomain`, `FFB.vegetationType`, `IUCN.status`, and
+the `plant_uses_*` and `free_notes_*` fields of `printed_lang`. The
+`endemism`, `FFB.establishmentMeans`, and `IUCN.status` fields are
+drop-down menus restricted to the values used to build the phrases. The
+edited data can be saved or exported as CSV or XLSX without rerunning
+the function.
 
 ## Details
 
@@ -250,18 +263,6 @@ The function follows five main steps:
     - Otherwise, the status is retrieved without a token from the IUCN
       Red List checklist mirrored by GBIF (<https://www.gbif.org>).
 
-6.  **HTML phrase guide generation**
-
-    - Generates natural-language species descriptions for each
-      `printed_lang` and stores them in the `full_phrases_*` columns.
-      Phrases already present in these columns are kept, so manual edits
-      are never overwritten. If `add_lang` is supplied, a dedicated
-      editable field is included for the custom language.
-
-    - Saves a standalone `__phrase_generating_guide.html` to `dir` when
-      `save = TRUE`. The guide embeds the full dataframe and provides
-      browser-based editing and export functionality.
-
 Before processing, `spp_list` is cleaned using internal helper
 functions. Leading and trailing whitespace are removed, names are
 standardized, and each element is checked to ensure that it contains a
@@ -269,9 +270,9 @@ space. The function stops with an error if any element appears not to be
 a binomial species name.
 
 If `dir` already contains a CSV or XLSX data file, the species data are
-read from that file instead of being retrieved again, and only empty
-`full_phrases_*` cells are filled; the file is rewritten only when new
-phrases were generated.
+read from that file instead of being retrieved again, and the data
+reviewing guide is rebuilt from it. Delete or move that file to retrieve
+the data again.
 
 If `save = TRUE`, the function creates the output directory if needed
 and saves the resulting dataframe either as a CSV file using
@@ -280,8 +281,8 @@ an Excel file using
 [`openxlsx::write.xlsx()`](https://rdrr.io/pkg/openxlsx/man/write.xlsx.html).
 When `verbose = TRUE`, a message reports the saved file path.
 
-The temporary FFB download folder named `"flora_download"` is removed
-when the function exits.
+The downloaded FFB dataset is kept in `ffb_dir`, so later runs reuse it
+instead of downloading it again.
 
 ## Note
 
@@ -308,6 +309,7 @@ when the function exits.
 
 ## See also
 
+[`arboretum_phrases`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md),
 [`flora_download`](https://rdrr.io/pkg/floraR/man/flora_download.html),
 [`flora_parse`](https://rdrr.io/pkg/floraR/man/flora_parse.html),
 [`rl_species`](https://docs.ropensci.org/rredlist/reference/rl_species.html)

@@ -191,7 +191,9 @@ distribution fields are required for full functionality.</p>
 steps:</p>
 <ol style="list-style-type: decimal">
 <li>extract and structure species data with
-<code><a href="../reference/arboretum_data.html">arboretum_data()</a></code>;</li>
+<code><a href="../reference/arboretum_data.html">arboretum_data()</a></code>, then review it;</li>
+<li>generate the editable species phrases with
+<code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code>;</li>
 <li>optionally prepare folders for personal audio with
 <code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code>;</li>
 <li>optionally prepare folders for species photos with
@@ -216,8 +218,9 @@ steps:</p>
 <h3 id="what-it-does">What it does<a class="anchor" aria-label="anchor" href="#what-it-does"></a>
 </h3>
 <p><code><a href="../reference/arboretum_data.html">arboretum_data()</a></code> extracts and merges species information
-from Flora e Funga do Brasil and Plants of the World Online. It resolves
-synonyms when possible, merges overlapping information, and returns a
+from Flora e Funga do Brasil and the World Checklist of Vascular Plants,
+and adds the IUCN Red List status of each species. It resolves synonyms
+when possible, merges overlapping information, and returns a
 standardised dataset that can be used by the rest of the package.</p>
 <p>The output also includes empty user-editable columns such as
 <code>plant_uses_*</code> and <code>free_notes_*</code>, which can later
@@ -243,8 +246,55 @@ be used to enrich labels in the built-in languages.</p>
 <li>Synonyms are resolved to accepted names when possible.</li>
 <li>Missing values from one source may still be complemented by the
 other.</li>
-<li>The saved output can be edited manually before generating
-labels.</li>
+<li>The saved output can be edited manually before generating the
+phrases, either directly or in the HTML data reviewing guide
+(<code>__data_reviewing_guide.html</code>) written to <code>dir</code>,
+whose interface languages are set by <code>printed_lang</code>.</li>
+<li>No phrase is generated at this step.</li>
+</ul>
+</div>
+</div>
+<div class="section level2">
+<h2 id="arboretum_phrases">
+<code>arboretum_phrases()</code><a class="anchor" aria-label="anchor" href="#arboretum_phrases"></a>
+</h2>
+<div class="section level3">
+<h3 id="what-it-does-1">What it does<a class="anchor" aria-label="anchor" href="#what-it-does-1"></a>
+</h3>
+<p><code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code> generates the natural-language
+species descriptions once the data retrieved with
+<code><a href="../reference/arboretum_data.html">arboretum_data()</a></code> have been reviewed. The phrases are stored
+in the data file itself, in the columns <code>full_phrases_EN</code>,
+<code>full_phrases_PT</code>, <code>full_phrases_ES</code>,
+<code>full_phrases_FR</code>, and
+<code>full_phrases_ADD_LANGUAGE</code>, which are created at this step
+only. It also writes an HTML phrase guide
+(<code>__phrase_generating_guide.html</code>) next to the data file, in
+which phrases, vernacular names, plant uses and notes can be edited and
+exported.</p>
+</div>
+<div class="section level3">
+<h3 id="example-1">Example<a class="anchor" aria-label="anchor" href="#example-1"></a>
+</h3>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_phrases.html">arboretum_phrases</a></span><span class="op">(</span></span>
+<span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span>,</span>
+<span>  add_lang <span class="op">=</span> <span class="st">"TUKANO"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level3">
+<h3 id="notes-1">Notes<a class="anchor" aria-label="anchor" href="#notes-1"></a>
+</h3>
+<ul>
+<li>Stored phrases, including manual edits, are never overwritten; only
+empty phrases are filled when the function is run again.</li>
+<li>
+<code>overwrite = TRUE</code> regenerates all phrases, for example
+after correcting the data.</li>
+<li>
+<code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code> and <code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code>
+only read the stored phrases and never generate them.</li>
 </ul>
 </div>
 </div>
@@ -253,7 +303,7 @@ labels.</li>
 <code>arboretum_audios()</code><a class="anchor" aria-label="anchor" href="#arboretum_audios"></a>
 </h2>
 <div class="section level3">
-<h3 id="what-it-does-1">What it does<a class="anchor" aria-label="anchor" href="#what-it-does-1"></a>
+<h3 id="what-it-does-2">What it does<a class="anchor" aria-label="anchor" href="#what-it-does-2"></a>
 </h3>
 <p><code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code> prepares a folder structure for
 personal species audio recordings. For each species and each selected
@@ -263,9 +313,9 @@ files.</p>
 workflow.</p>
 </div>
 <div class="section level3">
-<h3 id="example-1">Example<a class="anchor" aria-label="anchor" href="#example-1"></a>
+<h3 id="example-2">Example<a class="anchor" aria-label="anchor" href="#example-2"></a>
 </h3>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span>,</span>
@@ -274,7 +324,7 @@ workflow.</p>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="notes-1">Notes<a class="anchor" aria-label="anchor" href="#notes-1"></a>
+<h3 id="notes-2">Notes<a class="anchor" aria-label="anchor" href="#notes-2"></a>
 </h3>
 <ul>
 <li>Built-in languages are <code>"pt"</code>, <code>"en"</code>,
@@ -291,23 +341,23 @@ language without translating the whole interface.</li>
 <code>arboretum_photos()</code><a class="anchor" aria-label="anchor" href="#arboretum_photos"></a>
 </h2>
 <div class="section level3">
-<h3 id="what-it-does-2">What it does<a class="anchor" aria-label="anchor" href="#what-it-does-2"></a>
+<h3 id="what-it-does-3">What it does<a class="anchor" aria-label="anchor" href="#what-it-does-3"></a>
 </h3>
 <p><code><a href="../reference/arboretum_photos.html">arboretum_photos()</a></code> creates one photo folder per species
 so that users can add personal or curated images to be embedded later in
 the HTML labels.</p>
 </div>
 <div class="section level3">
-<h3 id="example-2">Example<a class="anchor" aria-label="anchor" href="#example-2"></a>
+<h3 id="example-3">Example<a class="anchor" aria-label="anchor" href="#example-3"></a>
 </h3>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_photos.html">arboretum_photos</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="notes-2">Notes<a class="anchor" aria-label="anchor" href="#notes-2"></a>
+<h3 id="notes-3">Notes<a class="anchor" aria-label="anchor" href="#notes-3"></a>
 </h3>
 <ul>
 <li>Existing folders are preserved.</li>
@@ -321,7 +371,7 @@ in the expected species folder.</li>
 <code>arboretum_labels()</code><a class="anchor" aria-label="anchor" href="#arboretum_labels"></a>
 </h2>
 <div class="section level3">
-<h3 id="what-it-does-3">What it does<a class="anchor" aria-label="anchor" href="#what-it-does-3"></a>
+<h3 id="what-it-does-4">What it does<a class="anchor" aria-label="anchor" href="#what-it-does-4"></a>
 </h3>
 <p><code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code> generates one standalone HTML label
 per species. Each label may include:</p>
@@ -337,9 +387,9 @@ per species. Each label may include:</p>
 </ul>
 </div>
 <div class="section level3">
-<h3 id="example-3">Example<a class="anchor" aria-label="anchor" href="#example-3"></a>
+<h3 id="example-4">Example<a class="anchor" aria-label="anchor" href="#example-4"></a>
 </h3>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_labels.html">arboretum_labels</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  audio_dir <span class="op">=</span> <span class="st">"arboretum_audios"</span>,</span>
@@ -362,7 +412,11 @@ the full website interface.</p>
 <p>When <code>add_lang</code> is supplied:</p>
 <ul>
 <li>
-<code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code> looks for a column named
+<code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code> adds an editable field for the
+extra language to the phrase guide, stored in the column
+<code>full_phrases_ADD_LANGUAGE</code>;</li>
+<li>
+<code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code> looks for the column
 <code>full_phrases_ADD_LANGUAGE</code>;</li>
 <li>if that column contains non-empty text, the extra language is added
 as an additional text option in the label;</li>
@@ -376,7 +430,7 @@ peoples or other local communities, where species-level accessibility
 may be more important than translating the full minisite interface.</p>
 </div>
 <div class="section level3">
-<h3 id="notes-3">Notes<a class="anchor" aria-label="anchor" href="#notes-3"></a>
+<h3 id="notes-4">Notes<a class="anchor" aria-label="anchor" href="#notes-4"></a>
 </h3>
 <ul>
 <li>Personal audio files take priority over browser speech
@@ -393,7 +447,7 @@ available.</li>
 <code>arboretum_minisite()</code><a class="anchor" aria-label="anchor" href="#arboretum_minisite"></a>
 </h2>
 <div class="section level3">
-<h3 id="what-it-does-4">What it does<a class="anchor" aria-label="anchor" href="#what-it-does-4"></a>
+<h3 id="what-it-does-5">What it does<a class="anchor" aria-label="anchor" href="#what-it-does-5"></a>
 </h3>
 <p><code><a href="../reference/arboretum_minisite.html">arboretum_minisite()</a></code> builds a searchable index page
 linking all generated species labels. It can also include simple
@@ -401,9 +455,9 @@ collection summaries and charts when the species dataset is
 provided.</p>
 </div>
 <div class="section level3">
-<h3 id="example-4">Example<a class="anchor" aria-label="anchor" href="#example-4"></a>
+<h3 id="example-5">Example<a class="anchor" aria-label="anchor" href="#example-5"></a>
 </h3>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_minisite.html">arboretum_minisite</a></span><span class="op">(</span></span>
 <span>  labels_dir <span class="op">=</span> <span class="st">"species_labels"</span>,</span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
@@ -415,7 +469,7 @@ provided.</p>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="notes-4">Notes<a class="anchor" aria-label="anchor" href="#notes-4"></a>
+<h3 id="notes-5">Notes<a class="anchor" aria-label="anchor" href="#notes-5"></a>
 </h3>
 <ul>
 <li>The interface language order follows the order of
@@ -430,16 +484,16 @@ panels may be reduced.</li>
 <code>arboretum_qrcodes()</code><a class="anchor" aria-label="anchor" href="#arboretum_qrcodes"></a>
 </h2>
 <div class="section level3">
-<h3 id="what-it-does-5">What it does<a class="anchor" aria-label="anchor" href="#what-it-does-5"></a>
+<h3 id="what-it-does-6">What it does<a class="anchor" aria-label="anchor" href="#what-it-does-6"></a>
 </h3>
 <p><code><a href="../reference/arboretum_qrcodes.html">arboretum_qrcodes()</a></code> creates printable QR-code labels
 that can link to species HTML labels, external URLs, or source records.
 The output can be generated in minimalist or complete layouts.</p>
 </div>
 <div class="section level3">
-<h3 id="example-5">Example<a class="anchor" aria-label="anchor" href="#example-5"></a>
+<h3 id="example-6">Example<a class="anchor" aria-label="anchor" href="#example-6"></a>
 </h3>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_qrcodes.html">arboretum_qrcodes</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  base_url <span class="op">=</span> <span class="st">"https://myinstitution.org/collection"</span>,</span>
@@ -462,7 +516,7 @@ The output can be generated in minimalist or complete layouts.</p>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level3">
-<h3 id="notes-5">Notes<a class="anchor" aria-label="anchor" href="#notes-5"></a>
+<h3 id="notes-6">Notes<a class="anchor" aria-label="anchor" href="#notes-6"></a>
 </h3>
 <ul>
 <li>When no custom URL is provided, the function falls back to source
@@ -478,8 +532,14 @@ URLs when possible.</li>
 English remain the main interface languages, while Tukano is added as a
 community language for species labels and optional personal
 recordings.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_phrases.html">arboretum_phrases</a></span><span class="op">(</span></span>
+<span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span><span class="op">)</span>,</span>
+<span>  add_lang <span class="op">=</span> <span class="st">"TUKANO"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span><span class="op">)</span>,</span>
 <span>  add_lang <span class="op">=</span> <span class="st">"TUKANO"</span></span>
@@ -492,9 +552,11 @@ recordings.</p>
 <span>  add_lang <span class="op">=</span> <span class="st">"TUKANO"</span>,</span>
 <span>  dir <span class="op">=</span> <span class="st">"species_labels"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>For this workflow, the input file should contain a column named
-<code>full_phrases_ADD_LANGUAGE</code> with the full text to display in
-Panará for each species.</p>
+<p>Before generating the labels, fill the column
+<code>full_phrases_ADD_LANGUAGE</code> created by
+<code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code> with the full text to display in Tukano
+for each species, either in the phrase guide or directly in the data
+file.</p>
 </div>
 <div class="section level2">
 <h2 id="defensive-checks-and-internal-helpers">Defensive checks and internal helpers<a class="anchor" aria-label="anchor" href="#defensive-checks-and-internal-helpers"></a>
@@ -569,7 +631,7 @@ automation with flexibility, allowing users to enrich labels with notes,
 uses, photos, personal audio, and one additional community-based
 language through <code>add_lang</code>.</p>
 <p>For function-specific details, see the package documentation:</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="op">?</span><span class="va">arboretum_data</span></span>
 <span><span class="op">?</span><span class="va">arboretum_audios</span></span>
 <span><span class="op">?</span><span class="va">arboretum_photos</span></span>

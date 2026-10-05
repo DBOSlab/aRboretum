@@ -89,11 +89,11 @@ information accessible in a community language. This can be especially
 relevant when co-developing interpretive materials with Indigenous
 peoples.</p>
 <p>For this purpose, <code>aRboretum</code> provides the
-<code>add_lang</code> argument in both <code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code>
-and <code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code>. This argument supports one
-additional language as a flexible accessibility layer, without requiring
-the full multilingual translation workflow used for the built-in package
-languages.</p>
+<code>add_lang</code> argument in <code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code>,
+<code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code> and <code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code>.
+This argument supports one additional language as a flexible
+accessibility layer, without requiring the full multilingual translation
+workflow used for the built-in package languages.</p>
 <p>In this example, we use <strong>Tukano</strong> as an additional
 language.</p>
 </div>
@@ -102,6 +102,11 @@ language.</p>
 </h2>
 <p>When <code>add_lang</code> is supplied:</p>
 <ul>
+<li>
+<code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code> adds an editable field for the
+extra language to the phrase guide; its text is stored in the column
+<code>full_phrases_ADD_LANGUAGE</code>, which
+<code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code> creates in the data file.</li>
 <li>
 <code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code> creates one extra folder per species
 for optional personal recordings in the additional language.</li>
@@ -124,11 +129,22 @@ also made available in a community language.</p>
 <div class="section level3">
 <h3 id="step-1--prepare-the-dataset">Step 1. Prepare the dataset<a class="anchor" aria-label="anchor" href="#step-1--prepare-the-dataset"></a>
 </h3>
-<p>Start from a dataset created with <code><a href="../reference/arboretum_data.html">arboretum_data()</a></code> or
-from your own formatted input file. To include Tukano, add a column
-named <code>full_phrases_ADD_LANGUAGE</code>. This column should contain
-the complete label text you want to display in the extra language.</p>
+<p>Start from a dataset created with <code><a href="../reference/arboretum_data.html">arboretum_data()</a></code> and
+reviewed by you. Then generate the phrases with
+<code>add_lang = "TUKANO"</code>:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_phrases.html">arboretum_phrases</a></span><span class="op">(</span></span>
+<span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span><span class="op">)</span>,</span>
+<span>  add_lang <span class="op">=</span> <span class="st">"TUKANO"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>This creates the phrase columns in the data file, including
+<code>full_phrases_ADD_LANGUAGE</code>, and writes
+<code>arboretum_data/__phrase_generating_guide.html</code>, which has an
+editable Tukano field for each species. Fill it, in the guide or
+directly in the data file, with the complete label text you want to
+display in the extra language. The resulting data look like this:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tukano_example</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  taxonName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Paubrasilia echinata"</span>, <span class="st">"Euterpe edulis"</span><span class="op">)</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Fabaceae"</span>, <span class="st">"Arecaceae"</span><span class="op">)</span>,</span>
@@ -182,18 +198,31 @@ columns:</p>
 generation</td>
 </tr>
 <tr class="odd">
-<td align="left"><code>full_phrases_ADD_LANGUAGE</code></td>
-<td align="center">Yes, for <code>add_lang</code> labels</td>
-<td align="left">Full label text to display in the extra language</td>
+<td align="left">
+<code>full_phrases_PT</code>,
+<code>full_phrases_EN</code>, etc.</td>
+<td align="center">Yes, for each language in
+<code>printed_lang</code>
+</td>
+<td align="left">Species phrases created by
+<code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code>
+</td>
 </tr>
 <tr class="even">
+<td align="left"><code>full_phrases_ADD_LANGUAGE</code></td>
+<td align="center">Yes, for <code>add_lang</code> labels</td>
+<td align="left">Full label text to display in the extra language,
+entered after running <code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code>
+</td>
+</tr>
+<tr class="odd">
 <td align="left">
 <code>plant_uses_PT</code>, <code>plant_uses_EN</code>,
 etc.</td>
 <td align="center">No</td>
 <td align="left">Language-specific uses text for built-in languages</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td align="left">
 <code>free_notes_PT</code>, <code>free_notes_EN</code>,
 etc.</td>
@@ -201,7 +230,7 @@ etc.</td>
 <td align="left">Language-specific notes text for built-in
 languages</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td align="left">Other standard <code><a href="../reference/arboretum_data.html">arboretum_data()</a></code>
 fields</td>
 <td align="center">Usually yes</td>
@@ -212,7 +241,7 @@ content used in the label</td>
 </table>
 <p>A more realistic toy example may also include built-in language note
 fields:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tukano_example_extended</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
 <span>  taxonName <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Paubrasilia echinata"</span>, <span class="st">"Euterpe edulis"</span><span class="op">)</span>,</span>
 <span>  family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Fabaceae"</span>, <span class="st">"Arecaceae"</span><span class="op">)</span>,</span>
@@ -244,7 +273,7 @@ fields:</p>
 </h3>
 <p>Use <code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code> with
 <code>add_lang = "TUKANO"</code>:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://DBOSlab.github.io/aRboretum">aRboretum</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="../reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
@@ -284,7 +313,7 @@ possible.</p>
 <h3 id="step-4--generate-html-labels-with-the-extra-language-included">Step 4. Generate HTML labels with the extra language included<a class="anchor" aria-label="anchor" href="#step-4--generate-html-labels-with-the-extra-language-included"></a>
 </h3>
 <p>Now generate the labels with <code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code>:</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_labels.html">arboretum_labels</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"extracted_data/my_species_data.xlsx"</span>,</span>
 <span>  audio_dir <span class="op">=</span> <span class="st">"arboretum_audios"</span>,</span>

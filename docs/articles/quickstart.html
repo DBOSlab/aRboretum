@@ -104,10 +104,10 @@ plant collection.</p>
 <p>Start with a character vector containing the species names of
 interest.</p>
 <p>The function <code><a href="../reference/arboretum_data.html">arboretum_data()</a></code> queries <a href="https://reflora.jbrj.gov.br/reflora/listaBrasil/" class="external-link">Flora e Funga do
-Brasil (FFB)</a> and <a href="https://powo.science.kew.org/" class="external-link">Plants of
-the World Online (POWO)</a>, resolves accepted names and synonyms, and
-compiles a structured dataset for downstream use in
-<code>aRboretum</code>.</p>
+Brasil (FFB)</a> and the <a href="https://powo.science.kew.org/" class="external-link">World
+Checklist of Vascular Plants (WCVP)</a>, adds the IUCN Red List status,
+resolves accepted names and synonyms, and compiles a structured dataset
+for downstream use in <code>aRboretum</code>.</p>
 <p>Both <code>.csv</code> and <code>.xlsx</code> outputs are
 supported.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -119,16 +119,40 @@ supported.</p>
 <span>  format <span class="op">=</span> <span class="st">"xlsx"</span>,</span>
 <span>  dir <span class="op">=</span> <span class="st">"arboretum_data"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>This saves a data file inside <code>arboretum_data/</code>, which can
-then be used to generate labels, optional personal audio folders, QR
-codes, and the minisite.</p>
+<p>This saves a data file inside <code>arboretum_data/</code>, together
+with <code>arboretum_data/__data_reviewing_guide.html</code>. Review the
+data before going further, either in the spreadsheet or in that guide,
+which lets you edit the retrieved fields, plant uses and notes in your
+browser and save or export the corrected file. The
+<code>printed_lang</code> argument sets the languages of the guide.</p>
 </div>
 <div class="section level2">
-<h2 id="step-2--generate-html-labels">Step 2. Generate HTML labels<a class="anchor" aria-label="anchor" href="#step-2--generate-html-labels"></a>
+<h2 id="step-2--generate-the-species-phrases">Step 2. Generate the species phrases<a class="anchor" aria-label="anchor" href="#step-2--generate-the-species-phrases"></a>
 </h2>
-<p>Use the saved data file to create one interactive HTML label per
-species.</p>
+<p>Once you agree with the data, generate the natural-language species
+descriptions:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_phrases.html">arboretum_phrases</a></span><span class="op">(</span></span>
+<span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>The phrases are stored in the data file, in the new columns
+<code>full_phrases_EN</code>, <code>full_phrases_PT</code>,
+<code>full_phrases_ES</code>, <code>full_phrases_FR</code>, and
+<code>full_phrases_ADD_LANGUAGE</code>. The function also writes
+<code>arboretum_data/__phrase_generating_guide.html</code>, where you
+can read and edit the phrases and export the updated data. Edited
+phrases are used as they are by the labels and audio guides; running
+<code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code> again only fills empty phrases (use
+<code>overwrite = TRUE</code> to regenerate them all).</p>
+</div>
+<div class="section level2">
+<h2 id="step-3--generate-html-labels">Step 3. Generate HTML labels<a class="anchor" aria-label="anchor" href="#step-3--generate-html-labels"></a>
+</h2>
+<p>Use the data file, now completed with phrases, to create one
+interactive HTML label per species. The labels only read the stored
+phrases and never generate them.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_labels.html">arboretum_labels</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span>,</span>
@@ -145,11 +169,11 @@ species.</p>
 </ul>
 </div>
 <div class="section level2">
-<h2 id="step-3--build-a-multilingual-minisite">Step 3. Build a multilingual minisite<a class="anchor" aria-label="anchor" href="#step-3--build-a-multilingual-minisite"></a>
+<h2 id="step-4--build-a-multilingual-minisite">Step 4. Build a multilingual minisite<a class="anchor" aria-label="anchor" href="#step-4--build-a-multilingual-minisite"></a>
 </h2>
 <p>Create a searchable <code>index.html</code> page linking all
 generated species labels.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_minisite.html">arboretum_minisite</a></span><span class="op">(</span></span>
 <span>  labels_dir <span class="op">=</span> <span class="st">"arboretum_labels"</span>,</span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
@@ -166,7 +190,7 @@ by just clicking on the <code>index.html</code> file.</p>
 <p>If you want to provide recorded audio instead of relying only on
 browser text-to-speech, first create the folder structure for
 recordings:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span></span>
@@ -185,20 +209,27 @@ the species labels without translating the full website or minisite
 interface. This can be especially relevant in collaborative work with
 Indigenous peoples or other local communities.</p>
 <p>For this purpose, <code>aRboretum</code> provides the
-<code>add_lang</code> argument in both <code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code>
-and <code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code>.</p>
+<code>add_lang</code> argument in <code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code>,
+<code><a href="../reference/arboretum_audios.html">arboretum_audios()</a></code> and <code><a href="../reference/arboretum_labels.html">arboretum_labels()</a></code>.</p>
 <p>To use this workflow:</p>
 <ol style="list-style-type: decimal">
-<li>Add a column named <code>full_phrases_ADD_LANGUAGE</code> to your
-input dataset.</li>
-<li>Fill this column with the complete label text for each species in
-the additional language.</li>
+<li>Run <code><a href="../reference/arboretum_phrases.html">arboretum_phrases()</a></code> with <code>add_lang</code>: it
+adds an editable field for the extra language to the phrase guide.</li>
+<li>Enter the complete label text for each species in the additional
+language, in the guide or directly in the
+<code>full_phrases_ADD_LANGUAGE</code> column of the data file.</li>
 <li>Use <code>add_lang</code> to include the extra language in the
 audio-folder workflow and in the final labels.</li>
 </ol>
 <p>Example with Tukano:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/arboretum_phrases.html">arboretum_phrases</a></span><span class="op">(</span></span>
+<span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
+<span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span><span class="op">)</span>,</span>
+<span>  add_lang <span class="op">=</span> <span class="st">"TUKANO"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/arboretum_audios.html">arboretum_audios</a></span><span class="op">(</span></span>
 <span>  data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span><span class="op">)</span>,</span>
 <span>  add_lang <span class="op">=</span> <span class="st">"TUKANO"</span></span>

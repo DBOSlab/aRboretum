@@ -8,9 +8,11 @@ IUCN Red List. It standardizes input names, handles synonyms,
 merges data from both sources, and returns a single dataframe that can optionally be
 saved as a CSV or Excel file. The output also includes genus-level richness and rank
 information derived from FFB. When save = TRUE, the function also writes a
-standalone HTML phrase guide (__phrase_generating_guide.html) to dir,
-which allows users to review, edit annotation fields, and export the updated data
-directly from the browser."><meta property="og:description" content="This function queries both Flora e Funga do Brasil (FFB)
+standalone HTML data reviewing guide (__data_reviewing_guide.html) to
+dir, in which the retrieved data can be reviewed, corrected, and exported
+back to the data file directly from the browser. Once the data have been
+reviewed, the species phrases used by the labels are generated with
+arboretum_phrases()."><meta property="og:description" content="This function queries both Flora e Funga do Brasil (FFB)
 and the World Checklist of Vascular Plants (WCVP), the
 backbone of Plants of the World Online (POWO), to retrieve taxonomic, distributional,
 vernacular, and occurrence-related information for a given list of plant species. The
@@ -19,9 +21,11 @@ IUCN Red List. It standardizes input names, handles synonyms,
 merges data from both sources, and returns a single dataframe that can optionally be
 saved as a CSV or Excel file. The output also includes genus-level richness and rank
 information derived from FFB. When save = TRUE, the function also writes a
-standalone HTML phrase guide (__phrase_generating_guide.html) to dir,
-which allows users to review, edit annotation fields, and export the updated data
-directly from the browser."></head><body>
+standalone HTML data reviewing guide (__data_reviewing_guide.html) to
+dir, in which the retrieved data can be reviewed, corrected, and exported
+back to the data file directly from the browser. Once the data have been
+reviewed, the species phrases used by the labels are generated with
+arboretum_phrases()."></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -79,9 +83,11 @@ global conservation status of each species is retrieved from the
 merges data from both sources, and returns a single dataframe that can optionally be
 saved as a CSV or Excel file. The output also includes genus-level richness and rank
 information derived from FFB. When <code>save = TRUE</code>, the function also writes a
-standalone HTML phrase guide (<code>__phrase_generating_guide.html</code>) to <code>dir</code>,
-which allows users to review, edit annotation fields, and export the updated data
-directly from the browser.</p>
+standalone HTML data reviewing guide (<code>__data_reviewing_guide.html</code>) to
+<code>dir</code>, in which the retrieved data can be reviewed, corrected, and exported
+back to the data file directly from the browser. Once the data have been
+reviewed, the species phrases used by the labels are generated with
+<code><a href="arboretum_phrases.html">arboretum_phrases()</a></code>.</p>
     </div>
 
     <div class="section level2">
@@ -89,12 +95,12 @@ directly from the browser.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">arboretum_data</span><span class="op">(</span></span>
 <span>  spp_list <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  printed_lang <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"pt"</span>, <span class="st">"en"</span>, <span class="st">"fr"</span>, <span class="st">"es"</span><span class="op">)</span>,</span>
-<span>  add_lang <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  save <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  format <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"csv"</span>, <span class="st">"xlsx"</span><span class="op">)</span>,</span>
 <span>  filename <span class="op">=</span> <span class="st">"arboretum_data"</span>,</span>
-<span>  dir <span class="op">=</span> <span class="st">"arboretum_data"</span></span>
+<span>  dir <span class="op">=</span> <span class="st">"arboretum_data"</span>,</span>
+<span>  ffb_dir <span class="op">=</span> <span class="st">"flora_download"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -111,19 +117,12 @@ space, indicating a probable non-species name.</p></dd>
 
 
 <dt id="arg-printed-lang">printed_lang<a class="anchor" aria-label="anchor" href="#arg-printed-lang"></a></dt>
-<dd><p>Character vector. Built-in language(s) for which phrases are
-generated in the HTML guide. Accepted values are <code>"pt"</code>, <code>"en"</code>, <code>"fr"</code>, and
-<code>"es"</code>. Default is <code>c("pt", "en", "fr", "es")</code>.</p></dd>
-
-
-<dt id="arg-add-lang">add_lang<a class="anchor" aria-label="anchor" href="#arg-add-lang"></a></dt>
-<dd><p>Character string or <code>NULL</code>. Optional code for one additional
-language, for example <code>"PANARA"</code> or <code>"TUKANO"</code>. When supplied, the HTML phrase
-guide includes a dedicated editable field for entering a full phrase translation
-for the specified custom language. The content entered there is stored in the
-<code>full_phrases_ADD_LANGUAGE</code> column and can be used on subsequent runs of
-<code><a href="arboretum_labels.html">arboretum_labels()</a></code> to include that language in the species labels.
-Default is <code>NULL</code>.</p></dd>
+<dd><p>Character vector. Language(s) of the HTML data reviewing guide:
+the guide interface can be switched between them, and the plant-use and
+free-note fields of these languages (<code>plant_uses_*</code>, <code>free_notes_*</code>)
+are shown for editing. Accepted values are <code>"pt"</code>, <code>"en"</code>, <code>"fr"</code>, and <code>"es"</code>.
+The data file always includes the plant-use and free-note columns of all four
+languages. Default is <code>c("pt", "en", "fr", "es")</code>.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -132,8 +131,8 @@ Default is <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-save">save<a class="anchor" aria-label="anchor" href="#arg-save"></a></dt>
-<dd><p>Logical. If <code>TRUE</code>, the resulting dataframe is saved to disk.
-Default is <code>TRUE</code>.</p></dd>
+<dd><p>Logical. If <code>TRUE</code>, the resulting dataframe is saved to disk and the
+HTML data reviewing guide is written to <code>dir</code>. Default is <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-format">format<a class="anchor" aria-label="anchor" href="#arg-format"></a></dt>
@@ -152,11 +151,26 @@ Default is <code>"arboretum_data"</code>.</p></dd>
 Trailing slashes are automatically removed. The directory is created if it does
 not exist. Default is <code>"arboretum_data"</code>.</p></dd>
 
+
+<dt id="arg-ffb-dir">ffb_dir<a class="anchor" aria-label="anchor" href="#arg-ffb-dir"></a></dt>
+<dd><p>Character string. Path to the folder where Flora e Funga do Brasil
+(FFB) Darwin Core Archives are downloaded and kept between runs, as in
+<code><a href="https://rdrr.io/pkg/floraR/man/flora_download.html" class="external-link">floraR::flora_download()</a></code>. Two kinds of paths are accepted:</p><ul><li><p>A folder holding one or more downloaded versions (for example
+<code>"flora_download"</code>). The most recent version already downloaded there is
+always used, without contacting the FFB server, so the function also works
+offline. The latest version is only downloaded, with
+<code><a href="https://rdrr.io/pkg/floraR/man/flora_download.html" class="external-link">floraR::flora_download()</a></code>, when the folder holds no downloaded
+version yet. To update a previously downloaded dataset, run
+<code>floraR::flora_download(dir = ffb_dir)</code>.</p></li>
+<li><p>A single version folder (for example
+<code>"flora_download/dwca_ffb_v393_430_latest"</code>), which is used as is, without
+any download.</p></li>
+</ul><p>Default is <code>"flora_download"</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A dataframe combining data retrieved from FFB and POWO. The returned columns include:</p><ul><li><p><code>original_query</code>: The species name as originally supplied in <code>spp_list</code>.</p></li>
-<li><p><code>family</code>: Family name of the accepted taxon.</p></li>
+    <p>A dataframe combining data retrieved from FFB and POWO. The returned columns include:</p><ul><li><p><code>family</code>: Family name of the accepted taxon.</p></li>
 <li><p><code>genus</code>: Genus extracted from the accepted scientific name.</p></li>
 <li><p><code>taxonName</code>: Accepted scientific name after synonym resolution.</p></li>
 <li><p><code>scientificNameAuthorship</code>: Authorship string.</p></li>
@@ -179,35 +193,33 @@ translated into English when applicable and concatenated by <code>" | "</code>.<
 representing the richest genus.</p></li>
 <li><p><code>plant_uses_EN</code>, <code>plant_uses_PT</code>, <code>plant_uses_ES</code>,
 <code>plant_uses_FR</code>: Plant-use fields in English, Portuguese, Spanish, and French,
-intended for user annotation via the HTML phrase guide or direct editing of the
-saved file.</p></li>
+intended for user annotation by direct editing of the saved file or via the
+HTML phrase guide of <code><a href="arboretum_phrases.html">arboretum_phrases()</a></code>.</p></li>
 <li><p><code>free_notes_EN</code>, <code>free_notes_PT</code>, <code>free_notes_ES</code>,
 <code>free_notes_FR</code>: Free-text note fields in English, Portuguese, Spanish, and
-French, intended for user annotation via the HTML phrase guide or direct editing
-of the saved file.</p></li>
+French, intended for user annotation by direct editing of the saved file or via
+the HTML phrase guide of <code><a href="arboretum_phrases.html">arboretum_phrases()</a></code>.</p></li>
 <li><p><code>IUCN.status</code>: Global IUCN Red List category, for example
 <code>"Endangered (EN)"</code>, or <code>NA</code> when the species has not been assessed.</p></li>
-<li><p><code>full_phrases_EN</code>, <code>full_phrases_PT</code>, <code>full_phrases_ES</code>,
-<code>full_phrases_FR</code>: Natural-language species descriptions automatically
-generated for each language in <code>printed_lang</code>. Phrases stored in these
-columns are reused as they are on later runs, so they can be manually edited in
-the saved file or in the HTML phrase guide; clearing a cell makes the phrase be
-generated again. Plant uses and free notes are appended after the phrase.</p></li>
-<li><p><code>full_phrases_ADD_LANGUAGE</code>: Reserved field for a complete phrase
-translation in the custom language specified by <code>add_lang</code>. Always present
-in the output; populated by the user via the HTML phrase guide or direct editing.</p></li>
 <li><p><code>POWO.url</code>: URL to the species page in POWO.</p></li>
 <li><p><code>FFB.url</code>: URL to the species page in FFB.</p></li>
 </ul><p>If a species is found in only one database, fields from the missing database are
 returned as <code>NA</code>. Species not found in either database are omitted from the final
 dataframe. For overlapping fields, FFB data generally take precedence, except for
 selected WCVP-derived fields such as botanical country, introduced range, and POWO URL.</p>
-<p>When <code>save = TRUE</code>, the function also writes a standalone HTML phrase guide
-(<code>__phrase_generating_guide.html</code>) to <code>dir</code>. This file embeds the full
-dataframe and allows users to review generated phrases, edit annotation fields
-(<code>FFB.vernacularName</code>, <code>plant_uses_*</code>, <code>free_notes_*</code>,
-<code>full_phrases_*</code>), and export the updated data as CSV or XLSX
-without rerunning the function.</p>
+<p>The phrase columns (<code>full_phrases_*</code>) are not part of this output: they are
+added by <code><a href="arboretum_phrases.html">arboretum_phrases()</a></code> once the data have been reviewed.</p>
+<p>When <code>save = TRUE</code>, the function also writes a standalone HTML data reviewing
+guide (<code>__data_reviewing_guide.html</code>) to <code>dir</code>. It embeds the data and
+provides, for each species, editable fields for <code>FFB.vernacularName</code>,
+<code>country</code>, <code>endemism</code>, <code>botanical_country</code>, <code>introduced_to</code>,
+<code>FFB.establishmentMeans</code>, <code>FFB.stateProvince</code>,
+<code>FFB.phytogeographicDomain</code>, <code>FFB.vegetationType</code>, <code>IUCN.status</code>,
+and the <code>plant_uses_*</code> and <code>free_notes_*</code> fields of <code>printed_lang</code>.
+The <code>endemism</code>, <code>FFB.establishmentMeans</code>, and <code>IUCN.status</code>
+fields are drop-down menus restricted to the values used to build the phrases.
+The edited data can be saved or exported as CSV or XLSX without rerunning the
+function.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -251,28 +263,19 @@ assessment is retrieved from the official IUCN Red List API.</p></li>
 <li><p>Otherwise, the status is retrieved without a token from the IUCN Red List
 checklist mirrored by GBIF (<a href="https://www.gbif.org" class="external-link">https://www.gbif.org</a>).</p></li>
 </ul></li>
-<li><p><strong>HTML phrase guide generation</strong></p><ul><li><p>Generates natural-language species descriptions for each
-<code>printed_lang</code> and stores them in the <code>full_phrases_*</code> columns.
-Phrases already present in these columns are kept, so manual edits are
-never overwritten. If <code>add_lang</code> is supplied, a dedicated editable
-field is included for the custom language.</p></li>
-<li><p>Saves a standalone <code>__phrase_generating_guide.html</code> to <code>dir</code>
-when <code>save = TRUE</code>. The guide embeds the full dataframe and provides
-browser-based editing and export functionality.</p></li>
-</ul></li>
 </ol><p>Before processing, <code>spp_list</code> is cleaned using internal helper functions.
 Leading and trailing whitespace are removed, names are standardized, and each element
 is checked to ensure that it contains a space. The function stops with an error if
 any element appears not to be a binomial species name.</p>
 <p>If <code>dir</code> already contains a CSV or XLSX data file, the species data are read
-from that file instead of being retrieved again, and only empty <code>full_phrases_*</code>
-cells are filled; the file is rewritten only when new phrases were generated.</p>
+from that file instead of being retrieved again, and the data reviewing guide is
+rebuilt from it. Delete or move that file to retrieve the data again.</p>
 <p>If <code>save = TRUE</code>, the function creates the output directory if needed and saves
 the resulting dataframe either as a CSV file using <code><a href="https://rdrr.io/r/utils/write.table.html" class="external-link">utils::write.csv()</a></code> or as
 an Excel file using <code><a href="https://rdrr.io/pkg/openxlsx/man/write.xlsx.html" class="external-link">openxlsx::write.xlsx()</a></code>. When <code>verbose = TRUE</code>, a
 message reports the saved file path.</p>
-<p>The temporary FFB download folder named <code>"flora_download"</code> is removed when the
-function exits.</p>
+<p>The downloaded FFB dataset is kept in <code>ffb_dir</code>, so later runs reuse it
+instead of downloading it again.</p>
     </div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
@@ -293,7 +296,8 @@ database versions or query dates.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="https://rdrr.io/pkg/floraR/man/flora_download.html" class="external-link">flora_download</a></code>,
+    <div class="dont-index"><p><code><a href="arboretum_phrases.html">arboretum_phrases</a></code>,
+<code><a href="https://rdrr.io/pkg/floraR/man/flora_download.html" class="external-link">flora_download</a></code>,
 <code><a href="https://rdrr.io/pkg/floraR/man/flora_parse.html" class="external-link">flora_parse</a></code>,
 <code><a href="https://docs.ropensci.org/rredlist/reference/rl_species.html" class="external-link">rl_species</a></code></p></div>
     </div>

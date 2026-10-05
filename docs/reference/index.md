@@ -6,6 +6,8 @@ Core functions for preparing data and generating outputs.
 
 - [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)
   : Extract and compile flora data from multiple taxonomic databases
+- [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)
+  : Generate editable multilingual species phrases
 - [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)
   : Create folder structure and phrase files for personal audio
   recordings

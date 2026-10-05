@@ -103,16 +103,19 @@ distribution fields are required for full functionality.
 A typical `aRboretum` workflow consists of the following steps:
 
 1.  extract and structure species data with
-    [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md);
-2.  optionally prepare folders for personal audio with
+    [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md),
+    then review it;
+2.  generate the editable species phrases with
+    [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md);
+3.  optionally prepare folders for personal audio with
     [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md);
-3.  optionally prepare folders for species photos with
+4.  optionally prepare folders for species photos with
     [`arboretum_photos()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_photos.md);
-4.  generate interactive HTML labels with
+5.  generate interactive HTML labels with
     [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md);
-5.  create a searchable microsite with
+6.  create a searchable microsite with
     [`arboretum_minisite()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_minisite.md);
-6.  create printable QR-code labels with
+7.  create printable QR-code labels with
     [`arboretum_qrcodes()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_qrcodes.md).
 
 ## Function overview
@@ -123,7 +126,8 @@ A typical `aRboretum` workflow consists of the following steps:
 
 [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)
 extracts and merges species information from Flora e Funga do Brasil and
-Plants of the World Online. It resolves synonyms when possible, merges
+the World Checklist of Vascular Plants, and adds the IUCN Red List
+status of each species. It resolves synonyms when possible, merges
 overlapping information, and returns a standardised dataset that can be
 used by the rest of the package.
 
@@ -147,7 +151,47 @@ labels in the built-in languages.
 
 - Synonyms are resolved to accepted names when possible.
 - Missing values from one source may still be complemented by the other.
-- The saved output can be edited manually before generating labels.
+- The saved output can be edited manually before generating the phrases,
+  either directly or in the HTML data reviewing guide
+  (`__data_reviewing_guide.html`) written to `dir`, whose interface
+  languages are set by `printed_lang`.
+- No phrase is generated at this step.
+
+## `arboretum_phrases()`
+
+### What it does
+
+[`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)
+generates the natural-language species descriptions once the data
+retrieved with
+[`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)
+have been reviewed. The phrases are stored in the data file itself, in
+the columns `full_phrases_EN`, `full_phrases_PT`, `full_phrases_ES`,
+`full_phrases_FR`, and `full_phrases_ADD_LANGUAGE`, which are created at
+this step only. It also writes an HTML phrase guide
+(`__phrase_generating_guide.html`) next to the data file, in which
+phrases, vernacular names, plant uses and notes can be edited and
+exported.
+
+### Example
+
+\
+[`arboretum_phrases`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``, ``"fr"``, ``"es"``)``,`\
+`  add_lang ``=`` ``"TUKANO"`\
+`)`
+
+### Notes
+
+- Stored phrases, including manual edits, are never overwritten; only
+  empty phrases are filled when the function is run again.
+- `overwrite = TRUE` regenerates all phrases, for example after
+  correcting the data.
+- [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)
+  and
+  [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)
+  only read the stored phrases and never generate them.
 
 ## `arboretum_audios()`
 
@@ -240,8 +284,11 @@ interface.
 
 When `add_lang` is supplied:
 
+- [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)
+  adds an editable field for the extra language to the phrase guide,
+  stored in the column `full_phrases_ADD_LANGUAGE`;
 - [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)
-  looks for a column named `full_phrases_ADD_LANGUAGE`;
+  looks for the column `full_phrases_ADD_LANGUAGE`;
 - if that column contains non-empty text, the extra language is added as
   an additional text option in the label;
 - the custom language text is read directly from
@@ -334,6 +381,12 @@ English remain the main interface languages, while Tukano is added as a
 community language for species labels and optional personal recordings.
 
 \
+[`arboretum_phrases`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  add_lang ``=`` ``"TUKANO"`\
+`)`\
+\
 [`arboretum_audios`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)`(`\
 `  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
 `  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
@@ -348,9 +401,11 @@ community language for species labels and optional personal recordings.
 `  dir ``=`` ``"species_labels"`\
 `)`
 
-For this workflow, the input file should contain a column named
-`full_phrases_ADD_LANGUAGE` with the full text to display in Panará for
-each species.
+Before generating the labels, fill the column
+`full_phrases_ADD_LANGUAGE` created by
+[`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)
+with the full text to display in Tukano for each species, either in the
+phrase guide or directly in the data file.
 
 ## Defensive checks and internal helpers
 

@@ -8,7 +8,8 @@ information accessible in a community language. This can be especially
 relevant when co-developing interpretive materials with Indigenous
 peoples.
 
-For this purpose, `aRboretum` provides the `add_lang` argument in both
+For this purpose, `aRboretum` provides the `add_lang` argument in
+[`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md),
 [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)
 and
 [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md).
@@ -22,6 +23,11 @@ In this example, we use **Tukano** as an additional language.
 
 When `add_lang` is supplied:
 
+- [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)
+  adds an editable field for the extra language to the phrase guide; its
+  text is stored in the column `full_phrases_ADD_LANGUAGE`, which
+  [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)
+  creates in the data file.
 - [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)
   creates one extra folder per species for optional personal recordings
   in the additional language.
@@ -43,9 +49,22 @@ also made available in a community language.
 
 Start from a dataset created with
 [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)
-or from your own formatted input file. To include Tukano, add a column
-named `full_phrases_ADD_LANGUAGE`. This column should contain the
-complete label text you want to display in the extra language.
+and reviewed by you. Then generate the phrases with
+`add_lang = "TUKANO"`:
+
+\
+[`arboretum_phrases`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  add_lang ``=`` ``"TUKANO"`\
+`)`
+
+This creates the phrase columns in the data file, including
+`full_phrases_ADD_LANGUAGE`, and writes
+`arboretum_data/__phrase_generating_guide.html`, which has an editable
+Tukano field for each species. Fill it, in the guide or directly in the
+data file, with the complete label text you want to display in the extra
+language. The resulting data look like this:
 
 \
 `tukano_example`` ``<-`` `[`data.frame`](https://rdrr.io/r/base/data.frame.html)`(`\
@@ -80,7 +99,8 @@ A minimal input file should include at least the following columns:
 |:---|:--:|:---|
 | `taxonName` | Yes | Scientific name used to identify the species |
 | `family` | Yes | Family name used in file naming and label generation |
-| `full_phrases_ADD_LANGUAGE` | Yes, for `add_lang` labels | Full label text to display in the extra language |
+| `full_phrases_PT`, `full_phrases_EN`, etc. | Yes, for each language in `printed_lang` | Species phrases created by [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md) |
+| `full_phrases_ADD_LANGUAGE` | Yes, for `add_lang` labels | Full label text to display in the extra language, entered after running [`arboretum_phrases()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_phrases.md) |
 | `plant_uses_PT`, `plant_uses_EN`, etc. | No | Language-specific uses text for built-in languages |
 | `free_notes_PT`, `free_notes_EN`, etc. | No | Language-specific notes text for built-in languages |
 | Other standard [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md) fields | Usually yes | Taxonomy, native distribution, status, and other content used in the label |
