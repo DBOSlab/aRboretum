@@ -63,6 +63,7 @@ reference:
     desc: Core functions for preparing data and generating outputs.
     contents:
       - arboretum_data
+      - arboretum_phrases
       - arboretum_audios
       - arboretum_photos
       - arboretum_labels

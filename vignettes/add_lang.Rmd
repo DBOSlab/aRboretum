@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 
 In some projects, a full translation of the website or minisite interface is not necessary, but it is still important to make species information accessible in a community language. This can be especially relevant when co-developing interpretive materials with Indigenous peoples.
 
-For this purpose, `aRboretum` provides the `add_lang` argument in both `arboretum_audios()` and `arboretum_labels()`. This argument supports one additional language as a flexible accessibility layer, without requiring the full multilingual translation workflow used for the built-in package languages.
+For this purpose, `aRboretum` provides the `add_lang` argument in `arboretum_phrases()`, `arboretum_audios()` and `arboretum_labels()`. This argument supports one additional language as a flexible accessibility layer, without requiring the full multilingual translation workflow used for the built-in package languages.
 
 In this example, we use **Tukano** as an additional language.
 
@@ -28,6 +28,7 @@ In this example, we use **Tukano** as an additional language.
 
 When `add_lang` is supplied:
 
+- `arboretum_phrases()` adds an editable field for the extra language to the phrase guide; its text is stored in the column `full_phrases_ADD_LANGUAGE`, which `arboretum_phrases()` creates in the data file.
 - `arboretum_audios()` creates one extra folder per species for optional personal recordings in the additional language.
 - `arboretum_labels()` adds one extra text option to the generated label when the dataset contains non-empty values in the column `full_phrases_ADD_LANGUAGE`.
 - The extra language text is read directly from `full_phrases_ADD_LANGUAGE`.
@@ -39,7 +40,17 @@ This is particularly useful when the website interface can remain in Portuguese,
 
 ### Step 1. Prepare the dataset
 
-Start from a dataset created with `arboretum_data()` or from your own formatted input file. To include Tukano, add a column named `full_phrases_ADD_LANGUAGE`. This column should contain the complete label text you want to display in the extra language.
+Start from a dataset created with `arboretum_data()` and reviewed by you. Then generate the phrases with `add_lang = "TUKANO"`:
+
+```{r tukano-phrases, eval = FALSE}
+arboretum_phrases(
+  data_path = "arboretum_data/arboretum_data.xlsx",
+  printed_lang = c("pt", "en"),
+  add_lang = "TUKANO"
+)
+```
+
+This creates the phrase columns in the data file, including `full_phrases_ADD_LANGUAGE`, and writes `arboretum_data/__phrase_generating_guide.html`, which has an editable Tukano field for each species. Fill it, in the guide or directly in the data file, with the complete label text you want to display in the extra language. The resulting data look like this:
 
 ```{r tukano-example-data}
 tukano_example <- data.frame(
@@ -67,7 +78,8 @@ A minimal input file should include at least the following columns:
 |:--|:--:|:--|
 | `taxonName` | Yes | Scientific name used to identify the species |
 | `family` | Yes | Family name used in file naming and label generation |
-| `full_phrases_ADD_LANGUAGE` | Yes, for `add_lang` labels | Full label text to display in the extra language |
+| `full_phrases_PT`, `full_phrases_EN`, etc. | Yes, for each language in `printed_lang` | Species phrases created by `arboretum_phrases()` |
+| `full_phrases_ADD_LANGUAGE` | Yes, for `add_lang` labels | Full label text to display in the extra language, entered after running `arboretum_phrases()` |
 | `plant_uses_PT`, `plant_uses_EN`, etc. | No | Language-specific uses text for built-in languages |
 | `free_notes_PT`, `free_notes_EN`, etc. | No | Language-specific notes text for built-in languages |
 | Other standard `arboretum_data()` fields | Usually yes | Taxonomy, native distribution, status, and other content used in the label |

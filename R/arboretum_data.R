@@ -13,29 +13,27 @@
 #' merges data from both sources, and returns a single dataframe that can optionally be
 #' saved as a CSV or Excel file. The output also includes genus-level richness and rank
 #' information derived from FFB. When \code{save = TRUE}, the function also writes a
-#' standalone HTML phrase guide (\code{__phrase_generating_guide.html}) to \code{dir},
-#' which allows users to review, edit annotation fields, and export the updated data
-#' directly from the browser.
+#' standalone HTML data reviewing guide (\code{__data_reviewing_guide.html}) to
+#' \code{dir}, in which the retrieved data can be reviewed, corrected, and exported
+#' back to the data file directly from the browser. Once the data have been
+#' reviewed, the species phrases used by the labels are generated with
+#' \code{arboretum_phrases()}.
 #'
 #' @param spp_list Required. A character vector of species names, for example
 #'   `c("Euterpe edulis", "Coffea arabica")`. Names should be binomials without
 #'   authorship. Leading and trailing whitespace are removed, and names are standardized
 #'   internally before querying. An error is thrown if any element does not contain a
 #'   space, indicating a probable non-species name.
-#' @param printed_lang Character vector. Built-in language(s) for which phrases are
-#'   generated in the HTML guide. Accepted values are `"pt"`, `"en"`, `"fr"`, and
-#'   `"es"`. Default is `c("pt", "en", "fr", "es")`.
-#' @param add_lang Character string or `NULL`. Optional code for one additional
-#'   language, for example `"PANARA"` or `"TUKANO"`. When supplied, the HTML phrase
-#'   guide includes a dedicated editable field for entering a full phrase translation
-#'   for the specified custom language. The content entered there is stored in the
-#'   \code{full_phrases_ADD_LANGUAGE} column and can be used on subsequent runs of
-#'   \code{arboretum_labels()} to include that language in the species labels.
-#'   Default is \code{NULL}.
+#' @param printed_lang Character vector. Language(s) of the HTML data reviewing guide:
+#'   the guide interface can be switched between them, and the plant-use and
+#'   free-note fields of these languages (\code{plant_uses_*}, \code{free_notes_*})
+#'   are shown for editing. Accepted values are `"pt"`, `"en"`, `"fr"`, and `"es"`.
+#'   The data file always includes the plant-use and free-note columns of all four
+#'   languages. Default is `c("pt", "en", "fr", "es")`.
 #' @param verbose Logical. If `TRUE`, progress messages are printed to the console.
 #'   Default is `TRUE`.
-#' @param save Logical. If `TRUE`, the resulting dataframe is saved to disk.
-#'   Default is `TRUE`.
+#' @param save Logical. If `TRUE`, the resulting dataframe is saved to disk and the
+#'   HTML data reviewing guide is written to \code{dir}. Default is `TRUE`.
 #' @param format Character string indicating the output file format. One of `"csv"`
 #'   or `"xlsx"`. Partial matching is allowed through \code{match.arg()}.
 #'   Default is `"csv"`.
@@ -44,11 +42,26 @@
 #' @param dir Character string. Directory path where the output file will be saved.
 #'   Trailing slashes are automatically removed. The directory is created if it does
 #'   not exist. Default is `"arboretum_data"`.
+#' @param ffb_dir Character string. Path to the folder where Flora e Funga do Brasil
+#'   (FFB) Darwin Core Archives are downloaded and kept between runs, as in
+#'   \code{floraR::flora_download()}. Two kinds of paths are accepted:
+#'   \itemize{
+#'     \item A folder holding one or more downloaded versions (for example
+#'       `"flora_download"`). The most recent version already downloaded there is
+#'       always used, without contacting the FFB server, so the function also works
+#'       offline. The latest version is only downloaded, with
+#'       \code{floraR::flora_download()}, when the folder holds no downloaded
+#'       version yet. To update a previously downloaded dataset, run
+#'       \code{floraR::flora_download(dir = ffb_dir)}.
+#'     \item A single version folder (for example
+#'       `"flora_download/dwca_ffb_v393_430_latest"`), which is used as is, without
+#'       any download.
+#'   }
+#'   Default is `"flora_download"`.
 #'
 #' @return
 #' A dataframe combining data retrieved from FFB and POWO. The returned columns include:
 #' \itemize{
-#'   \item \code{original_query}: The species name as originally supplied in \code{spp_list}.
 #'   \item \code{family}: Family name of the accepted taxon.
 #'   \item \code{genus}: Genus extracted from the accepted scientific name.
 #'   \item \code{taxonName}: Accepted scientific name after synonym resolution.
@@ -72,23 +85,14 @@
 #'     representing the richest genus.
 #'   \item \code{plant_uses_EN}, \code{plant_uses_PT}, \code{plant_uses_ES},
 #'     \code{plant_uses_FR}: Plant-use fields in English, Portuguese, Spanish, and French,
-#'     intended for user annotation via the HTML phrase guide or direct editing of the
-#'     saved file.
+#'     intended for user annotation by direct editing of the saved file or via the
+#'     HTML phrase guide of \code{arboretum_phrases()}.
 #'   \item \code{free_notes_EN}, \code{free_notes_PT}, \code{free_notes_ES},
 #'     \code{free_notes_FR}: Free-text note fields in English, Portuguese, Spanish, and
-#'     French, intended for user annotation via the HTML phrase guide or direct editing
-#'     of the saved file.
+#'     French, intended for user annotation by direct editing of the saved file or via
+#'     the HTML phrase guide of \code{arboretum_phrases()}.
 #'   \item \code{IUCN.status}: Global IUCN Red List category, for example
 #'     `"Endangered (EN)"`, or `NA` when the species has not been assessed.
-#'   \item \code{full_phrases_EN}, \code{full_phrases_PT}, \code{full_phrases_ES},
-#'     \code{full_phrases_FR}: Natural-language species descriptions automatically
-#'     generated for each language in \code{printed_lang}. Phrases stored in these
-#'     columns are reused as they are on later runs, so they can be manually edited in
-#'     the saved file or in the HTML phrase guide; clearing a cell makes the phrase be
-#'     generated again. Plant uses and free notes are appended after the phrase.
-#'   \item \code{full_phrases_ADD_LANGUAGE}: Reserved field for a complete phrase
-#'     translation in the custom language specified by \code{add_lang}. Always present
-#'     in the output; populated by the user via the HTML phrase guide or direct editing.
 #'   \item \code{POWO.url}: URL to the species page in POWO.
 #'   \item \code{FFB.url}: URL to the species page in FFB.
 #' }
@@ -98,12 +102,20 @@
 #' dataframe. For overlapping fields, FFB data generally take precedence, except for
 #' selected WCVP-derived fields such as botanical country, introduced range, and POWO URL.
 #'
-#' When \code{save = TRUE}, the function also writes a standalone HTML phrase guide
-#' (\code{__phrase_generating_guide.html}) to \code{dir}. This file embeds the full
-#' dataframe and allows users to review generated phrases, edit annotation fields
-#' (\code{FFB.vernacularName}, \code{plant_uses_*}, \code{free_notes_*},
-#' \code{full_phrases_*}), and export the updated data as CSV or XLSX
-#' without rerunning the function.
+#' The phrase columns (\code{full_phrases_*}) are not part of this output: they are
+#' added by \code{arboretum_phrases()} once the data have been reviewed.
+#'
+#' When \code{save = TRUE}, the function also writes a standalone HTML data reviewing
+#' guide (\code{__data_reviewing_guide.html}) to \code{dir}. It embeds the data and
+#' provides, for each species, editable fields for \code{FFB.vernacularName},
+#' \code{country}, \code{endemism}, \code{botanical_country}, \code{introduced_to},
+#' \code{FFB.establishmentMeans}, \code{FFB.stateProvince},
+#' \code{FFB.phytogeographicDomain}, \code{FFB.vegetationType}, \code{IUCN.status},
+#' and the \code{plant_uses_*} and \code{free_notes_*} fields of \code{printed_lang}.
+#' The \code{endemism}, \code{FFB.establishmentMeans}, and \code{IUCN.status}
+#' fields are drop-down menus restricted to the values used to build the phrases.
+#' The edited data can be saved or exported as CSV or XLSX without rerunning the
+#' function.
 #'
 #' @details
 #' The function follows five main steps:
@@ -163,17 +175,6 @@
 #'       checklist mirrored by GBIF (\url{https://www.gbif.org}).
 #'   }
 #'
-#'   \item \strong{HTML phrase guide generation}
-#'   \itemize{
-#'     \item Generates natural-language species descriptions for each
-#'       \code{printed_lang} and stores them in the \code{full_phrases_*} columns.
-#'       Phrases already present in these columns are kept, so manual edits are
-#'       never overwritten. If \code{add_lang} is supplied, a dedicated editable
-#'       field is included for the custom language.
-#'     \item Saves a standalone \code{__phrase_generating_guide.html} to \code{dir}
-#'       when \code{save = TRUE}. The guide embeds the full dataframe and provides
-#'       browser-based editing and export functionality.
-#'   }
 #' }
 #'
 #' Before processing, \code{spp_list} is cleaned using internal helper functions.
@@ -182,16 +183,16 @@
 #' any element appears not to be a binomial species name.
 #'
 #' If \code{dir} already contains a CSV or XLSX data file, the species data are read
-#' from that file instead of being retrieved again, and only empty \code{full_phrases_*}
-#' cells are filled; the file is rewritten only when new phrases were generated.
+#' from that file instead of being retrieved again, and the data reviewing guide is
+#' rebuilt from it. Delete or move that file to retrieve the data again.
 #'
 #' If \code{save = TRUE}, the function creates the output directory if needed and saves
 #' the resulting dataframe either as a CSV file using \code{utils::write.csv()} or as
 #' an Excel file using \code{openxlsx::write.xlsx()}. When \code{verbose = TRUE}, a
 #' message reports the saved file path.
 #'
-#' The temporary FFB download folder named `"flora_download"` is removed when the
-#' function exits.
+#' The downloaded FFB dataset is kept in \code{ffb_dir}, so later runs reuse it
+#' instead of downloading it again.
 #'
 #' @note
 #' \itemize{
@@ -211,6 +212,7 @@
 #' }
 #'
 #' @seealso
+#' \code{\link{arboretum_phrases}},
 #' \code{\link[floraR]{flora_download}},
 #' \code{\link[floraR]{flora_parse}},
 #' \code{\link[rredlist]{rl_species}}
@@ -255,12 +257,12 @@
 
 arboretum_data <- function(spp_list = NULL,
                            printed_lang = c("pt", "en", "fr", "es"),
-                           add_lang = NULL,
                            verbose = TRUE,
                            save = TRUE,
                            format = c("csv", "xlsx"),
                            filename = "arboretum_data",
-                           dir = "arboretum_data"){
+                           dir = "arboretum_data",
+                           ffb_dir = "flora_download"){
 
   # Input validation  ####
   spp_list <- .arg_check_spp_list(spp_list)
@@ -305,14 +307,9 @@ arboretum_data <- function(spp_list = NULL,
       stop("Package 'floraR' is required for `arboretum_data()`. Please install it.")
     }
 
-    floraR::flora_download(version = "latest", dir = "flora_download")
-    # Remove the downloaded FFB folder flora_download when this function finishes,
-    # run this cleanup code before returning.
-    on.exit(unlink("flora_download", recursive = TRUE, force = TRUE), add = TRUE)
+    dwca <- .load_ffb(ffb_dir, verbose = verbose)
 
-    dwca <- floraR::flora_parse(path = "flora_download", version = "latest")
-
-    if (verbose) message("Flora e Funga do Brasil DwC-A dataset successfully donwloaded and parsed!")
+    if (verbose) message("Flora e Funga do Brasil DwC-A dataset successfully loaded and parsed!")
 
     # Data extraction ####
     # The first one contains all the required data; as the names may change, we therefore take the first element
@@ -482,11 +479,6 @@ arboretum_data <- function(spp_list = NULL,
         free_notes_PT = NA_character_,
         free_notes_ES = NA_character_,
         free_notes_FR = NA_character_,
-        full_phrases_EN = NA_character_,
-        full_phrases_PT = NA_character_,
-        full_phrases_ES = NA_character_,
-        full_phrases_FR = NA_character_,
-        full_phrases_ADD_LANGUAGE = NA_character_,
         POWO.url = result_POWO$references,
         FFB.url = NA_character_
       )
@@ -516,11 +508,6 @@ arboretum_data <- function(spp_list = NULL,
         free_notes_PT = NA_character_,
         free_notes_ES = NA_character_,
         free_notes_FR = NA_character_,
-        full_phrases_EN = NA_character_,
-        full_phrases_PT = NA_character_,
-        full_phrases_ES = NA_character_,
-        full_phrases_FR = NA_character_,
-        full_phrases_ADD_LANGUAGE = NA_character_,
         POWO.url = NA_character_,
         FFB.url = NA_character_
       )
@@ -597,79 +584,120 @@ arboretum_data <- function(spp_list = NULL,
     result_merged$IUCN.status <- .get_iucn_status(result_merged$taxonName,
                                                   verbose = verbose)
 
-    file_exists <- FALSE
+    if (save) {
+      if (format == "csv") {
+        .save_csv(df = result_merged,
+                  verbose = verbose,
+                  filename = filename,
+                  dir = dir)
+      } else if (format == "xlsx") {
+        .save_xlsx(df = result_merged,
+                   verbose = verbose,
+                   filename = filename,
+                   dir = dir)
+      }
+    }
+    data_filename <- paste0(filename, ".", format)
 
   } else {
 
     data_path <- file.path(dir, files[grepl("[.]xlsx$|[.]csv$", files)][1])
-    result_merged <- .read_species_data(data_path, verbose)
-    format <- tolower(tools::file_ext(data_path))
-    filename <- tools::file_path_sans_ext(basename(data_path))
-    file_exists <- TRUE
-  }
-
-  # Generate phrases for each requested language ####
-  # Phrases already stored in the full_phrases_* columns (e.g. manually edited
-  # by the user) are kept; only empty cells are filled with generated phrases
-  phrases_out <- .build_arboretum_phrases(
-    data_path = NULL,
-    df = result_merged,
-    printed_lang = printed_lang,
-    add_lang = add_lang,
-    verbose = verbose
-  )
-
-  result_merged <- phrases_out$df
-  printed_lang <- phrases_out$printed_lang
-  html_phrases <- phrases_out$html_phrases
-
-  # Save the data with the stored phrases. An existing data file is only
-  # rewritten when new phrases were generated for it
-  if (save && (!file_exists || phrases_out$n_generated > 0)) {
-    if (format == "csv") {
-      .save_csv(df = result_merged,
-                verbose = verbose,
-                filename = filename,
-                dir = dir)
-    } else if (format == "xlsx") {
-      .save_xlsx(df = result_merged,
-                 verbose = verbose,
-                 filename = filename,
-                 dir = dir)
+    if (verbose) {
+      message("The data file '", data_path, "' already exists and is read instead of ",
+              "retrieving the data again. Delete or move it to retrieve the data again.")
     }
+    result_merged <- .read_species_data(data_path, verbose)
+    data_filename <- basename(data_path)
   }
 
-  ui_strings <- .ui_strings()
-
-  lang_button_label <- c(
-    en = "English",
-    pt = "Portugu\u00eas",
-    fr = "Fran\u00e7ais",
-    es = "Espa\u00f1ol"
-  )
-
-  missing_langs <- setdiff(printed_lang, names(lang_button_label))
-  if (length(missing_langs) > 0) {
-    lang_button_label[missing_langs] <- toupper(missing_langs)
-  }
-
+  # HTML data reviewing guide ####
   if (save) {
-    output_path <- file.path(dir, "__phrase_generating_guide.html")
     .save_phrase_html(
       df = result_merged,
-      function_use = "_data",
-      ui_strings = ui_strings,
-      lang_button_label = lang_button_label,
+      function_use = "_review",
+      ui_strings = .ui_strings(),
+      lang_button_label = .lang_button_labels(printed_lang),
       printed_lang = printed_lang,
-      html_phrases = html_phrases,
-      output_path = output_path,
+      html_phrases = list(),
+      output_path = file.path(dir, "__data_reviewing_guide.html"),
       verbose = verbose,
-      add_lang = add_lang,
-      data_filename = paste0(filename, ".", format)
+      data_filename = data_filename
     )
   }
 
   return(result_merged)
+}
+
+# Side function to get and parse the FFB DwC-A dataset ####
+# A previously downloaded FFB version is always used first, without contacting
+# the FFB server; the latest version is only downloaded (with
+# floraR::flora_download()) when ffb_dir holds no downloaded version yet. A path
+# to a single version folder is used as is.
+.load_ffb <- function(ffb_dir = "flora_download", verbose = TRUE) {
+  if (!is.character(ffb_dir) || length(ffb_dir) != 1L || !nzchar(trimws(ffb_dir))) {
+    stop("'ffb_dir' must be a single character string.", call. = FALSE)
+  }
+  ffb_dir <- gsub("/+$", "", trimws(ffb_dir))
+
+  # A single version folder, e.g. "flora_download/dwca_ffb_v393_430_latest"
+  if (.is_ffb_version_folder(ffb_dir)) {
+    if (verbose) message("Using the FFB dataset in '", ffb_dir, "'")
+    return(floraR::flora_parse(path = dirname(ffb_dir),
+                               version = .ffb_folder_version(basename(ffb_dir)),
+                               verbose = verbose))
+  }
+
+  local_folders <- .ffb_local_versions(ffb_dir)
+
+  if (length(local_folders) == 0) {
+    # Nothing downloaded yet: get the latest version
+    tryCatch(
+      floraR::flora_download(version = "latest", verbose = verbose, dir = ffb_dir),
+      error = function(e) {
+        stop("Could not download the Flora e Funga do Brasil dataset and no previously ",
+             "downloaded version was found in '", ffb_dir, "'.\n",
+             "Original error: ", conditionMessage(e), "\n",
+             "Download it with floraR::flora_download() or set 'ffb_dir' to a folder ",
+             "containing a downloaded FFB dataset.", call. = FALSE)
+      }
+    )
+    local_folders <- .ffb_local_versions(ffb_dir)
+    if (length(local_folders) == 0) {
+      stop("No FFB dataset was found in '", ffb_dir, "'.", call. = FALSE)
+    }
+  } else if (verbose) {
+    message("Using the FFB dataset previously downloaded in '", ffb_dir, "'. ",
+            "To update it, run floraR::flora_download(dir = \"", ffb_dir, "\").")
+  }
+
+  # Use the most recent version available locally
+  newest <- local_folders[order(package_version(.ffb_folder_version(local_folders)),
+                                decreasing = TRUE)][1]
+
+  floraR::flora_parse(path = ffb_dir, version = .ffb_folder_version(newest),
+                      verbose = verbose)
+}
+
+# FFB version folders are named like "dwca_ffb_v393_430" or
+# "dwca_ffb_v393_430_latest"
+.ffb_folder_pattern <- function() "^dwca_ffb_v[0-9]+(_[0-9]+)*(_latest)?$"
+
+.is_ffb_version_folder <- function(path) {
+  dir.exists(path) &&
+    grepl(.ffb_folder_pattern(), basename(path)) &&
+    file.exists(file.path(path, "taxon.txt"))
+}
+
+.ffb_local_versions <- function(ffb_dir) {
+  if (!dir.exists(ffb_dir)) return(character(0))
+  folders <- list.files(ffb_dir)
+  folders[grepl(.ffb_folder_pattern(), folders) &
+            file.exists(file.path(ffb_dir, folders, "taxon.txt"))]
+}
+
+# Version string as used by floraR, e.g. "393.430"
+.ffb_folder_version <- function(folder) {
+  gsub("_", ".", gsub("^dwca_ffb_v|_latest$", "", folder))
 }
 
 # Side function to load the WCVP tables once per run ####
@@ -733,56 +761,3 @@ arboretum_data <- function(spp_list = NULL,
 
   return(result_POWO)
 }
-
-# # Side function to mine plant data from POWO ####
-# .extract_powo_data <- function(result_POWO, sp, i){
-#
-#   tax <- taxize::pow_search(sci_com = sp)
-#   pos <- which(tax[["data"]][["name"]] %in% sp)
-#   if (length(pos) == 0) return(result_POWO)
-#
-#   if (any(!tax[["data"]][["accepted"]][pos])) {
-#     accepted_name <- stats::na.omit(tax[["data"]][["synonymOf"]][["name"]])
-#     if (length(accepted_name) == 0) return(result_POWO)
-#     result_POWO$taxonName[i] <- accepted_name
-#
-#     # Search back in POWO with accepted name when the original search returns synonym
-#     tax <- taxize::pow_search(sci_com = accepted_name)
-#     pos <- which(tax[["data"]][["name"]] %in% accepted_name)
-#     url <- tax$data$url[pos][tax[["data"]][["accepted"]][pos]]
-#     id <- gsub(".*[/]taxon[/]", "", url)
-#     pow <- taxize::pow_lookup(id = id,
-#                               include = c("distribution", "descriptions"))
-#   } else {
-#     id <- gsub(".*[/]taxon[/]", "", tax$data$url)[pos]
-#     pow <- taxize::pow_lookup(id = id,
-#                               include = c("distribution", "descriptions"))
-#   }
-#
-#   result_POWO$family[i] <- pow[["meta"]][["family"]]
-#   result_POWO$taxonName[i] <- pow[["meta"]][["name"]]
-#   result_POWO$scientificNameAuthorship[i] <- pow[["meta"]][["authors"]]
-#
-#   native_vec <- pow[["meta"]][["distribution"]][["natives"]][["name"]]
-#   result_POWO$botanical_country[i] <- paste(native_vec, collapse = " | ")
-#   result_POWO$country[i] <- .botdiv_to_countries(result_POWO$botanical_country, i)
-#
-#   introduced_vec <- pow[["meta"]][["distribution"]][["introduced"]][["name"]]
-#   if (length(pow[["meta"]][["distribution"]][["introduced"]][["name"]]) >= 1) {
-#     result_POWO$introduced_to[i] <- paste(introduced_vec, collapse = " | ")
-#   } else {
-#     result_POWO$introduced_to[i] <- NA
-#   }
-#
-#   iucn_status <- pow[["meta"]][["descriptions"]][["IUCN"]][["descriptions"]][["conservation"]][["description"]]
-#   if (!is.null(iucn_status)) {
-#     iucn_status <- paste0(strsplit(iucn_status, " - ")[[1]][2], " (",
-#                           strsplit(iucn_status, " - ")[[1]][1], ")")
-#     result_POWO$IUCN.status[i] <- iucn_status
-#   }
-#
-#   # The references column shows the URL for each species in POWO
-#   result_POWO$references[i] <-  paste0("https://powo.science.kew.org/taxon/", id)
-#
-#   return(result_POWO)
-# }

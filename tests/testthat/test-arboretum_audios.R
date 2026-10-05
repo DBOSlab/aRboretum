@@ -10,12 +10,9 @@ testthat::test_that("arboretum_audios creates default language folders and HTML 
     free_notes_EN = c("Endemic species", "Atlantic Forest"),
     stringsAsFactors = FALSE
   )
-
-  phrase_stub <- function(df, lang, dict, verbose) {
-    stats::setNames(
-      as.list(paste("Phrase", toupper(lang), "for", df$taxonName)),
-      df$taxonName
-    )
+  # Phrases stored by arboretum_phrases()
+  for (sfx in c("PT", "EN", "FR", "ES")) {
+    df[[paste0("full_phrases_", sfx)]] <- paste("Phrase", sfx, "for", df$taxonName)
   }
 
   old_wd <- getwd()
@@ -30,8 +27,6 @@ testthat::test_that("arboretum_audios creates default language folders and HTML 
   testthat::local_mocked_bindings(
     .arg_check_printed_lang = function(x) x,
     .read_species_data = function(data_path, verbose) df,
-    .phrase_generator = phrase_stub,
-    .dict = function() list(),
     .package = "aRboretum"
   )
 
@@ -61,12 +56,11 @@ testthat::test_that("arboretum_audios creates extra folders for add_lang", {
   df <- data.frame(
     taxonName = "Paubrasilia echinata",
     family = "Fabaceae",
+    full_phrases_PT = "Frase",
+    full_phrases_EN = "Phrase",
+    full_phrases_ADD_LANGUAGE = "Texto panar\u00e1",
     stringsAsFactors = FALSE
   )
-
-  phrase_stub <- function(df, lang, dict, verbose) {
-    stats::setNames(as.list(paste("Phrase", lang)), df$taxonName)
-  }
 
   old_wd <- getwd()
   tmp <- tempdir()
@@ -80,8 +74,6 @@ testthat::test_that("arboretum_audios creates extra folders for add_lang", {
   testthat::local_mocked_bindings(
     .arg_check_printed_lang = function(x) x,
     .read_species_data = function(data_path, verbose) df,
-    .phrase_generator = phrase_stub,
-    .dict = function() list(),
     .package = "aRboretum"
   )
 
@@ -96,6 +88,25 @@ testthat::test_that("arboretum_audios creates extra folders for add_lang", {
   testthat::expect_true(any(grepl("_PANARA$", folders)))
   testthat::expect_true(any(grepl("_PT$", folders)))
   testthat::expect_true(any(grepl("_EN$", folders)))
+
+  html <- paste(readLines("arboretum_audios/__personal_audio_recording_guide.html",
+                          warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+  testthat::expect_match(html, "Texto panar\u00e1", fixed = TRUE)
+})
+
+testthat::test_that("arboretum_audios requires the phrases created by arboretum_phrases", {
+  df <- data.frame(taxonName = "Paubrasilia echinata", family = "Fabaceae",
+                   full_phrases_PT = "Frase", stringsAsFactors = FALSE)
+  testthat::local_mocked_bindings(
+    .read_species_data = function(data_path, verbose) df,
+    .package = "aRboretum"
+  )
+  .with_tmp_wd("audios-no-phrases", {
+    testthat::expect_error(
+      aRboretum::arboretum_audios("fake.csv", printed_lang = c("pt", "en"), verbose = FALSE),
+      "full_phrases_EN"
+    )
+  })
 })
 
 testthat::test_that("get_extra_phrase_text combines plant uses and notes with normalization", {

@@ -4,3 +4,9 @@
 .Ruserdata
 .httr-oauth
 .DS_Store
+flora_download/
+arboretum_data/
+arboretum_audios/
+arboretum_photos/
+arboretum_labels/
+arboretum_qrcodes/

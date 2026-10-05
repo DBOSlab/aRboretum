@@ -102,12 +102,13 @@ Not every column needs to be filled, but the core taxonomic and distribution fie
 
 A typical `aRboretum` workflow consists of the following steps:
 
-1. extract and structure species data with `arboretum_data()`;
-2. optionally prepare folders for personal audio with `arboretum_audios()`;
-3. optionally prepare folders for species photos with `arboretum_photos()`;
-4. generate interactive HTML labels with `arboretum_labels()`;
-5. create a searchable microsite with `arboretum_minisite()`;
-6. create printable QR-code labels with `arboretum_qrcodes()`.
+1. extract and structure species data with `arboretum_data()`, then review it;
+2. generate the editable species phrases with `arboretum_phrases()`;
+3. optionally prepare folders for personal audio with `arboretum_audios()`;
+4. optionally prepare folders for species photos with `arboretum_photos()`;
+5. generate interactive HTML labels with `arboretum_labels()`;
+6. create a searchable microsite with `arboretum_minisite()`;
+7. create printable QR-code labels with `arboretum_qrcodes()`.
 
 ## Function overview
 
@@ -115,7 +116,7 @@ A typical `aRboretum` workflow consists of the following steps:
 
 ### What it does
 
-`arboretum_data()` extracts and merges species information from Flora e Funga do Brasil and Plants of the World Online. It resolves synonyms when possible, merges overlapping information, and returns a standardised dataset that can be used by the rest of the package.
+`arboretum_data()` extracts and merges species information from Flora e Funga do Brasil and the World Checklist of Vascular Plants, and adds the IUCN Red List status of each species. It resolves synonyms when possible, merges overlapping information, and returns a standardised dataset that can be used by the rest of the package.
 
 The output also includes empty user-editable columns such as `plant_uses_*` and `free_notes_*`, which can later be used to enrich labels in the built-in languages.
 
@@ -136,7 +137,30 @@ extracted_data <- arboretum_data(
 
 - Synonyms are resolved to accepted names when possible.
 - Missing values from one source may still be complemented by the other.
-- The saved output can be edited manually before generating labels.
+- The saved output can be edited manually before generating the phrases, either directly or in the HTML data reviewing guide (`__data_reviewing_guide.html`) written to `dir`, whose interface languages are set by `printed_lang`.
+- No phrase is generated at this step.
+
+## `arboretum_phrases()`
+
+### What it does
+
+`arboretum_phrases()` generates the natural-language species descriptions once the data retrieved with `arboretum_data()` have been reviewed. The phrases are stored in the data file itself, in the columns `full_phrases_EN`, `full_phrases_PT`, `full_phrases_ES`, `full_phrases_FR`, and `full_phrases_ADD_LANGUAGE`, which are created at this step only. It also writes an HTML phrase guide (`__phrase_generating_guide.html`) next to the data file, in which phrases, vernacular names, plant uses and notes can be edited and exported.
+
+### Example
+
+```{r}
+arboretum_phrases(
+  data_path = "arboretum_data/arboretum_data.xlsx",
+  printed_lang = c("pt", "en", "fr", "es"),
+  add_lang = "TUKANO"
+)
+```
+
+### Notes
+
+- Stored phrases, including manual edits, are never overwritten; only empty phrases are filled when the function is run again.
+- `overwrite = TRUE` regenerates all phrases, for example after correcting the data.
+- `arboretum_audios()` and `arboretum_labels()` only read the stored phrases and never generate them.
 
 ## `arboretum_audios()`
 
@@ -220,7 +244,8 @@ The `add_lang` argument provides a flexible, interim pathway for including one a
 
 When `add_lang` is supplied:
 
-- `arboretum_labels()` looks for a column named `full_phrases_ADD_LANGUAGE`;
+- `arboretum_phrases()` adds an editable field for the extra language to the phrase guide, stored in the column `full_phrases_ADD_LANGUAGE`;
+- `arboretum_labels()` looks for the column `full_phrases_ADD_LANGUAGE`;
 - if that column contains non-empty text, the extra language is added as an additional text option in the label;
 - the custom language text is read directly from `full_phrases_ADD_LANGUAGE`;
 - this extra language does **not** pass through the standard phrase-generation and translation workflow.
@@ -299,6 +324,12 @@ arboretum_qrcodes(
 The example below illustrates a simple workflow where Portuguese and English remain the main interface languages, while Tukano is added as a community language for species labels and optional personal recordings.
 
 ```{r}
+arboretum_phrases(
+  data_path = "arboretum_data/arboretum_data.xlsx",
+  printed_lang = c("pt", "en"),
+  add_lang = "TUKANO"
+)
+
 arboretum_audios(
   data_path = "arboretum_data/arboretum_data.xlsx",
   printed_lang = c("pt", "en"),
@@ -314,7 +345,7 @@ arboretum_labels(
 )
 ```
 
-For this workflow, the input file should contain a column named `full_phrases_ADD_LANGUAGE` with the full text to display in Panará for each species.
+Before generating the labels, fill the column `full_phrases_ADD_LANGUAGE` created by `arboretum_phrases()` with the full text to display in Tukano for each species, either in the phrase guide or directly in the data file.
 
 
 ## Defensive checks and internal helpers

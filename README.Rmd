@@ -110,9 +110,10 @@ usethis::edit_r_environ()   # add the line: IUCN_REDLIST_KEY=your_token
 
 ## Usage
 
-The package provides six main functions:
+The package provides seven main functions, used in this order:
 
-- `arboretum_data()` — retrieves and merges species data from Flora e Funga do Brasil and the World Checklist of Vascular Plants, adds IUCN Red List status, and generates editable multilingual species phrases.
+- `arboretum_data()` — retrieves and merges species data from Flora e Funga do Brasil and the World Checklist of Vascular Plants, adds IUCN Red List status, and writes an HTML guide to review and correct the data.
+- `arboretum_phrases()` — once the data have been reviewed, generates the editable multilingual species phrases and an HTML guide to review and edit them.
 - `arboretum_audios()` — creates folders and an HTML recording guide for custom personal audio files, including one optional extra community or local language.
 - `arboretum_photos()` — creates folders for personal species photos.
 - `arboretum_labels()` — generates interactive multilingual, audio-enhanced HTML species labels, with support for one optional extra language supplied directly in the input data.
@@ -137,6 +138,7 @@ spp_list <- c("Euterpe edulis", "Paubrasilia echinata", "Coffea arabica")
 
 species_data <- arboretum_data(
   spp_list = spp_list,
+  printed_lang = c("pt", "en", "fr", "es"),
   verbose = TRUE,
   save = TRUE,
   format = "xlsx",
@@ -145,31 +147,68 @@ species_data <- arboretum_data(
 )
 ```
 
-The resulting dataframe includes taxonomic information, distribution data, Brazilian states, phytogeographic domains, vegetation types, endemism, establishment means, IUCN Red List status (e.g. `"Endangered (EN)"`) when the species has been assessed, genus-level richness summaries, and links to FFB and POWO species pages. When `save = TRUE`, the function also writes a standalone HTML phrase guide (`__phrase_generating_guide.html`) to `dir`, allowing you to review generated phrases, fill in annotation fields (`FFB.vernacularName`, `plant_uses_*`, `free_notes_*`, `full_phrases_*`), and export the updated data as CSV or XLSX directly from the browser.
+The resulting dataframe includes taxonomic information, distribution data, Brazilian states, phytogeographic domains, vegetation types, endemism, establishment means, IUCN Red List status (e.g. `"Endangered (EN)"`) when the species has been assessed, genus-level richness summaries, empty annotation columns (`plant_uses_*`, `free_notes_*`), and links to FFB and POWO species pages.
 
-##### Editing the species phrases
+Review this file before going further: correct anything you disagree with and fill in the plant uses and notes you want to show on the labels. No phrase is generated at this step.
 
-The natural-language species descriptions are generated automatically and
-stored in the columns `full_phrases_EN`, `full_phrases_PT`,
-`full_phrases_ES`, and `full_phrases_FR`. You can rewrite any of them, either
-directly in the saved CSV/XLSX file or in the phrase guide, and your text is
-then used as is by `arboretum_audios()` and `arboretum_labels()`:
+When `save = TRUE`, the function also writes `__data_reviewing_guide.html` to `dir`. Open it in a browser to review and edit, species by species, the vernacular names, country, endemism in Brazil, botanical countries, introduced range, establishment means, Brazilian states, phytogeographic domains, vegetation types, IUCN status, plant uses and free notes, then save or export the corrected data as CSV or XLSX. Endemism, establishment means and IUCN status are drop-down menus restricted to the values used to build the phrases. `printed_lang` sets the languages of the guide interface and which plant-use and note fields it shows; the data file always keeps the columns of all four languages. Running `arboretum_data()` again on a `dir` that already contains the data file reads that file instead of querying the databases again; delete or move it to retrieve the data again.
 
-- Phrases already stored in these columns are never overwritten.
-- If you clear a cell, a new phrase is generated for that species on the next
-  `arboretum_data()` run with the same `dir`.
-- Text in `plant_uses_*` and `free_notes_*` is appended after the phrase, so
-  there is no need to repeat it there.
+##### Reusing a downloaded Flora e Funga do Brasil dataset
 
-Running `arboretum_data()` again on a `dir` that already contains the data
-file reuses that file instead of querying the databases again, and only
-fills in empty phrase cells.
+The Flora e Funga do Brasil (FFB) dataset is downloaded with
+[`floraR`](https://github.com/DBOSlab/floraR) into the folder given by
+`ffb_dir` (default `"flora_download"`) and kept there. Later runs always use
+the most recent version already downloaded in `ffb_dir`, without contacting
+the FFB server, so `arboretum_data()` also works offline. The latest version is
+only downloaded when `ffb_dir` holds no version yet; to update it, run
+`floraR::flora_download(dir = ffb_dir)`. You can also point `ffb_dir` to one
+specific version folder to use it as is:
+
+``` r
+species_data <- arboretum_data(
+  spp_list = spp_list,
+  ffb_dir = "~/data/flora_download/dwca_ffb_v393_430_latest"
+)
+```
+
+#### *2. `arboretum_phrases`: Generating editable species phrases*
+
+Once you agree with the retrieved data, generate the natural-language species
+descriptions. The phrases are written into the data file itself, in new
+columns that are created at this step only: `full_phrases_EN`,
+`full_phrases_PT`, `full_phrases_ES`, `full_phrases_FR`, and
+`full_phrases_ADD_LANGUAGE`.
+
+``` r
+arboretum_phrases(
+  data_path = "extracted_data/my_species_data.xlsx",
+  printed_lang = c("pt", "en", "fr", "es"),
+  add_lang = "TUKANO"   # optional
+)
+```
+
+The function also writes `__phrase_generating_guide.html` next to the data
+file. Open it in a browser to read the phrases and edit them, together with the
+vernacular names, plant uses and free notes (and the full text of the extra
+language set in `add_lang`), then export the updated data as CSV or XLSX.
+
+You can also edit the phrases directly in the CSV/XLSX file. Your text is then
+used as is by `arboretum_audios()` and `arboretum_labels()`, which only read the
+stored phrases and never generate them:
+
+- Running `arboretum_phrases()` again keeps every stored phrase and only fills
+  empty cells, so clearing a cell makes that phrase be generated again.
+- `overwrite = TRUE` generates all phrases again, for example after correcting
+  the data (`full_phrases_ADD_LANGUAGE` is never overwritten).
+- Text in `plant_uses_*` and `free_notes_*` is appended after the phrase on the
+  labels, so there is no need to repeat it there.
     
 
-#### *2. `arboretum_audios`: Prepare folders for personal audio recordings*
+#### *3. `arboretum_audios`: Prepare folders for personal audio recordings*
 
-Create folder structure and phrase files for personal audio
-recordings:  
+Create folder structure and a recording guide for personal audio
+recordings. The guide shows the phrases stored by `arboretum_phrases()`, so
+your recordings match the label texts:  
 
 ``` r
 library(aRboretum)
@@ -191,7 +230,7 @@ Use this guide to record custom audio files for each species and language. Perso
 
 The optional add_lang argument is especially useful when collaborating with Indigenous peoples or other local communities. It allows you to prepare one additional language for personal audio recording without requiring translation of the full package interface or minisite.
 
-#### *3. `arboretum_photos`: Prepare folders for personal photos*
+#### *4. `arboretum_photos`: Prepare folders for personal photos*
 
 ``` r
 library(aRboretum)
@@ -203,12 +242,14 @@ arboretum_photos(data_path = "extracted_data/my_species_data.xlsx",
 This creates the `arboretum_photos/` folder with one species-specific folder per taxon. Add JPG, PNG, WebP, SVG, or other supported image files to the corresponding folders. When photos are found, `arboretum_labels()` can include them as a slideshow.
 
 
-#### *4. `arboretum_labels`: Generating audio-enhanced HTML labels*
+#### *5. `arboretum_labels`: Generating audio-enhanced HTML labels*
 
-Once you have your species data (either from `arboretum_data` or
-your own prepared dataframe), you can generate interactive HTML labels
-with text-to-speech functionality, or automatically use personal
-recordings when available:  
+Once your species data and phrases are ready (from `arboretum_data()` and
+`arboretum_phrases()`), you can generate interactive HTML labels with
+text-to-speech functionality, or automatically use personal recordings when
+available. The labels only read the stored `full_phrases_*` columns; if they
+are missing, `arboretum_labels()` stops and asks you to run
+`arboretum_phrases()` first:  
 
 ``` r
 library(aRboretum)
@@ -248,16 +289,17 @@ available
 
 In some projects, a full translation of the website interface is not necessary, but it is still important to make species information accessible in a local or community language. This can be especially relevant when co-developing interpretive materials with Indigenous peoples.
 
-For this reason, `aRboretum` provides an intermediate workflow through the `add_lang` argument in `arboretum_audios()` and `arboretum_labels()`.
+For this reason, `aRboretum` provides an intermediate workflow through the `add_lang` argument in `arboretum_phrases()`, `arboretum_audios()` and `arboretum_labels()`.
 
+- In `arboretum_phrases()`, `add_lang` adds an editable field to the phrase guide where the full label text in the extra language can be entered.
 - In `arboretum_audios()`, `add_lang` creates one additional folder per species for personal audio recording.
 - In `arboretum_labels()`, `add_lang` adds one extra text option to the species label when the input data includes non-empty values in the column `full_phrases_ADD_LANGUAGE`.
 - This extra language bypasses the standard multilingual phrase-generation workflow and is therefore ideal for curated, community-provided text.
 
 A typical workflow is:
 
-1. Prepare your species dataset with the usual columns.
-2. Add a column named `full_phrases_ADD_LANGUAGE` containing the full label text in the extra language.
+1. Retrieve and review your species data with `arboretum_data()`.
+2. Run `arboretum_phrases(..., add_lang = "TUKANO")` and enter the full label text in the extra language, either in the phrase guide or directly in the `full_phrases_ADD_LANGUAGE` column.
 3. Run `arboretum_audios(..., add_lang = "TUKANO")` to create folders for optional personal recordings.
 4. Add audio files to the corresponding species folders if desired.
 5. Run `arboretum_labels(..., add_lang = "TUKANO")` to include the extra language in the generated labels.
@@ -265,7 +307,7 @@ A typical workflow is:
 This approach allows the package to support meaningful multilingual accessibility before a full interface translation is implemented.
 
 
-#### _5. `arboretum_minisite`: Creating a  searchable multilingual minisite index_
+#### _6. `arboretum_minisite`: Creating a  searchable multilingual minisite index_
 
 After generating your species labels, create a beautiful, searchable index page that lists all species with real-time filtering and multilingual interface:
 
@@ -292,7 +334,7 @@ This creates a searchable index.html page linking to all species labels. When da
 🔗 Direct links — Click any card to open its full species label\
 
 
-#### _6. `arboretum_qrcodes`: Generate printable QR-code labels_
+#### _7. `arboretum_qrcodes`: Generate printable QR-code labels_
 
 Generate print-ready QR code labels arranged on A4 pages and saved as PDF or PNG. Four visual layouts are available: `"minimalist"` (default), `"classic"`, `"modern"`, and `"botanical"`. Each layout differs in typography, colour palette, and border style.
 
@@ -339,25 +381,32 @@ species_data <- arboretum_data(
   dir = "data"
 )
 
-# Step 2: Create folder structure for personal audio
+# Step 2: Review data/my_garden_plants.xlsx, then generate the phrases.
+# Edit them in data/__phrase_generating_guide.html or in the xlsx file
+arboretum_phrases(
+  data_path = "data/my_garden_plants.xlsx",
+  printed_lang = c("pt", "en")
+)
+
+# Step 3: Create folder structure for personal audio
 arboretum_audios(
   data_path = "data/my_garden_plants.xlsx",
   printed_lang = c("pt", "en"),
   verbose = TRUE
 )
 
-# Step 3: Add your own recordings!
+# Step 4: Add your own recordings!
 # Place files like:
 #   arboretum_audios/ARECACEAE_Euterpe_edulis_EN/my_recording.mp3
 #   arboretum_audios/ARECACEAE_Euterpe_edulis_PT/gravacao_pessoal.wav
 
-# Step 4: Prepare personal photo folders 
+# Step 5: Prepare personal photo folders 
 arboretum_photos(
   data_path = "data/my_garden_plants.xlsx", 
   verbose = TRUE
 )
 
-# Step 5: Generate HTML labels (automatically uses your recordings)
+# Step 6: Generate HTML labels (automatically uses your recordings)
 arboretum_labels(
   data_path = "data/my_garden_plants.xlsx",
   printed_lang = c("pt", "en"),
@@ -365,7 +414,7 @@ arboretum_labels(
   dir = "labels"
 )
 
-# Step 6: Create a multilingual minisite index
+# Step 7: Create a multilingual minisite index
 arboretum_minisite(
   labels_dir = "labels",
   site_title = "My Botanical Garden Collection",
@@ -375,7 +424,7 @@ arboretum_minisite(
   verbose = TRUE
 )
 
-# Step 7: Generate QR-code labels linked to the published minisite 
+# Step 8: Generate QR-code labels linked to the published minisite 
 arboretum_qrcodes(
   data_path = "data/my_garden_plants.xlsx",
   base_url = "https://myinstitution.org/my-collection",
@@ -386,7 +435,7 @@ arboretum_qrcodes(
   verbose = TRUE
 )
 
-# Step 8: Deploy to an internet pages
+# Step 9: Deploy to an internet pages
 # Copy the entire 'minisite' folder to your internet page repository
 # The index.html file will automatically show all species!
 
@@ -432,7 +481,8 @@ Visitors scan → instantly see the species label with audio!
 ## Input data requirements
 
 The input data for `arboretum_labels()` must include the following
-columns (as produced by `arboretum_data()`):
+columns (as produced by `arboretum_data()` and completed by
+`arboretum_phrases()`):
 
 | Column | Description |
 |---|---|
@@ -451,8 +501,8 @@ columns (as produced by `arboretum_data()`):
 | `IUCN.status` | IUCN Red List category (e.g. `Endangered (EN)`), when assessed |
 | `plant_uses_EN/PT/ES/FR` | Plant-use annotation fields (editable via HTML guide) |
 | `free_notes_EN/PT/ES/FR` | Free-text note fields (editable via HTML guide) |
-| `full_phrases_EN/PT/ES/FR` | Generated species phrases; optional, editable, and filled in automatically when empty |
-| `full_phrases_ADD_LANGUAGE` | Full phrase for the custom language set in `add_lang` |
+| `full_phrases_EN/PT/ES/FR` | Species phrases created by `arboretum_phrases()`; editable, and required for every language in `printed_lang` |
+| `full_phrases_ADD_LANGUAGE` | Full phrase for the custom language set in `add_lang`, created by `arboretum_phrases()` |
 | `POWO.url` | POWO species page |
 | `FFB.url` | FFB species page |
 

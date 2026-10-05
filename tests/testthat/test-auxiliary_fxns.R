@@ -107,7 +107,7 @@ testthat::test_that("read_species_data reads csv and xlsx and validates required
   )
 })
 
-testthat::test_that("read_species_data adds missing phrase columns as character", {
+testthat::test_that("read_species_data reads empty columns as character and adds no phrase columns", {
   df <- data.frame(
     family = "Fabaceae", taxonName = "Paubrasilia echinata",
     scientificNameAuthorship = "Lam.", FFB.vernacularName = NA, country = "Brazil",
@@ -116,7 +116,6 @@ testthat::test_that("read_species_data adds missing phrase columns as character"
     botanical_country = "Brazil Northeast", introduced_to = NA, IUCN.status = NA,
     plant_uses_EN = NA, plant_uses_PT = NA, plant_uses_ES = NA, plant_uses_FR = NA,
     free_notes_EN = NA, free_notes_PT = NA, free_notes_ES = NA, free_notes_FR = NA,
-    full_phrases_EN = NA,
     POWO.url = NA, FFB.url = NA,
     stringsAsFactors = FALSE
   )
@@ -125,10 +124,8 @@ testthat::test_that("read_species_data adds missing phrase columns as character"
 
   out <- aRboretum:::.read_species_data(csv_file, verbose = FALSE)
 
-  for (col in aRboretum:::.phrase_cols()) {
-    testthat::expect_true(col %in% names(out), info = col)
-    testthat::expect_type(out[[col]], "character")
-  }
+  testthat::expect_type(out$FFB.vegetationType, "character")
+  testthat::expect_false(any(aRboretum:::.phrase_cols() %in% names(out)))
 })
 
 testthat::test_that("save_csv writes a UTF-8 csv without row names", {
@@ -145,15 +142,15 @@ testthat::test_that("save_csv writes a UTF-8 csv without row names", {
   testthat::expect_identical(out$FFB.vernacularName, "juçara")
 })
 
-testthat::test_that("build_arboretum_phrases stores generated phrases and keeps stored ones", {
+testthat::test_that("generate_phrases fills empty phrases, keeps stored ones and can overwrite", {
   testthat::skip_if_not_installed("aRboretum")
 
   df <- data.frame(
     taxonName = c("Paubrasilia echinata", "Euterpe edulis"),
     family = c("Fabaceae", "Arecaceae"),
+    free_notes_FR = NA,
+    POWO.url = NA,
     full_phrases_EN = c("Manual phrase.", "  "),
-    full_phrases_PT = c(NA, NA),
-    full_phrases_ADD_LANGUAGE = c("Texto 1", NA),
     stringsAsFactors = FALSE
   )
   seen <- list()
@@ -167,32 +164,78 @@ testthat::test_that("build_arboretum_phrases stores generated phrases and keeps 
     .package = "aRboretum"
   )
 
-  out <- aRboretum:::.build_arboretum_phrases(
-    df = df,
-    printed_lang = c("en", "pt"),
-    add_lang = "PANARA",
-    verbose = FALSE
-  )
+  out <- aRboretum:::.generate_phrases(df, printed_lang = c("en", "pt"), verbose = FALSE)
 
   # Only rows without a stored phrase are generated
   testthat::expect_identical(seen$en, "Euterpe edulis")
   testthat::expect_identical(seen$pt, c("Paubrasilia echinata", "Euterpe edulis"))
   testthat::expect_identical(out$n_generated, 3L)
-
   testthat::expect_identical(out$df$full_phrases_EN,
                              c("Manual phrase.", "Generated en Euterpe edulis"))
   testthat::expect_identical(out$df$full_phrases_PT,
                              c("Generated pt Paubrasilia echinata", "Generated pt Euterpe edulis"))
-  testthat::expect_identical(out$html_phrases$en[["Paubrasilia echinata"]], "Manual phrase.")
-  testthat::expect_identical(out$html_phrases$PANARA[["Paubrasilia echinata"]], "Texto 1")
-  testthat::expect_identical(out$printed_lang, c("en", "pt", "PANARA"))
+
+  # All phrase columns exist, placed after the annotation columns
+  testthat::expect_identical(
+    names(out$df),
+    c("taxonName", "family", "free_notes_FR", aRboretum:::.phrase_cols(), "POWO.url")
+  )
+  testthat::expect_true(all(is.na(out$df$full_phrases_FR)))
 
   # A second pass with everything stored generates nothing
-  again <- aRboretum:::.build_arboretum_phrases(
-    df = out$df, printed_lang = c("en", "pt"), verbose = FALSE
+  testthat::expect_message(
+    again <- aRboretum:::.generate_phrases(out$df, printed_lang = c("en", "pt"), verbose = TRUE),
+    "Keeping the stored phrases for language: EN"
   )
   testthat::expect_identical(again$n_generated, 0L)
-  testthat::expect_identical(again$df$full_phrases_EN, out$df$full_phrases_EN)
+
+  # overwrite = TRUE regenerates every phrase
+  seen <- list()
+  forced <- aRboretum:::.generate_phrases(out$df, printed_lang = "en", overwrite = TRUE,
+                                          verbose = FALSE)
+  testthat::expect_identical(seen$en, c("Paubrasilia echinata", "Euterpe edulis"))
+  testthat::expect_identical(forced$df$full_phrases_EN[1], "Generated en Paubrasilia echinata")
+})
+
+testthat::test_that("add_phrase_cols appends the columns when there is no annotation column", {
+  out <- aRboretum:::.add_phrase_cols(data.frame(taxonName = "a", family = "b"))
+  testthat::expect_identical(names(out), c("taxonName", "family", aRboretum:::.phrase_cols()))
+})
+
+testthat::test_that("stored_phrases reads phrases, adds the custom language and never generates", {
+  df <- data.frame(
+    taxonName = c("Paubrasilia echinata", "Euterpe edulis"),
+    full_phrases_EN = c("Phrase 1", NA),
+    full_phrases_PT = c("Frase 1", "Frase 2"),
+    full_phrases_ADD_LANGUAGE = c("Texto 1", NA),
+    stringsAsFactors = FALSE
+  )
+  testthat::local_mocked_bindings(
+    .phrase_generator = function(...) stop("phrases must not be generated"),
+    .package = "aRboretum"
+  )
+
+  testthat::expect_warning(
+    out <- aRboretum:::.stored_phrases(df, printed_lang = c("en", "pt"), add_lang = "PANARA",
+                                       verbose = FALSE),
+    "No stored phrase in 'full_phrases_EN' for: Euterpe edulis"
+  )
+  testthat::expect_identical(out$printed_lang, c("en", "pt", "PANARA"))
+  testthat::expect_identical(out$html_phrases$en[["Euterpe edulis"]], "")
+  testthat::expect_identical(out$html_phrases$pt[["Euterpe edulis"]], "Frase 2")
+  testthat::expect_identical(out$html_phrases$PANARA[["Paubrasilia echinata"]], "Texto 1")
+  testthat::expect_identical(out$html_phrases$PANARA[["Euterpe edulis"]], "")
+
+  # The custom language is ignored when it has no text
+  df$full_phrases_ADD_LANGUAGE <- NA
+  out2 <- aRboretum:::.stored_phrases(df, printed_lang = "pt", add_lang = "PANARA",
+                                      verbose = FALSE)
+  testthat::expect_identical(out2$printed_lang, "pt")
+
+  testthat::expect_error(
+    aRboretum:::.stored_phrases(df, printed_lang = c("fr", "es"), verbose = FALSE),
+    "full_phrases_FR, full_phrases_ES"
+  )
 })
 
 testthat::test_that("phrase_generator handles species without Brazilian data and adds IUCN status", {

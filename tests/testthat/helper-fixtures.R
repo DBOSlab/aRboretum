@@ -27,15 +27,20 @@
     free_notes_PT = c("Árvore nacional do Brasil", NA),
     free_notes_ES = c(NA, NA),
     free_notes_FR = c(NA, NA),
-    full_phrases_EN = c(NA, NA),
-    full_phrases_PT = c(NA, NA),
-    full_phrases_ES = c(NA, NA),
-    full_phrases_FR = c(NA, NA),
-    full_phrases_ADD_LANGUAGE = c("Texto em panará", NA),
     POWO.url = c("https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:1", NA),
     FFB.url = c("https://floradobrasil.jbrj.gov.br/FB1", NA),
     stringsAsFactors = FALSE
   )
+}
+
+# The same table completed with phrases, as done by arboretum_phrases()
+.fixture_phrases_df <- function(df = .fixture_species_df()) {
+  df$full_phrases_EN <- paste("English phrase for", df$taxonName)
+  df$full_phrases_PT <- paste("Frase em portugu\u00eas para", df$taxonName)
+  df$full_phrases_ES <- paste("Frase en espa\u00f1ol para", df$taxonName)
+  df$full_phrases_FR <- paste("Phrase en fran\u00e7ais pour", df$taxonName)
+  df$full_phrases_ADD_LANGUAGE <- NA_character_
+  df
 }
 
 .write_fixture_csv <- function(path, df = .fixture_species_df()) {

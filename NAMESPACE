@@ -5,6 +5,7 @@ export(arboretum_data)
 export(arboretum_labels)
 export(arboretum_minisite)
 export(arboretum_photos)
+export(arboretum_phrases)
 export(arboretum_qrcodes)
 importFrom(base64enc,dataURI)
 importFrom(dplyr,

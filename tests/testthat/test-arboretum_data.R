@@ -75,14 +75,8 @@ testthat::test_that("arboretum_data rejects non-binomial names early", {
       result_merged$free_notes_EN <- paste("Genus note for", result_merged$genus)
       result_merged
     },
+    .load_ffb = function(ffb_dir, verbose) fake_dwca,
     .package = "aRboretum",
-    .env = env
-  )
-
-  testthat::local_mocked_bindings(
-    flora_download = function(version, dir) invisible(TRUE),
-    flora_parse = function(path, version) fake_dwca,
-    .package = "floraR",
     .env = env
   )
 }
@@ -107,9 +101,25 @@ testthat::test_that("arboretum_data merges FFB and WCVP data, adds IUCN status a
 
   csv_path <- file.path(temp_dir, "arboretum_data_test.csv")
   testthat::expect_true(file.exists(csv_path))
-  testthat::expect_true(file.exists(file.path(temp_dir, "__phrase_generating_guide.html")))
-  testthat::expect_true(all(c("full_phrases_EN", "full_phrases_PT", "full_phrases_ES",
-                              "full_phrases_FR", "full_phrases_ADD_LANGUAGE") %in% names(result)))
+
+  # Phrases are only created later, by arboretum_phrases()
+  testthat::expect_false(any(grepl("^full_phrases_", names(result))))
+  testthat::expect_false(file.exists(file.path(temp_dir, "__phrase_generating_guide.html")))
+
+  # The data reviewing guide is written next to the data file
+  guide <- file.path(temp_dir, "__data_reviewing_guide.html")
+  testthat::expect_true(file.exists(guide))
+  html <- paste(readLines(guide, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+  testthat::expect_match(html, "Data Reviewing Guide", fixed = TRUE)
+  testthat::expect_match(html, 'const dataFilename = "arboretum_data_test.csv"', fixed = TRUE)
+  for (col in c("FFB.vernacularName", "country", "endemism", "botanical_country",
+                "introduced_to", "FFB.establishmentMeans", "FFB.stateProvince",
+                "FFB.phytogeographicDomain", "FFB.vegetationType",
+                "IUCN.status", "plant_uses_EN", "plant_uses_PT",
+                "plant_uses_ES", "plant_uses_FR", "free_notes_EN", "free_notes_PT",
+                "free_notes_ES", "free_notes_FR")) {
+    testthat::expect_match(html, paste0('data-col="', col, '"'), fixed = TRUE, info = col)
+  }
   testthat::expect_equal(result$genus, c("Euterpe", "Coffea"))
 
   euterpe <- result[result$taxonName == "Euterpe edulis", , drop = FALSE]
@@ -133,20 +143,12 @@ testthat::test_that("arboretum_data merges FFB and WCVP data, adds IUCN status a
   testthat::expect_true(is.na(coffea$IUCN.status))
   testthat::expect_false(any(is.na(result$FFB.genusRank)))
 
-  # Phrases are generated for every built-in language and stored in the data
-  for (col in c("full_phrases_EN", "full_phrases_PT", "full_phrases_ES", "full_phrases_FR")) {
-    testthat::expect_true(all(nzchar(result[[col]])), info = col)
-  }
-  testthat::expect_match(euterpe$full_phrases_EN, "Euterpe edulis")
-  testthat::expect_match(euterpe$full_phrases_EN, "least concern \\(LC\\)")
-  testthat::expect_true(all(is.na(result$full_phrases_ADD_LANGUAGE)))
-
   saved <- utils::read.csv(csv_path, stringsAsFactors = FALSE, encoding = "UTF-8")
-  testthat::expect_equal(saved$full_phrases_EN, result$full_phrases_EN)
+  testthat::expect_identical(names(saved), names(result))
   testthat::expect_equal(saved$IUCN.status, result$IUCN.status)
 })
 
-testthat::test_that("arboretum_data keeps manually edited phrases and only fills empty ones", {
+testthat::test_that("arboretum_data reads an existing data file instead of querying again", {
   testthat::skip_if_not_installed("floraR")
 
   temp_dir <- file.path(tempdir(), "arboretum_data_rerun_test")
@@ -160,51 +162,107 @@ testthat::test_that("arboretum_data keeps manually edited phrases and only fills
   first <- aRboretum::arboretum_data(
     spp_list = c("Euterpe edulis", "Coffea arabica"),
     verbose = FALSE,
-    filename = "arboretum_data",
     dir = temp_dir
   )
   testthat::expect_equal(iucn_calls$n, 1L)
 
-  # The user edits one phrase and clears another directly in the data file
+  # The user reviews and corrects the data file
   csv_path <- file.path(temp_dir, "arboretum_data.csv")
   edited <- utils::read.csv(csv_path, stringsAsFactors = FALSE, encoding = "UTF-8")
-  edited$full_phrases_EN[edited$taxonName == "Euterpe edulis"] <- "My own phrase about the palm."
-  edited$full_phrases_PT[edited$taxonName == "Coffea arabica"] <- NA
+  edited$FFB.vernacularName[edited$taxonName == "Coffea arabica"] <- "cafeeiro"
   utils::write.csv(edited, csv_path, row.names = FALSE, fileEncoding = "UTF-8")
 
-  second <- aRboretum::arboretum_data(
-    spp_list = c("Euterpe edulis", "Coffea arabica"),
-    verbose = FALSE,
-    filename = "arboretum_data",
-    dir = temp_dir
+  testthat::expect_message(
+    second <- aRboretum::arboretum_data(
+      spp_list = c("Euterpe edulis", "Coffea arabica"),
+      verbose = TRUE,
+      dir = temp_dir
+    ),
+    "already exists and is read instead of retrieving the data again"
   )
 
-  # The existing file is reused instead of querying the databases again
   testthat::expect_equal(iucn_calls$n, 1L)
-  testthat::expect_equal(
-    second$full_phrases_EN[second$taxonName == "Euterpe edulis"],
-    "My own phrase about the palm."
-  )
-  testthat::expect_equal(
-    second$full_phrases_EN[second$taxonName == "Coffea arabica"],
-    first$full_phrases_EN[first$taxonName == "Coffea arabica"]
-  )
-  regenerated <- second$full_phrases_PT[second$taxonName == "Coffea arabica"]
-  testthat::expect_true(!is.na(regenerated) && nzchar(regenerated))
+  testthat::expect_equal(second$FFB.vernacularName[second$taxonName == "Coffea arabica"],
+                         "cafeeiro")
+  testthat::expect_false(any(grepl("^full_phrases_", names(second))))
 
-  # The regenerated phrase was written back while the manual edit was kept
-  saved <- utils::read.csv(csv_path, stringsAsFactors = FALSE, encoding = "UTF-8")
-  testthat::expect_equal(saved$full_phrases_PT, second$full_phrases_PT)
-  testthat::expect_equal(
-    saved$full_phrases_EN[saved$taxonName == "Euterpe edulis"],
-    "My own phrase about the palm."
-  )
-
-  # The manual phrase is shown in the HTML guide
-  html <- paste(readLines(file.path(temp_dir, "__phrase_generating_guide.html"),
+  # The reviewing guide is rebuilt from the corrected file
+  html <- paste(readLines(file.path(temp_dir, "__data_reviewing_guide.html"),
                           warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-  testthat::expect_match(html, "My own phrase about the palm.", fixed = TRUE)
-  testthat::expect_match(html, 'data-col="full_phrases_EN"', fixed = TRUE)
+  testthat::expect_match(html, ">cafeeiro</textarea>", fixed = TRUE)
+})
+
+testthat::test_that("arboretum_data shows the annotation fields of printed_lang only", {
+  testthat::skip_if_not_installed("floraR")
+
+  temp_dir <- file.path(tempdir(), "arboretum_data_printed_lang")
+  unlink(temp_dir, recursive = TRUE)
+  on.exit(unlink(temp_dir, recursive = TRUE), add = TRUE)
+  .local_mock_data_sources()
+
+  result <- aRboretum::arboretum_data(spp_list = "Euterpe edulis", printed_lang = c("es", "fr"),
+                                      verbose = FALSE, dir = temp_dir)
+
+  html <- paste(readLines(file.path(temp_dir, "__data_reviewing_guide.html"),
+                          warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+  testthat::expect_match(html, 'data-col="plant_uses_ES"', fixed = TRUE)
+  testthat::expect_match(html, 'data-col="free_notes_FR"', fixed = TRUE)
+  testthat::expect_no_match(html, 'data-col="plant_uses_EN"', fixed = TRUE)
+  testthat::expect_match(html, '<html lang="es">', fixed = TRUE)
+
+  # The data keep the annotation columns of every language
+  testthat::expect_true(all(c("plant_uses_EN", "free_notes_PT") %in% names(result)))
+
+  testthat::expect_error(
+    aRboretum::arboretum_data(spp_list = "Euterpe edulis", printed_lang = "de",
+                              verbose = FALSE, dir = temp_dir),
+    "Invalid language code"
+  )
+})
+
+testthat::test_that("the data reviewing form offers menus for values used by the phrases", {
+  df <- .fixture_species_df()
+  df$IUCN.status[2] <- "Weird status"
+
+  out <- aRboretum:::.build_species_cards(
+    function_use = "_review",
+    df = df,
+    printed_lang = c("en", "pt"),
+    html_phrases = list(),
+    initial_lang = "en"
+  )
+
+  # No phrase blocks, but an always-open form
+  testthat::expect_no_match(out, "lang-content", fixed = TRUE)
+  testthat::expect_no_match(out, "edit-toggle-btn", fixed = TRUE)
+  testthat::expect_match(out, '<div class="edit-panel review-panel" id="edit-panel-0">', fixed = TRUE)
+
+  testthat::expect_match(out, '<select class="edit-field" data-row="0" data-col="endemism"',
+                         fixed = TRUE)
+  testthat::expect_match(out, '<option value="Endemic" selected>Endemic</option>', fixed = TRUE)
+  testthat::expect_match(out, '<option value="Cultivated" selected>Cultivated</option>',
+                         fixed = TRUE)
+  testthat::expect_match(out, '<option value="Endangered (EN)" selected>', fixed = TRUE)
+  # Unexpected values already in the data are kept as an option
+  testthat::expect_match(out, '<option value="Weird status" selected>Weird status</option>',
+                         fixed = TRUE)
+  # Empty values give empty fields
+  testthat::expect_match(
+    out,
+    'data-row="0" data-col="FFB.vegetationType" data-kind="data"></textarea>',
+    fixed = TRUE
+  )
+  testthat::expect_match(out, '>pau-brasil | ibirapitanga</textarea>', fixed = TRUE)
+  testthat::expect_match(out, 'data-col="plant_uses_PT"', fixed = TRUE)
+  testthat::expect_no_match(out, 'data-col="plant_uses_FR"', fixed = TRUE)
+  testthat::expect_no_match(out, 'full_phrases_', fixed = TRUE)
+
+  # Genus statistics are not edited, and endemism is labelled as Brazil-only
+  testthat::expect_no_match(out, 'data-col="FFB.genusRichness"', fixed = TRUE)
+  testthat::expect_no_match(out, 'data-col="FFB.genusRank"', fixed = TRUE)
+  testthat::expect_match(out, "<label>endemism (in Brazil only)</label>", fixed = TRUE)
+  testthat::expect_match(out, "endemic to Brazil, as recorded by Flora e Funga do Brasil",
+                         fixed = TRUE)
 })
 
 testthat::test_that("arboretum_data does not write files when save = FALSE", {
@@ -267,7 +325,7 @@ testthat::test_that("arboretum_data keeps species found only in WCVP and drops u
   )
 
   testthat::expect_true(any(grepl("1/4: retrieving information from 'Theobroma cacao'", msgs)))
-  testthat::expect_true(any(grepl("successfully donwloaded and parsed", msgs)))
+  testthat::expect_true(any(grepl("successfully loaded and parsed", msgs)))
   testthat::expect_true(file.exists(file.path(temp_dir, "arboretum_data.xlsx")))
 
   testthat::expect_setequal(result$taxonName, c("Theobroma cacao", "Paubrasilia echinata"))
@@ -330,28 +388,147 @@ testthat::test_that("arboretum_data matches WCVP data to FFB synonyms through th
   testthat::expect_equal(result$endemism, "Non-endemic")
 })
 
-testthat::test_that("arboretum_data adds the custom language stored in the data file", {
+# Flora e Funga do Brasil dataset -----------------------------------------------
+
+# Create fake FFB version folders inside a temporary ffb_dir
+.fake_ffb_dir <- function(name, folders) {
+  ffb_dir <- file.path(tempdir(), name)
+  unlink(ffb_dir, recursive = TRUE)
+  for (f in folders) {
+    dir.create(file.path(ffb_dir, f), recursive = TRUE)
+    writeLines("id", file.path(ffb_dir, f, "taxon.txt"))
+  }
+  dir.create(ffb_dir, showWarnings = FALSE)
+  ffb_dir
+}
+
+# Mock floraR, recording the calls
+.local_mock_floraR <- function(calls, download = function(...) invisible(TRUE),
+                               env = parent.frame()) {
+  testthat::local_mocked_bindings(
+    flora_download = function(version, verbose, dir) {
+      calls$download <- c(calls$download, dir)
+      download(version = version, verbose = verbose, dir = dir)
+    },
+    flora_parse = function(path, version, verbose) {
+      calls$parse <- c(calls$parse, list(list(path = path, version = version)))
+      "parsed"
+    },
+    .package = "floraR",
+    .env = env
+  )
+}
+
+testthat::test_that(".load_ffb uses the newest downloaded version without contacting FFB", {
+  testthat::skip_if_not_installed("floraR")
+  ffb_dir <- .fake_ffb_dir("ffb-local", c("dwca_ffb_v393_99", "dwca_ffb_v393_430_latest",
+                                          "not_a_dwca", "dwca_ffb_v393_500"))
+  # A version folder without taxon.txt is ignored
+  unlink(file.path(ffb_dir, "dwca_ffb_v393_500", "taxon.txt"))
+  on.exit(unlink(ffb_dir, recursive = TRUE), add = TRUE)
+
+  calls <- new.env()
+  .local_mock_floraR(calls, download = function(...) stop("should not download"))
+
+  testthat::expect_message(
+    out <- aRboretum:::.load_ffb(paste0(ffb_dir, "/"), verbose = TRUE),
+    "Using the FFB dataset previously downloaded"
+  )
+  testthat::expect_identical(out, "parsed")
+  testthat::expect_null(calls$download)
+  testthat::expect_identical(calls$parse, list(list(path = ffb_dir, version = "393.430")))
+})
+
+testthat::test_that(".load_ffb uses older versions too when no latest folder exists", {
+  testthat::skip_if_not_installed("floraR")
+  ffb_dir <- .fake_ffb_dir("ffb-no-latest", c("dwca_ffb_v393_430", "dwca_ffb_v393_99"))
+  on.exit(unlink(ffb_dir, recursive = TRUE), add = TRUE)
+
+  calls <- new.env()
+  .local_mock_floraR(calls, download = function(...) stop("should not download"))
+
+  aRboretum:::.load_ffb(ffb_dir, verbose = FALSE)
+  testthat::expect_identical(calls$parse, list(list(path = ffb_dir, version = "393.430")))
+})
+
+testthat::test_that(".load_ffb downloads the latest version when nothing was downloaded yet", {
+  testthat::skip_if_not_installed("floraR")
+  ffb_dir <- .fake_ffb_dir("ffb-first-download", character(0))
+  on.exit(unlink(ffb_dir, recursive = TRUE), add = TRUE)
+
+  calls <- new.env()
+  .local_mock_floraR(calls, download = function(version, verbose, dir) {
+    dir.create(file.path(dir, "dwca_ffb_v393_431_latest"))
+    writeLines("id", file.path(dir, "dwca_ffb_v393_431_latest", "taxon.txt"))
+  })
+
+  aRboretum:::.load_ffb(ffb_dir, verbose = FALSE)
+  testthat::expect_identical(calls$download, ffb_dir)
+  testthat::expect_identical(calls$parse, list(list(path = ffb_dir, version = "393.431")))
+})
+
+testthat::test_that(".load_ffb uses a single version folder as is, without downloading", {
+  testthat::skip_if_not_installed("floraR")
+  ffb_dir <- .fake_ffb_dir("ffb-single", c("dwca_ffb_v393_420", "dwca_ffb_v393_430_latest"))
+  on.exit(unlink(ffb_dir, recursive = TRUE), add = TRUE)
+
+  calls <- new.env()
+  .local_mock_floraR(calls, download = function(...) stop("should not download"))
+
+  testthat::expect_message(
+    aRboretum:::.load_ffb(file.path(ffb_dir, "dwca_ffb_v393_420"), verbose = TRUE),
+    "Using the FFB dataset in"
+  )
+  testthat::expect_null(calls$download)
+  testthat::expect_identical(calls$parse, list(list(path = ffb_dir, version = "393.420")))
+})
+
+testthat::test_that(".load_ffb fails clearly without internet nor local data", {
+  testthat::skip_if_not_installed("floraR")
+  ffb_dir <- .fake_ffb_dir("ffb-empty", character(0))
+  on.exit(unlink(ffb_dir, recursive = TRUE), add = TRUE)
+
+  calls <- new.env()
+  .local_mock_floraR(calls, download = function(...) stop("No internet connection"))
+
+  testthat::expect_error(aRboretum:::.load_ffb(ffb_dir, verbose = FALSE),
+                         "no previously downloaded version was found")
+  testthat::expect_error(aRboretum:::.load_ffb(c("a", "b")), "single character string")
+
+  # A folder that does not exist yet is simply where the download goes
+  testthat::expect_identical(aRboretum:::.ffb_local_versions(file.path(ffb_dir, "nope")),
+                             character(0))
+  testthat::expect_error(aRboretum:::.load_ffb(file.path(ffb_dir, "nope"), verbose = FALSE),
+                         "no previously downloaded version was found")
+  testthat::expect_identical(calls$download[2], file.path(ffb_dir, "nope"))
+
+  # flora_download() returning without leaving a dataset behind
+  calls2 <- new.env()
+  .local_mock_floraR(calls2)
+  testthat::expect_error(aRboretum:::.load_ffb(ffb_dir, verbose = FALSE),
+                         "No FFB dataset was found")
+})
+
+testthat::test_that("arboretum_data keeps the FFB download and passes ffb_dir along", {
   testthat::skip_if_not_installed("floraR")
 
-  temp_dir <- file.path(tempdir(), "arboretum_data_add_lang")
+  temp_dir <- file.path(tempdir(), "arboretum_data_ffb_dir")
   unlink(temp_dir, recursive = TRUE)
   on.exit(unlink(temp_dir, recursive = TRUE), add = TRUE)
+
+  seen <- new.env()
   .local_mock_data_sources()
+  testthat::local_mocked_bindings(
+    .load_ffb = function(ffb_dir, verbose) {
+      seen$ffb_dir <- ffb_dir
+      .fake_dwca()
+    },
+    .package = "aRboretum"
+  )
 
-  aRboretum::arboretum_data(spp_list = "Euterpe edulis", verbose = FALSE, dir = temp_dir)
-  csv_path <- file.path(temp_dir, "arboretum_data.csv")
-  edited <- utils::read.csv(csv_path, stringsAsFactors = FALSE, encoding = "UTF-8")
-  edited$full_phrases_ADD_LANGUAGE <- "Texto em panará"
-  utils::write.csv(edited, csv_path, row.names = FALSE, fileEncoding = "UTF-8")
-
-  result <- aRboretum::arboretum_data(spp_list = "Euterpe edulis", add_lang = "PANARA",
-                                      verbose = FALSE, dir = temp_dir)
-
-  html <- paste(readLines(file.path(temp_dir, "__phrase_generating_guide.html"),
-                          warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-  testthat::expect_match(html, 'data-lang="PANARA"', fixed = TRUE)
-  testthat::expect_match(html, "Texto em panará", fixed = TRUE)
-  testthat::expect_equal(result$full_phrases_ADD_LANGUAGE, "Texto em panará")
+  aRboretum::arboretum_data(spp_list = "Euterpe edulis", verbose = FALSE, save = FALSE,
+                            dir = temp_dir, ffb_dir = "my_ffb")
+  testthat::expect_identical(seen$ffb_dir, "my_ffb")
 })
 
 # WCVP extraction --------------------------------------------------------------

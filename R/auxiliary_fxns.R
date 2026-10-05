@@ -105,24 +105,47 @@
   is_lgl <- vapply(df, is.logical, logical(1))
   df[is_lgl] <- lapply(df[is_lgl], as.character)
 
-  # Phrase columns are optional so that data files created before they were
-  # introduced can still be read
-  for (col in .phrase_cols()) {
-    if (!col %in% names(df)) {
-      df[[col]] <- NA_character_
-    } else {
-      df[[col]] <- as.character(df[[col]])
-    }
-  }
-
   if (verbose) message("Loaded data with ", nrow(df), " species and ", ncol(df), " columns.")
   return(df)
 }
 
 # Names of the columns storing full phrases per language ####
+# These columns are created by arboretum_phrases() only
 .phrase_cols <- function() {
   c("full_phrases_EN", "full_phrases_PT", "full_phrases_ES", "full_phrases_FR",
     "full_phrases_ADD_LANGUAGE")
+}
+
+# Add the missing phrase columns, placed after the free_notes_* columns ####
+.add_phrase_cols <- function(df) {
+  missing <- setdiff(.phrase_cols(), names(df))
+  for (col in missing) {
+    df[[col]] <- NA_character_
+  }
+  for (col in .phrase_cols()) {
+    df[[col]] <- as.character(df[[col]])
+  }
+  if (length(missing) > 0) {
+    others <- setdiff(names(df), .phrase_cols())
+    anchor <- max(c(0L, which(grepl("^(free_notes|plant_uses)_", others))))
+    if (anchor == 0L) anchor <- length(others)
+    df <- df[, c(others[seq_len(anchor)], .phrase_cols(),
+                 others[-seq_len(anchor)]), drop = FALSE]
+  }
+  df
+}
+
+# Button labels of the language switcher ####
+.lang_button_labels <- function(printed_lang) {
+  labels <- c(en = "English",
+              pt = "Portugu\u00eas",
+              fr = "Fran\u00e7ais",
+              es = "Espa\u00f1ol")
+  missing_langs <- setdiff(printed_lang, names(labels))
+  if (length(missing_langs) > 0) {
+    labels[missing_langs] <- toupper(missing_langs)
+  }
+  labels
 }
 
 # Upper case function ####
@@ -146,88 +169,102 @@
   return(invisible(sum(copied)))
 }
 
-# Phrase generator function ####
-.build_arboretum_phrases <- function(data_path = NULL,
-                                     df = NULL,
-                                     printed_lang = c("pt", "en", "fr", "es"),
-                                     add_lang = NULL,
-                                     verbose = TRUE) {
+# Generate and store phrases (used by arboretum_phrases() only) ####
+# Fills the full_phrases_* columns of each language in printed_lang. Stored
+# phrases are kept unless overwrite = TRUE, so manual edits are preserved.
+.generate_phrases <- function(df,
+                              printed_lang = c("pt", "en", "fr", "es"),
+                              overwrite = FALSE,
+                              verbose = TRUE) {
+
+  printed_lang <- .arg_check_printed_lang(printed_lang)
+  df <- .add_phrase_cols(df)
+  dict <- .dict()
+  n_generated <- 0L
+
+  for (lang in printed_lang) {
+    col <- paste0("full_phrases_", .lang_suffix(lang))
+    stored <- df[[col]]
+    todo <- if (overwrite) rep(TRUE, nrow(df)) else .is_empty_phrase(stored)
+
+    if (any(todo)) {
+      generated <- .phrase_generator(
+        df = df[todo, , drop = FALSE],
+        dict = dict,
+        lang = lang,
+        verbose = verbose
+      )
+      stored[todo] <- trimws(unlist(generated, use.names = FALSE))
+      n_generated <- n_generated + sum(todo)
+      if (verbose) {
+        message("Generated ", sum(todo), " phrase(s) for language: ", toupper(lang))
+      }
+    } else if (verbose) {
+      message("Keeping the stored phrases for language: ", toupper(lang))
+    }
+
+    df[[col]] <- stored
+  }
+
+  list(df = df, n_generated = n_generated)
+}
+
+# Read the stored phrases (used by arboretum_labels() and arboretum_audios()) ####
+# No phrase is generated here: the full_phrases_* columns must have been
+# created with arboretum_phrases()
+.stored_phrases <- function(df,
+                            printed_lang = c("pt", "en", "fr", "es"),
+                            add_lang = NULL,
+                            verbose = TRUE) {
 
   printed_lang <- .arg_check_printed_lang(printed_lang)
 
-  if (is.null(df)) {
-    df <- .read_species_data(data_path, verbose)
+  cols <- paste0("full_phrases_", vapply(printed_lang, .lang_suffix, character(1)))
+  missing_cols <- setdiff(cols, names(df))
+  if (length(missing_cols) > 0) {
+    stop("The species data has no phrase column(s) ",
+         paste(missing_cols, collapse = ", "), ".\n",
+         "Run arboretum_phrases() on your data file first to create and review ",
+         "the species phrases.", call. = FALSE)
   }
 
-  dict <- .dict()
+  html_phrases <- list()
+  for (k in seq_along(printed_lang)) {
+    stored <- as.character(df[[cols[k]]])
+    empty <- .is_empty_phrase(stored)
+    if (any(empty)) {
+      warning("No stored phrase in '", cols[k], "' for: ",
+              paste(df$taxonName[empty], collapse = ", "),
+              ". Run arboretum_phrases() to fill in the empty phrases.", call. = FALSE)
+      stored[empty] <- ""
+    }
+    html_phrases[[printed_lang[k]]] <- stats::setNames(as.list(stored), df$taxonName)
+  }
 
   has_add_lang_phrases <- !is.null(add_lang) &&
     "full_phrases_ADD_LANGUAGE" %in% names(df) &&
-    any(nzchar(trimws(stats::na.omit(df$full_phrases_ADD_LANGUAGE))))
+    !all(.is_empty_phrase(df$full_phrases_ADD_LANGUAGE))
 
   if (has_add_lang_phrases) {
+    add_phrases <- as.character(df$full_phrases_ADD_LANGUAGE)
+    add_phrases[.is_empty_phrase(add_phrases)] <- ""
+    html_phrases[[add_lang]] <- stats::setNames(as.list(add_phrases), df$taxonName)
     printed_lang <- unique(c(printed_lang, add_lang))
     if (verbose) {
       message("Added custom language to phrases: ", toupper(add_lang))
     }
   }
 
-  html_phrases <- list()
-  base_langs <- setdiff(printed_lang, add_lang)
-  n_generated <- 0L
-
-  for (lang in base_langs) {
-    col <- paste0("full_phrases_", .lang_suffix(lang))
-    if (!col %in% names(df)) {
-      df[[col]] <- NA_character_
-    }
-    stored <- as.character(df[[col]])
-    missing <- is.na(stored) | !nzchar(trimws(stored))
-
-    # Only generate phrases for species without a stored phrase, so manual
-    # edits made in the data file are preserved across runs
-    if (any(missing)) {
-      generated <- .phrase_generator(
-        df = df[missing, , drop = FALSE],
-        dict = dict,
-        lang = lang,
-        verbose = verbose
-      )
-      stored[missing] <- trimws(unlist(generated, use.names = FALSE))
-      n_generated <- n_generated + sum(missing)
-      if (verbose) {
-        message("Generated phrases for language: ", toupper(lang))
-      }
-    } else if (verbose) {
-      message("Using stored phrases for language: ", toupper(lang))
-    }
-
-    df[[col]] <- stored
-    html_phrases[[lang]] <- stats::setNames(as.list(stored), df$taxonName)
-  }
-
-  if (has_add_lang_phrases) {
-    add_phrases <- as.list(ifelse(
-      is.na(df$full_phrases_ADD_LANGUAGE) |
-        !nzchar(trimws(df$full_phrases_ADD_LANGUAGE)),
-      "",
-      df$full_phrases_ADD_LANGUAGE
-    ))
-    names(add_phrases) <- df$taxonName
-    html_phrases[[add_lang]] <- add_phrases
-
-    if (verbose) {
-      message("Loaded custom phrases for language: ", toupper(add_lang))
-    }
-  }
-
   list(
-    df = df,
     printed_lang = printed_lang,
     html_phrases = html_phrases,
-    has_add_lang_phrases = has_add_lang_phrases,
-    n_generated = n_generated
+    has_add_lang_phrases = has_add_lang_phrases
   )
+}
+
+.is_empty_phrase <- function(x) {
+  x <- as.character(x)
+  is.na(x) | !nzchar(trimws(x))
 }
 
 .phrase_generator <- function(df,
@@ -950,7 +987,7 @@
 
 # Auxiliary functions to build HTML phrase and audio guides for arboretum_audios and arboretum_data
 .save_phrase_html <- function(df,
-                              function_use = c("_data", "_audios"),
+                              function_use = c("_data", "_audios", "_review"),
                               ui_strings,
                               lang_button_label,
                               printed_lang,
@@ -960,27 +997,25 @@
                               add_lang = NULL,
                               data_filename = NULL) {
 
-  if (function_use == "_data") {
-    ui_strings <- lapply(ui_strings, function(x) {
-      # remove all *_audios entries
-      x <- x[!grepl("_audios$", names(x))]
-      names(x)[names(x) == "title_data"] <- "title"
-      names(x)[names(x) == "subtitle_data"] <- "subtitle"
-      x
-    })
-  } else if (function_use == "_audios") {
-    ui_strings <- lapply(ui_strings, function(x) {
-      # remove all *_data entries
-      x <- x[!grepl("_data$", names(x))]
-      names(x)[names(x) == "title_audios"] <- "title"
-      names(x)[names(x) == "subtitle_audios"] <- "subtitle"
-      x
-    })
-  }
+  function_use <- match.arg(function_use)
+
+  # Keep the title and subtitle of this guide only:
+  #   "_data" = phrase guide (arboretum_phrases()),
+  #   "_audios" = recording guide (arboretum_audios()),
+  #   "_review" = data reviewing guide (arboretum_data())
+  mode <- sub("^_", "", function_use)
+  ui_strings <- lapply(ui_strings, function(x) {
+    x$title <- x[[paste0("title_", mode)]]
+    x$subtitle <- x[[paste0("subtitle_", mode)]]
+    x[!grepl("^(title|subtitle)_", names(x))]
+  })
+
+  # Guides whose fields can be edited and exported back to the data file
+  editable <- function_use %in% c("_data", "_review")
 
   initial_lang <- printed_lang[1L]
   ui_strings_json <- jsonlite::toJSON(ui_strings[printed_lang], auto_unbox = TRUE)
-  species_data_json <- if (function_use == "_data") {
+  species_data_json <- if (editable) {
     jsonlite::toJSON(df, na = "null", auto_unbox = TRUE)
   } else {
     "[]"
@@ -1213,7 +1248,7 @@ ifelse(function_use == "_audios",
   min-width: 80px;
 }'), paste0("\n")),
 
-ifelse(function_use == "_data", paste0(
+ifelse(editable, paste0(
 '.search-row {
   display: flex;
   gap: 8px;
@@ -1274,6 +1309,27 @@ ifelse(function_use == "_data", paste0(
   background: #fafaf8;
 }
 .edit-section { margin-bottom: 14px; }
+.review-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px 14px;
+}
+.review-field label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.review-field .edit-ta, .review-field select.edit-field {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 0.88rem;
+  background: #fff;
+}
 .edit-section:last-child { margin-bottom: 0; }
 .edit-section-label {
   display: block;
@@ -1343,7 +1399,7 @@ ifelse(function_use == "_audios",
 '</section>
 
   <div class="search-wrap">',
-ifelse(function_use == "_data", paste0(
+ifelse(editable, paste0(
 '    <div id="editToolbar" class="edit-toolbar">
       <span class="save-status" id="saveStatus"></span>
       <button type="button" class="save-btn save-btn-csv" id="downloadCsvBtn">&#8681;&nbsp;CSV</button>
@@ -1601,7 +1657,7 @@ ifelse(function_use == "_audios",
 
 'applyLanguage(currentLang);
 ',
-ifelse(function_use == "_data", paste0(
+ifelse(editable, paste0(
 
 '  // ================================================================
   // Data Editor
@@ -1789,7 +1845,7 @@ ifelse(function_use == "_data", paste0(
           .catch(() => { triggerDownload(blob, dataFilename); setSaved("\u2713 Downloaded"); });
       } else if (window.showSaveFilePicker) {
         // When opened as file://, the dialog starts in the same folder as
-        // this HTML file \u2014 i.e. the dir/ that arboretum_data() wrote to.
+        // this HTML file \u2014 i.e. the folder of the data file used by arboretum_phrases().
         window.showSaveFilePicker({
           suggestedName: dataFilename,
           types: [{ description: "Excel Workbook", accept: { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] } }]
@@ -1828,7 +1884,7 @@ ifelse(function_use == "_data", paste0(
   writeLines(html, con = output_path, useBytes = TRUE)
 
   if (verbose) {
-    message("Phrases saved to: ", output_path)
+    message("HTML guide saved to: ", output_path)
   }
 }
 
@@ -1853,7 +1909,10 @@ ifelse(function_use == "_data", paste0(
 
     lang_blocks <- character(0)
 
-    for (lang in printed_lang) {
+    # The data reviewing guide shows data fields instead of phrases
+    block_langs <- if (function_use == "_review") character(0) else printed_lang
+
+    for (lang in block_langs) {
       base_text <- html_phrases[[lang]][[species_name]]
       base_text <- gsub("[<]i[>]|[<][/]i[>]", "", base_text)
       base_text <- .normalize_text(base_text, ensure_period = FALSE)
@@ -1910,9 +1969,9 @@ ifelse(function_use == "_data", paste0(
       )
     }
 
-    # Build edit panel (only for _data function)
+    # Build edit panel (phrase guide) or data form (data reviewing guide)
     edit_panel_html <- ""
-    if (function_use == "_data") {
+    if (function_use %in% c("_data", "_review")) {
       vern_val <- if (!.is_missing_text(df$FFB.vernacularName[i])) df$FFB.vernacularName[i] else ""
 
       lang_field_rows <- paste(vapply(std_langs, function(lang) {
@@ -1965,7 +2024,7 @@ ifelse(function_use == "_data", paste0(
           '<label class="edit-section-label">Full phrases (full_phrases_*)</label>',
           '<small class="edit-hint" style="margin-bottom:6px">',
           '&#8505; Automatically generated phrases. Edit them freely; stored phrases ',
-          'are kept on the next runs. Clear a field to regenerate it. ',
+          'are kept on the next runs. Clear a field and rerun arboretum_phrases() to regenerate it. ',
           'Plant uses and free notes are appended after the phrase.',
           '</small>',
           full_phrase_rows,
@@ -1984,7 +2043,7 @@ ifelse(function_use == "_data", paste0(
           '<label class="edit-section-label">Full phrase (', .escape_html(alabel), ')</label>',
           '<small class="edit-hint" style="margin-bottom:6px">',
           '&#8505; Paste the complete translation for ', .escape_html(alabel), '. ',
-          'Changes will be used on the next arboretum_data() run.',
+          'Export the data and it will be used by arboretum_labels().',
           '</small>',
           '<textarea class="edit-field edit-ta" rows="5"',
           ' data-row="', row_idx, '" data-col="', acol, '"',
@@ -2004,7 +2063,7 @@ ifelse(function_use == "_data", paste0(
         ' data-row="', row_idx, '" data-col="FFB.vernacularName" data-kind="vernacular">',
         .escape_html(vern_val), '</textarea>',
         '<small class="edit-hint">',
-        '&#8505; Vernacular name changes take effect on the next arboretum_data() run.',
+        '&#8505; Vernacular names are used when a phrase is generated again: clear its full phrase and rerun arboretum_phrases().',
         '</small>',
         '</div>',
         '<div class="edit-section">',
@@ -2015,6 +2074,23 @@ ifelse(function_use == "_data", paste0(
         add_lang_html,
         '</div>'
       )
+
+      # Data reviewing guide: every reviewed data field, always open
+      if (function_use == "_review") {
+        edit_panel_html <- paste0(
+          '<div class="edit-panel review-panel" id="edit-panel-', row_idx, '">',
+          '<div class="edit-section">',
+          '<label class="edit-section-label">Species data</label>',
+          .review_fields_html(df, i, row_idx),
+          '<small class="edit-hint">&#8505; Multiple values are separated by &quot; | &quot;.</small>',
+          '</div>',
+          '<div class="edit-section">',
+          '<div class="edit-uses-header"><span></span><span>Plant uses</span><span>Free notes</span></div>',
+          lang_field_rows,
+          '</div>',
+          '</div>'
+        )
+      }
     }
 
     cards[i] <- paste0(
@@ -2031,6 +2107,70 @@ ifelse(function_use == "_data", paste0(
   }
 
   paste(cards, collapse = "\n")
+}
+
+# Data fields edited in the data reviewing guide of arboretum_data() ####
+# Fields whose values are matched exactly by the phrase generator are offered
+# as drop-down menus; any other value already present is kept as an option
+.review_fields <- function() {
+  list(
+    FFB.vernacularName = NULL,
+    country = NULL,
+    endemism = c("Endemic", "Non-endemic"),
+    botanical_country = NULL,
+    introduced_to = NULL,
+    FFB.establishmentMeans = c("Native", "Cultivated", "Naturalized"),
+    FFB.stateProvince = NULL,
+    FFB.phytogeographicDomain = NULL,
+    FFB.vegetationType = NULL,
+    IUCN.status = unname(.iucn_label(c("EX", "EW", "RE", "CR", "EN", "VU",
+                                       "NT", "LC", "DD", "NE")))
+  )
+}
+
+# Labels and hints of the reviewed fields that need clarification
+.review_field_labels <- function() {
+  list(
+    endemism = list(
+      label = "endemism (in Brazil only)",
+      hint = "Whether the species is endemic to Brazil, as recorded by Flora e Funga do Brasil."
+    )
+  )
+}
+
+.review_fields_html <- function(df, i, row_idx) {
+  fields <- .review_fields()
+  labels <- .review_field_labels()
+  html <- vapply(names(fields), function(col) {
+    val <- if (col %in% names(df) && !.is_missing_text(df[[col]][i])) {
+      as.character(df[[col]][i])
+    } else {
+      ""
+    }
+    choices <- fields[[col]]
+    control <- if (is.null(choices)) {
+      paste0('<textarea class="edit-field edit-ta" rows="2"',
+             ' data-row="', row_idx, '" data-col="', col, '" data-kind="data">',
+             .escape_html(val), '</textarea>')
+    } else {
+      choices <- unique(c("", choices, if (nzchar(val)) val))
+      options <- paste0('<option value="', .escape_html(choices), '"',
+                        ifelse(choices == val, " selected", ""), '>',
+                        .escape_html(ifelse(nzchar(choices), choices, "\u2014")),
+                        '</option>', collapse = "")
+      paste0('<select class="edit-field" data-row="', row_idx, '" data-col="', col,
+             '" data-kind="data">', options, '</select>')
+    }
+    label <- if (!is.null(labels[[col]])) labels[[col]]$label else col
+    hint <- if (!is.null(labels[[col]])) {
+      paste0('<small class="edit-hint">', .escape_html(labels[[col]]$hint), '</small>')
+    } else {
+      ""
+    }
+    paste0('<div class="review-field"><label>', .escape_html(label), '</label>',
+           control, hint, '</div>')
+  }, character(1))
+  paste0('<div class="review-grid">', paste(html, collapse = ""), '</div>')
 }
 
 .lang_label <- function(lang) {
@@ -2201,6 +2341,8 @@ subtitle_html <- function(ui_strings, lang) {
       html_lang = "en",
       title_audios = "Personal Audio Recording Guide",
       title_data = "Phrases Generating Guide",
+      title_review = "Data Reviewing Guide",
+      subtitle_review = "Use this file to review and correct the species data retrieved by arboretum_data() before generating the phrases with arboretum_phrases().",
       subtitle_audios = "Use this file to record your own species audios before generating the HTML labels and minisite.",
       subtitle_data = "Use this file to check the automatically generated phrases before recording audios and generating the HTML labels and minisite.",
       search_placeholder = "Search species or family name...",
@@ -2215,6 +2357,8 @@ subtitle_html <- function(ui_strings, lang) {
       html_lang = "pt",
       title_audios = "Guia para Grava\u00e7\u00e3o de \u00c1udios Pessoais",
       title_data = "Guia de Gera\u00e7\u00e3o de Frases",
+      title_review = "Guia de Revis\u00e3o dos Dados",
+      subtitle_review = "Use este arquivo para revisar e corrigir os dados das esp\u00e9cies obtidos por arboretum_data() antes de gerar as frases com arboretum_phrases().",
       subtitle_audios = "Use este arquivo para gravar seus pr\u00f3prios \u00e1udios das esp\u00e9cies antes de gerar os r\u00f3tulos em HTML e o minisite.",
       subtitle_data = "Use este arquivo para verificar as frases geradas automaticamente antes de gravar os \u00e1udios e gerar as etiquetas HTML e o minisite.",
       search_placeholder = "Pesquisar nome da esp\u00e9cie ou fam\u00edlia...",
@@ -2229,6 +2373,8 @@ subtitle_html <- function(ui_strings, lang) {
       html_lang = "fr",
       title_audios = "Guide d\u2019Enregistrement Audio Personnel",
       title_data = "Guide de g\u00e9n\u00e9ration de phrases",
+      title_review = "Guide de r\u00e9vision des donn\u00e9es",
+      subtitle_review = "Utilisez ce fichier pour r\u00e9viser et corriger les donn\u00e9es des esp\u00e8ces obtenues par arboretum_data() avant de g\u00e9n\u00e9rer les phrases avec arboretum_phrases().",
       subtitle_audios = "Utilisez ce fichier pour enregistrer vos propres audios d\u2019esp\u00e8ces avant de g\u00e9n\u00e9rer les \u00e9tiquettes HTML et le minisite.",
       subtitle_data = "Utilisez ce fichier pour v\u00e9rifier les phrases g\u00e9n\u00e9r\u00e9es automatiquement avant d\u2019enregistrer les audios et de g\u00e9n\u00e9rer les \u00e9tiquettes HTML et le minisite.",
       search_placeholder = "Rechercher le nom de l\u2019esp\u00e8ce ou de la famille...",
@@ -2243,6 +2389,8 @@ subtitle_html <- function(ui_strings, lang) {
       html_lang = "es",
       title_audios = "Gu\u00eda para Grabar Audios Personales",
       title_data = "Gu\u00eda de Generaci\u00f3n de Frases",
+      title_review = "Gu\u00eda de Revisi\u00f3n de Datos",
+      subtitle_review = "Use este archivo para revisar y corregir los datos de las especies obtenidos por arboretum_data() antes de generar las frases con arboretum_phrases().",
       subtitle_audios = "Use este archivo para grabar sus propios audios de especies antes de generar las etiquetas HTML y el minisitio.",
       subtitle_data = "Use este archivo para revisar las frases generadas autom\u00e1ticamente antes de grabar los audios y generar las etiquetas HTML y el minisite.",
       search_placeholder = "Buscar nombre de la especie o familia...",

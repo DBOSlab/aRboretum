@@ -7,12 +7,12 @@
 arboretum_data(
   spp_list = NULL,
   printed_lang = c("pt", "en", "fr", "es"),
-  add_lang = NULL,
   verbose = TRUE,
   save = TRUE,
   format = c("csv", "xlsx"),
   filename = "arboretum_data",
-  dir = "arboretum_data"
+  dir = "arboretum_data",
+  ffb_dir = "flora_download"
 )
 }
 \arguments{
@@ -22,23 +22,18 @@ authorship. Leading and trailing whitespace are removed, and names are standardi
 internally before querying. An error is thrown if any element does not contain a
 space, indicating a probable non-species name.}
 
-\item{printed_lang}{Character vector. Built-in language(s) for which phrases are
-generated in the HTML guide. Accepted values are \code{"pt"}, \code{"en"}, \code{"fr"}, and
-\code{"es"}. Default is \code{c("pt", "en", "fr", "es")}.}
-
-\item{add_lang}{Character string or \code{NULL}. Optional code for one additional
-language, for example \code{"PANARA"} or \code{"TUKANO"}. When supplied, the HTML phrase
-guide includes a dedicated editable field for entering a full phrase translation
-for the specified custom language. The content entered there is stored in the
-\code{full_phrases_ADD_LANGUAGE} column and can be used on subsequent runs of
-\code{arboretum_labels()} to include that language in the species labels.
-Default is \code{NULL}.}
+\item{printed_lang}{Character vector. Language(s) of the HTML data reviewing guide:
+the guide interface can be switched between them, and the plant-use and
+free-note fields of these languages (\code{plant_uses_*}, \code{free_notes_*})
+are shown for editing. Accepted values are \code{"pt"}, \code{"en"}, \code{"fr"}, and \code{"es"}.
+The data file always includes the plant-use and free-note columns of all four
+languages. Default is \code{c("pt", "en", "fr", "es")}.}
 
 \item{verbose}{Logical. If \code{TRUE}, progress messages are printed to the console.
 Default is \code{TRUE}.}
 
-\item{save}{Logical. If \code{TRUE}, the resulting dataframe is saved to disk.
-Default is \code{TRUE}.}
+\item{save}{Logical. If \code{TRUE}, the resulting dataframe is saved to disk and the
+HTML data reviewing guide is written to \code{dir}. Default is \code{TRUE}.}
 
 \item{format}{Character string indicating the output file format. One of \code{"csv"}
 or \code{"xlsx"}. Partial matching is allowed through \code{match.arg()}.
@@ -50,11 +45,27 @@ Default is \code{"arboretum_data"}.}
 \item{dir}{Character string. Directory path where the output file will be saved.
 Trailing slashes are automatically removed. The directory is created if it does
 not exist. Default is \code{"arboretum_data"}.}
+
+\item{ffb_dir}{Character string. Path to the folder where Flora e Funga do Brasil
+(FFB) Darwin Core Archives are downloaded and kept between runs, as in
+\code{floraR::flora_download()}. Two kinds of paths are accepted:
+\itemize{
+\item A folder holding one or more downloaded versions (for example
+\code{"flora_download"}). The most recent version already downloaded there is
+always used, without contacting the FFB server, so the function also works
+offline. The latest version is only downloaded, with
+\code{floraR::flora_download()}, when the folder holds no downloaded
+version yet. To update a previously downloaded dataset, run
+\code{floraR::flora_download(dir = ffb_dir)}.
+\item A single version folder (for example
+\code{"flora_download/dwca_ffb_v393_430_latest"}), which is used as is, without
+any download.
+}
+Default is \code{"flora_download"}.}
 }
 \value{
 A dataframe combining data retrieved from FFB and POWO. The returned columns include:
 \itemize{
-\item \code{original_query}: The species name as originally supplied in \code{spp_list}.
 \item \code{family}: Family name of the accepted taxon.
 \item \code{genus}: Genus extracted from the accepted scientific name.
 \item \code{taxonName}: Accepted scientific name after synonym resolution.
@@ -78,23 +89,14 @@ translated into English when applicable and concatenated by \code{" | "}.
 representing the richest genus.
 \item \code{plant_uses_EN}, \code{plant_uses_PT}, \code{plant_uses_ES},
 \code{plant_uses_FR}: Plant-use fields in English, Portuguese, Spanish, and French,
-intended for user annotation via the HTML phrase guide or direct editing of the
-saved file.
+intended for user annotation by direct editing of the saved file or via the
+HTML phrase guide of \code{arboretum_phrases()}.
 \item \code{free_notes_EN}, \code{free_notes_PT}, \code{free_notes_ES},
 \code{free_notes_FR}: Free-text note fields in English, Portuguese, Spanish, and
-French, intended for user annotation via the HTML phrase guide or direct editing
-of the saved file.
+French, intended for user annotation by direct editing of the saved file or via
+the HTML phrase guide of \code{arboretum_phrases()}.
 \item \code{IUCN.status}: Global IUCN Red List category, for example
 \code{"Endangered (EN)"}, or \code{NA} when the species has not been assessed.
-\item \code{full_phrases_EN}, \code{full_phrases_PT}, \code{full_phrases_ES},
-\code{full_phrases_FR}: Natural-language species descriptions automatically
-generated for each language in \code{printed_lang}. Phrases stored in these
-columns are reused as they are on later runs, so they can be manually edited in
-the saved file or in the HTML phrase guide; clearing a cell makes the phrase be
-generated again. Plant uses and free notes are appended after the phrase.
-\item \code{full_phrases_ADD_LANGUAGE}: Reserved field for a complete phrase
-translation in the custom language specified by \code{add_lang}. Always present
-in the output; populated by the user via the HTML phrase guide or direct editing.
 \item \code{POWO.url}: URL to the species page in POWO.
 \item \code{FFB.url}: URL to the species page in FFB.
 }
@@ -104,12 +106,20 @@ returned as \code{NA}. Species not found in either database are omitted from the
 dataframe. For overlapping fields, FFB data generally take precedence, except for
 selected WCVP-derived fields such as botanical country, introduced range, and POWO URL.
 
-When \code{save = TRUE}, the function also writes a standalone HTML phrase guide
-(\code{__phrase_generating_guide.html}) to \code{dir}. This file embeds the full
-dataframe and allows users to review generated phrases, edit annotation fields
-(\code{FFB.vernacularName}, \code{plant_uses_*}, \code{free_notes_*},
-\code{full_phrases_*}), and export the updated data as CSV or XLSX
-without rerunning the function.
+The phrase columns (\code{full_phrases_*}) are not part of this output: they are
+added by \code{arboretum_phrases()} once the data have been reviewed.
+
+When \code{save = TRUE}, the function also writes a standalone HTML data reviewing
+guide (\code{__data_reviewing_guide.html}) to \code{dir}. It embeds the data and
+provides, for each species, editable fields for \code{FFB.vernacularName},
+\code{country}, \code{endemism}, \code{botanical_country}, \code{introduced_to},
+\code{FFB.establishmentMeans}, \code{FFB.stateProvince},
+\code{FFB.phytogeographicDomain}, \code{FFB.vegetationType}, \code{IUCN.status},
+and the \code{plant_uses_*} and \code{free_notes_*} fields of \code{printed_lang}.
+The \code{endemism}, \code{FFB.establishmentMeans}, and \code{IUCN.status}
+fields are drop-down menus restricted to the values used to build the phrases.
+The edited data can be saved or exported as CSV or XLSX without rerunning the
+function.
 }
 \description{
 This function queries both \href{https://floradobrasil.jbrj.gov.br/consulta/}{Flora e Funga do Brasil (FFB)}
@@ -121,9 +131,11 @@ global conservation status of each species is retrieved from the
 merges data from both sources, and returns a single dataframe that can optionally be
 saved as a CSV or Excel file. The output also includes genus-level richness and rank
 information derived from FFB. When \code{save = TRUE}, the function also writes a
-standalone HTML phrase guide (\code{__phrase_generating_guide.html}) to \code{dir},
-which allows users to review, edit annotation fields, and export the updated data
-directly from the browser.
+standalone HTML data reviewing guide (\code{__data_reviewing_guide.html}) to
+\code{dir}, in which the retrieved data can be reviewed, corrected, and exported
+back to the data file directly from the browser. Once the data have been
+reviewed, the species phrases used by the labels are generated with
+\code{arboretum_phrases()}.
 }
 \details{
 The function follows five main steps:
@@ -183,17 +195,6 @@ assessment is retrieved from the official IUCN Red List API.
 checklist mirrored by GBIF (\url{https://www.gbif.org}).
 }
 
-\item \strong{HTML phrase guide generation}
-\itemize{
-\item Generates natural-language species descriptions for each
-\code{printed_lang} and stores them in the \code{full_phrases_*} columns.
-Phrases already present in these columns are kept, so manual edits are
-never overwritten. If \code{add_lang} is supplied, a dedicated editable
-field is included for the custom language.
-\item Saves a standalone \code{__phrase_generating_guide.html} to \code{dir}
-when \code{save = TRUE}. The guide embeds the full dataframe and provides
-browser-based editing and export functionality.
-}
 }
 
 Before processing, \code{spp_list} is cleaned using internal helper functions.
@@ -202,16 +203,16 @@ is checked to ensure that it contains a space. The function stops with an error 
 any element appears not to be a binomial species name.
 
 If \code{dir} already contains a CSV or XLSX data file, the species data are read
-from that file instead of being retrieved again, and only empty \code{full_phrases_*}
-cells are filled; the file is rewritten only when new phrases were generated.
+from that file instead of being retrieved again, and the data reviewing guide is
+rebuilt from it. Delete or move that file to retrieve the data again.
 
 If \code{save = TRUE}, the function creates the output directory if needed and saves
 the resulting dataframe either as a CSV file using \code{utils::write.csv()} or as
 an Excel file using \code{openxlsx::write.xlsx()}. When \code{verbose = TRUE}, a
 message reports the saved file path.
 
-The temporary FFB download folder named \code{"flora_download"} is removed when the
-function exits.
+The downloaded FFB dataset is kept in \code{ffb_dir}, so later runs reuse it
+instead of downloading it again.
 }
 \note{
 \itemize{
@@ -260,6 +261,7 @@ result <- arboretum_data(
 
 }
 \seealso{
+\code{\link{arboretum_phrases}},
 \code{\link[floraR]{flora_download}},
 \code{\link[floraR]{flora_parse}},
 \code{\link[rredlist]{rl_species}}
