@@ -8,17 +8,15 @@ and building a searchable minisite for a living plant collection.
 
 If you have not already installed the package from GitHub:
 
-``` r
-# Install from GitHub
-if (!require("devtools")) install.packages("devtools")
-devtools::install_github("DBOSlab/aRboretum")
-```
+\
+`# Install from GitHub`\
+`if`` ``(``!`[`require`](https://rdrr.io/r/base/library.html)`(`[`"devtools"`](https://devtools.r-lib.org/)`)``)`` `[`install.packages`](https://rdrr.io/r/utils/install.packages.html)`(``"devtools"``)`\
+`devtools``::`[`install_github`](https://devtools.r-lib.org/reference/install-deprecated.html)`(``"DBOSlab/aRboretum"``)`
 
 Then load it:
 
-``` r
-library(aRboretum)
-```
+\
+[`library`](https://rdrr.io/r/base/library.html)`(`[`aRboretum`](https://DBOSlab.github.io/aRboretum)`)`
 
 ## Step 1. Prepare species data
 
@@ -34,16 +32,15 @@ downstream use in `aRboretum`.
 
 Both `.csv` and `.xlsx` outputs are supported.
 
-``` r
-species_list <- c("Luetzelburgia bahiensis", "Paubrasilia echinata")
-
-arboretum_data(
-  spp_list = species_list,
-  save = TRUE,
-  format = "xlsx",
-  dir = "arboretum_data"
-)
-```
+\
+`species_list`` ``<-`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Luetzelburgia bahiensis"``, ``"Paubrasilia echinata"``)`\
+\
+[`arboretum_data`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)`(`\
+`  spp_list ``=`` ``species_list``,`\
+`  save ``=`` ``TRUE``,`\
+`  format ``=`` ``"xlsx"``,`\
+`  dir ``=`` ``"arboretum_data"`\
+`)`
 
 This saves a data file inside `arboretum_data/`, which can then be used
 to generate labels, optional personal audio folders, QR codes, and the
@@ -54,13 +51,12 @@ minisite.
 Use the saved data file to create one interactive HTML label per
 species.
 
-``` r
-arboretum_labels(
-  data_path = "arboretum_data/arboretum_data.xlsx",
-  printed_lang = c("pt", "en", "fr", "es"),
-  dir = "arboretum_labels"
-)
-```
+\
+[`arboretum_labels`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``, ``"fr"``, ``"es"``)``,`\
+`  dir ``=`` ``"arboretum_labels"`\
+`)`
 
 Each label can include:
 
@@ -76,14 +72,13 @@ Each label can include:
 Create a searchable `index.html` page linking all generated species
 labels.
 
-``` r
-arboretum_minisite(
-  labels_dir = "arboretum_labels",
-  data_path = "arboretum_data/arboretum_data.xlsx",
-  site_title = "My Plant Collection",
-  group_by_family = TRUE
-)
-```
+\
+[`arboretum_minisite`](https://DBOSlab.github.io/aRboretum/reference/arboretum_minisite.md)`(`\
+`  labels_dir ``=`` ``"arboretum_labels"``,`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  site_title ``=`` ``"My Plant Collection"``,`\
+`  group_by_family ``=`` ``TRUE`\
+`)`
 
 This creates a minisite homepage inside `arboretum_labels/`. You may
 want to open it in your browser by just clicking on the `index.html`
@@ -94,12 +89,11 @@ file.
 If you want to provide recorded audio instead of relying only on browser
 text-to-speech, first create the folder structure for recordings:
 
-``` r
-arboretum_audios(
-  data_path = "arboretum_data/arboretum_data.xlsx",
-  printed_lang = c("pt", "en", "fr", "es")
-)
-```
+\
+[`arboretum_audios`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``, ``"fr"``, ``"es"``)`\
+`)`
 
 This creates an `arboretum_audios/` directory and a recording guide
 named:
@@ -133,21 +127,20 @@ To use this workflow:
 
 Example with Tukano:
 
-``` r
-arboretum_audios(
-  data_path = "arboretum_data/arboretum_data.xlsx",
-  printed_lang = c("pt", "en"),
-  add_lang = "TUKANO"
-)
-
-arboretum_labels(
-  data_path = "arboretum_data/arboretum_data.xlsx",
-  audio_dir = "arboretum_audios",
-  printed_lang = c("pt", "en"),
-  add_lang = "TUKANO",
-  dir = "arboretum_labels"
-)
-```
+\
+[`arboretum_audios`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  add_lang ``=`` ``"TUKANO"`\
+`)`\
+\
+[`arboretum_labels`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  audio_dir ``=`` ``"arboretum_audios"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  add_lang ``=`` ``"TUKANO"``,`\
+`  dir ``=`` ``"arboretum_labels"`\
+`)`
 
 In this workflow:
 

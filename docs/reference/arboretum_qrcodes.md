@@ -7,15 +7,28 @@ Labels are arranged on A4 pages and saved as PDF or PNG files. If the
 number of labels exceeds the page capacity, the function automatically
 creates multiple output files, one per page.
 
-Two visual layouts are available:
+Four visual layouts are available:
 
-- `"minimalist"`: a compact label with a border, scientific name,
-  optional first vernacular name, and QR code.
+- `"minimalist"` (default): a compact label with a thin border,
+  scientific name in italic, optional first vernacular name, and QR
+  code. All elements scale proportionally to the chosen label size.
 
-- `"complete"`: a larger botanical label with scientific name,
-  authorship, family name, optional first vernacular name, optional
-  language-specific endemism phrase, QR code, optional specimen
-  identifier, and optional institutional logo.
+- `"classic"`: a traditional botanical label with dark-green serif
+  typography, scientific name, authorship, bold family name, optional
+  vernacular name, optional language-specific endemism phrase, QR code,
+  optional specimen identifier, and optional institutional logo.
+
+- `"modern"`: a contemporary label with a slate-blue colour palette,
+  clean sans-serif fonts throughout, a lightweight border, and the same
+  information fields as `"classic"`.
+
+- `"botanical"`: a warm parchment-background label with brown earth-tone
+  serif typography, an ornamental double border, and the same
+  information fields as `"classic"`.
+
+In all `"classic"`, `"modern"`, and `"botanical"` layouts, all font
+sizes scale proportionally to both the label width and height, so the
+text remains readable at any custom size.
 
 QR codes can link to species pages in a published minisite, to a single
 shared URL, to POWO or FFB source pages from the input data, or, when no
@@ -31,7 +44,7 @@ arboretum_qrcodes(
   length = NULL,
   width = NULL,
   path_to_logo = NULL,
-  layout = c("minimalist", "complete"),
+  layout = c("minimalist", "classic", "modern", "botanical"),
   id_code = NULL,
   base_url = NULL,
   url = NULL,
@@ -65,46 +78,46 @@ arboretum_qrcodes(
 - printed_lang:
 
   Character vector. Language code used for the endemism phrase in
-  `"complete"` labels. Accepted values are `"pt"`, `"en"`, `"fr"`, and
-  `"es"`. When more than one language is supplied and
-  `layout = "complete"`, the first valid value selected by
-  [`match.arg()`](https://rdrr.io/r/base/match.arg.html) is used. This
-  argument is ignored for `"minimalist"` labels. Default is
+  detailed labels (`"classic"`, `"modern"`, `"botanical"`). Accepted
+  values are `"pt"`, `"en"`, `"fr"`, and `"es"`. When more than one
+  language is supplied, the first valid value selected by
+  [`match.arg()`](https://rdrr.io/r/base/match.arg.html) is used.
+  Ignored for `"minimalist"` labels. Default is
   `c("pt", "en", "fr", "es")`.
 
 - length:
 
   Numeric or `NULL`. Label height in centimetres. If `NULL`, the default
-  is `2.5` cm for `"minimalist"` labels and `8.0` cm for `"complete"`
-  labels.
+  is `2.5` cm for `"minimalist"` labels and `8.0` cm for detailed
+  layouts. All text sizes scale proportionally.
 
 - width:
 
   Numeric or `NULL`. Label width in centimetres. If `NULL`, the default
-  is `2.5` cm for `"minimalist"` labels and `6.0` cm for `"complete"`
-  labels.
+  is `2.5` cm for `"minimalist"` labels and `6.0` cm for detailed
+  layouts. All text sizes scale proportionally.
 
 - path_to_logo:
 
   Character string or `NULL`. Optional path to a PNG or JPEG logo file.
-  The logo is shown only in `"complete"` labels, near the bottom-right
-  of each label. The image aspect ratio is preserved. If the logo file
-  is missing or unsupported, the function warns and continues without
-  it. Default is `NULL`.
+  The logo is shown in `"classic"`, `"modern"`, and `"botanical"`
+  labels, near the bottom-right corner. The image aspect ratio is
+  preserved. If the logo file is missing or unsupported, the function
+  warns and continues without it. Default is `NULL`.
 
 - layout:
 
-  Character string. Label layout. One of `"minimalist"` or `"complete"`.
-  Default is the first option, `"minimalist"`.
+  Character string. Label layout. One of `"minimalist"` (default),
+  `"classic"`, `"modern"`, or `"botanical"`.
 
 - id_code:
 
   Character vector or `NULL`. Optional specimen or collection identifier
-  printed on `"complete"` labels. If a single value matching a column
-  name in the input data is supplied, values are taken from that column.
-  Otherwise, supplied values are recycled or used directly to match the
-  selected species. Ignored visually for `"minimalist"` labels. Default
-  is `NULL`.
+  printed on detailed labels (`"classic"`, `"modern"`, `"botanical"`).
+  If a single value matching a column name in the input data is
+  supplied, values are taken from that column. Otherwise, supplied
+  values are recycled or used directly. Ignored for `"minimalist"`
+  labels. Default is `NULL`.
 
 - base_url:
 
@@ -214,7 +227,7 @@ The function follows five main steps:
     - Display a QR code with a white quiet zone for scanning
       reliability.
 
-5.  **Complete labels**
+5.  **Classic / Modern / Botanical labels**
 
     - Display scientific name, authorship, family, and first vernacular
       name when available.
@@ -228,6 +241,10 @@ The function follows five main steps:
 
     - Display a QR code with a white quiet zone for scanning
       reliability.
+
+    - All font sizes are computed from a single proportional scale
+      factor `min(width / 6, height / 8)`, so text remains readable at
+      any size.
 
 Output files are named `arboretum_qrcodes.pdf` or
 `arboretum_qrcodes.png` when all labels fit on one page. When multiple
@@ -279,11 +296,11 @@ data_path = "arboretum_data/arboretum_data.xlsx",
 base_url = "https://dboslab.github.io/jbrj-arboretum"
 )
 
-# Complete labels with specimen IDs and a logo
+# Classic labels with specimen IDs and a logo
 arboretum_qrcodes(
 data_path = "arboretum_data/arboretum_data.xlsx",
 species = c("Euterpe edulis", "Paubrasilia echinata"),
-layout = "complete",
+layout = "classic",
 printed_lang = "pt",
 base_url = "https://dboslab.github.io/jbrj-arboretum",
 id_code = c("JBRJ-001", "JBRJ-002"),
@@ -291,12 +308,21 @@ path_to_logo = "path/to/institution_logo.png",
 format = "pdf"
 )
 
-# Complete labels using specimen IDs stored in a data column
+# Modern labels using specimen IDs stored in a data column
 arboretum_qrcodes(
 data_path = "arboretum_data/arboretum_data.xlsx",
-layout = "complete",
+layout = "modern",
 id_code = "accession_id",
 printed_lang = "en"
+)
+
+# Botanical labels with warm parchment style
+arboretum_qrcodes(
+data_path = "arboretum_data/arboretum_data.xlsx",
+layout = "botanical",
+printed_lang = "pt",
+base_url = "https://dboslab.github.io/jbrj-arboretum",
+format = "pdf"
 )
 
 # Larger minimalist PNG labels with a custom QR colour

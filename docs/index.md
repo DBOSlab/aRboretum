@@ -3,22 +3,27 @@
 `aRboretum` is an R package for generating interactive, multilingual
 audio-enhanced HTML labels for botanical and living plant collections.
 It extracts species data from taxonomic databases ([Flora e Funga do
-Brasil](https://floradobrasil.jbrj.gov.br/) and [Plants of the World
-Online](https://powo.science.kew.org/)), handles synonym resolution,
+Brasil](https://floradobrasil.jbrj.gov.br/) and the [World Checklist of
+Vascular Plants](https://powo.science.kew.org/), the backbone of Plants
+of the World Online), retrieves conservation status from the [IUCN Red
+List](https://www.iucnredlist.org/), handles synonym resolution,
 generates natural language descriptions, and produces standalone HTML
 files with audio playback capabilities.
 
 ## Key features
 
-- 🎵 **Dual audio support** - Personal recordings OR text-to-speech
-- 🌐 **Multilingual** - Portuguese, English, French, Spanish, plus one
+- 🎵 **Dual audio support** — Personal recordings OR text-to-speech
+- 🌐 **Multilingual** — Portuguese, English, French, Spanish, plus one
   flexible custom language slot for community-based accessibility
-- 🗺️ **Interactive maps** - World and Brazil state-level distribution
-- 🔍 **Searchable index** - Real-time filtering of species collection
-- 📊 **Data mining** - Automatic extraction from FFB and POWO databases
-- 🎨 **Customizable branding** - Add institutional logos
-- 📱 **Responsive design** - Works on mobile and desktop
-- 🚀 **Ready to deploy** - Complete website in one folder, no build step
+- 🗺️ **Interactive maps** — World and Brazil state-level distribution
+- 🔍 **Searchable index** — Real-time filtering of species collection
+- 📊 **Data mining** — Automatic extraction from FFB and WCVP, plus IUCN
+  Red List status
+- ✏️ **Editable phrases** — Generated descriptions are stored in the
+  data and can be edited by hand
+- 🎨 **Customizable branding** — Add institutional logos
+- 📱 **Responsive design** — Works on mobile and desktop
+- 🚀 **Ready to deploy** — Complete website in one folder, no build step
   needed
 - 🖼️ **Personal photos** — Add species photos and slideshows
 - 🧾 **QR-code labels** — Generate printable labels linked to species
@@ -30,36 +35,80 @@ herbaria, and living plant collections.
 
 ## Installation
 
-You can install the development version of `aRboretum` from
+`aRboretum` depends on two packages that are not on CRAN, so install
+them first:
+
+- [`rWCVPdata`](https://github.com/matildabrown/rWCVPdata), which
+  provides the World Checklist of Vascular Plants data and is
+  distributed through its own repository;
+- [`floraR`](https://github.com/DBOSlab/floraR), which downloads and
+  parses the Flora e Funga do Brasil dataset used by
+  [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md).
+
+\
+`if`` ``(``!`[`requireNamespace`](https://rdrr.io/r/base/ns-load.html)`(``"rWCVPdata"``, quietly ``=`` ``TRUE``)``)`` ``{`\
+`  `[`install.packages`](https://rdrr.io/r/utils/install.packages.html)`(``"rWCVPdata"``,`\
+`                   repos ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(`\
+`                     ``"https://matildabrown.github.io/drat"``,`\
+`                     ``"https://cloud.r-project.org"`\
+`                   ``)`\
+`  ``)`\
+`}`\
+\
+`if`` ``(``!`[`requireNamespace`](https://rdrr.io/r/base/ns-load.html)`(``"BiocManager"``, quietly ``=`` ``TRUE``)``)`` `\
+[`install.packages`](https://rdrr.io/r/utils/install.packages.html)`(``"BiocManager"``)`` `\
+\
+`# Install the development version of floraR from GitHub, `\
+`# together with its required dependencies `\
+`BiocManager``::`[`install`](https://bioconductor.github.io/BiocManager/reference/install.html)`(``"DBOSlab/floraR"``, dependencies ``=`` ``TRUE``)`
+
+Then install the development version of `aRboretum` from
 [GitHub](https://github.com/DBOSlab/aRboretum) with:
 
-``` r
-if (!require("devtools")) install.packages("devtools")
-devtools::install_github("DBOSlab/aRboretum")
-```
+\
+`if`` ``(``!`[`requireNamespace`](https://rdrr.io/r/base/ns-load.html)`(``"BiocManager"``, quietly ``=`` ``TRUE``)``)`` `\
+[`install.packages`](https://rdrr.io/r/utils/install.packages.html)`(``"BiocManager"``)`` `\
+\
+`# Install the development version of aRboretum from GitHub, `\
+`# together with its required dependencies `\
+`BiocManager``::`[`install`](https://bioconductor.github.io/BiocManager/reference/install.html)`(``"DBOSlab/aRboretum"``, dependencies ``=`` ``TRUE``)`
 
-``` r
-library(aRboretum)
-```
+\
+[`library`](https://rdrr.io/r/base/library.html)`(`[`aRboretum`](https://DBOSlab.github.io/aRboretum)`)`
+
+### Optional: IUCN Red List API token
+
+By default, IUCN Red List categories are retrieved from the IUCN Red
+List checklist mirrored by [GBIF](https://www.gbif.org/), which requires
+no registration. To query the official [IUCN Red List
+API](https://api.iucnredlist.org/) instead, install the
+[`rredlist`](https://docs.ropensci.org/rredlist/) package, request a
+free API token, and store it in your `.Renviron` file:
+
+\
+[`install.packages`](https://rdrr.io/r/utils/install.packages.html)`(``"rredlist"``)`\
+`usethis``::`[`edit_r_environ`](https://usethis.r-lib.org/reference/edit.html)`(``)``   ``# add the line: IUCN_REDLIST_KEY=your_token`
 
 ## Usage
 
-The package provides three main functions:
+The package provides six main functions:
 
-- [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md) -
-  retrieves and merges species data from Flora e Funga do Brasil and
-  Plants of the World Online.
-- [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md) -
-  creates folders and an HTML recording guide for custom personal audio
-  files, including one optional extra community or local language.
+- [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)
+  — retrieves and merges species data from Flora e Funga do Brasil and
+  the World Checklist of Vascular Plants, adds IUCN Red List status, and
+  generates editable multilingual species phrases.
+- [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)
+  — creates folders and an HTML recording guide for custom personal
+  audio files, including one optional extra community or local language.
 - [`arboretum_photos()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_photos.md)
   — creates folders for personal species photos.
-- [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md) -
-  generates interactive multilingual, audio-enhanced HTML species
+- [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)
+  — generates interactive multilingual, audio-enhanced HTML species
   labels, with support for one optional extra language supplied directly
   in the input data.
-- `arboretum_minisite` - creates a searchable multilingual index page
-  for all generated species labels.
+- [`arboretum_minisite()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_minisite.md)
+  — creates a searchable multilingual index page for all generated
+  species labels.
 - [`arboretum_qrcodes()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_qrcodes.md)
   — generates printable QR-code labels linked to species pages or source
   URLs.
@@ -67,50 +116,84 @@ The package provides three main functions:
 #### *1. `arboretum_data`: Extracting species data from taxonomic databases*
 
 The following code retrieves species information from both Flora e Funga
-do Brasil (FFB) and Plants of the World Online (POWO), handling synonym
-resolution and merging data from both sources into a single dataframe.
+do Brasil (FFB) and the World Checklist of Vascular Plants (WCVP, via
+the [`rWCVPdata`](https://github.com/matildabrown/rWCVPdata) package),
+handling synonym resolution and merging data from both sources into a
+single dataframe. The global IUCN Red List status of each species is
+then retrieved, as described in
+[Installation](#optional-iucn-red-list-api-token).
 
-``` r
-library(aRboretum)
-
-# Extract data for multiple species
-spp_list <- c("Euterpe edulis", "Paubrasilia echinata", "Coffea arabica")
-
-species_data <- arboretum_data(
-  spp_list = spp_list,
-  verbose = TRUE,
-  save = TRUE,
-  format = "xlsx",
-  filename = "my_species_data",
-  dir = "extracted_data"
-)
-```
+\
+[`library`](https://rdrr.io/r/base/library.html)`(`[`aRboretum`](https://DBOSlab.github.io/aRboretum)`)`\
+\
+`# Extract data for multiple species`\
+`spp_list`` ``<-`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Euterpe edulis"``, ``"Paubrasilia echinata"``, ``"Coffea arabica"``)`\
+\
+`species_data`` ``<-`` `[`arboretum_data`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)`(`\
+`  spp_list ``=`` ``spp_list``,`\
+`  verbose ``=`` ``TRUE``,`\
+`  save ``=`` ``TRUE``,`\
+`  format ``=`` ``"xlsx"``,`\
+`  filename ``=`` ``"my_species_data"``,`\
+`  dir ``=`` ``"extracted_data"`\
+`)`
 
 The resulting dataframe includes taxonomic information, distribution
 data, Brazilian states, phytogeographic domains, vegetation types,
-endemism, establishment means, IUCN status when available, genus-level
-richness summaries, and links to FFB and POWO species pages.
+endemism, establishment means, IUCN Red List status
+(e.g. `"Endangered (EN)"`) when the species has been assessed,
+genus-level richness summaries, and links to FFB and POWO species pages.
+When `save = TRUE`, the function also writes a standalone HTML phrase
+guide (`__phrase_generating_guide.html`) to `dir`, allowing you to
+review generated phrases, fill in annotation fields
+(`FFB.vernacularName`, `plant_uses_*`, `free_notes_*`,
+`full_phrases_*`), and export the updated data as CSV or XLSX directly
+from the browser.
+
+##### Editing the species phrases
+
+The natural-language species descriptions are generated automatically
+and stored in the columns `full_phrases_EN`, `full_phrases_PT`,
+`full_phrases_ES`, and `full_phrases_FR`. You can rewrite any of them,
+either directly in the saved CSV/XLSX file or in the phrase guide, and
+your text is then used as is by
+[`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)
+and
+[`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md):
+
+- Phrases already stored in these columns are never overwritten.
+- If you clear a cell, a new phrase is generated for that species on the
+  next
+  [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)
+  run with the same `dir`.
+- Text in `plant_uses_*` and `free_notes_*` is appended after the
+  phrase, so there is no need to repeat it there.
+
+Running
+[`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)
+again on a `dir` that already contains the data file reuses that file
+instead of querying the databases again, and only fills in empty phrase
+cells.
 
 #### *2. `arboretum_audios`: Prepare folders for personal audio recordings*
 
 Create folder structure and phrase files for personal audio recordings:
 
-``` r
-library(aRboretum)
+\
+[`library`](https://rdrr.io/r/base/library.html)`(`[`aRboretum`](https://DBOSlab.github.io/aRboretum)`)`\
+\
+`# Create folders for personal audio recordings`\
+[`arboretum_audios`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)`(`\
+`  data_path ``=`` ``"extracted_data/my_species_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``, ``"fr"``, ``"es"``)``,`\
+`  add_lang ``=`` ``"TUKANO"``,`\
+`  verbose ``=`` ``TRUE`\
+`)`
 
-# Create folders for personal audio recordings
-arboretum_audios(
-  data_path = "extracted_data/my_species_data.xlsx",
-  printed_lang = c("pt", "en", "fr", "es"),
-  add_lang = "TUKANO",
-  verbose = TRUE
-)
-```
+This creates the `arboretum_audios/` folder and a searchable HTML guide
+named:
 
-This creates the arboretum_personal_audios/ folder and a searchable HTML
-guide named:
-
-`arboretum_personal_audios/__personal_audio_recording_guide.html`
+`arboretum_audios/__personal_audio_recording_guide.html`
 
 Use this guide to record custom audio files for each species and
 language. Personal recordings are automatically preferred over browser
@@ -123,12 +206,11 @@ requiring translation of the full package interface or minisite.
 
 #### *3. `arboretum_photos`: Prepare folders for personal photos*
 
-``` r
-library(aRboretum)
-
-arboretum_photos(data_path = "extracted_data/my_species_data.xlsx", 
-                 verbose = TRUE )
-```
+\
+[`library`](https://rdrr.io/r/base/library.html)`(`[`aRboretum`](https://DBOSlab.github.io/aRboretum)`)`\
+\
+[`arboretum_photos`](https://DBOSlab.github.io/aRboretum/reference/arboretum_photos.md)`(``data_path ``=`` ``"extracted_data/my_species_data.xlsx"``, `\
+`                 verbose ``=`` ``TRUE`` ``)`
 
 This creates the `arboretum_photos/` folder with one species-specific
 folder per taxon. Add JPG, PNG, WebP, SVG, or other supported image
@@ -143,21 +225,20 @@ own prepared dataframe), you can generate interactive HTML labels with
 text-to-speech functionality, or automatically use personal recordings
 when available:
 
-``` r
-library(aRboretum)
-
-# Generate HTML labels (will use personal recordings if found)
-arboretum_labels(
-  data_path = "extracted_data/my_species_data.csv",
-  audio_dir = "arboretum_audios",  # optional, defaults to this
-  printed_lang = c("pt", "en", "fr", "es"),
-  add_lang = "TUKANO",
-  path_to_logo = "jbrj_logo.png",  # optional
-  logo_url = "https://www.jbrj.gov.br",   # optional
-  verbose = TRUE,
-  dir = "html_species_labels"
-)
-```
+\
+[`library`](https://rdrr.io/r/base/library.html)`(`[`aRboretum`](https://DBOSlab.github.io/aRboretum)`)`\
+\
+`# Generate HTML labels (will use personal recordings if found)`\
+[`arboretum_labels`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)`(`\
+`  data_path ``=`` ``"extracted_data/my_species_data.csv"``,`\
+`  audio_dir ``=`` ``"arboretum_audios"``,  ``# optional, defaults to this`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``, ``"fr"``, ``"es"``)``,`\
+`  add_lang ``=`` ``"TUKANO"``,`\
+`  path_to_logo ``=`` ``"jbrj_logo.png"``,  ``# optional`\
+`  logo_url ``=`` ``"https://www.jbrj.gov.br"``,   ``# optional`\
+`  verbose ``=`` ``TRUE``,`\
+`  dir ``=`` ``"html_species_labels"`\
+`)`
 
 If add_lang is supplied and your input file contains a column named
 full_phrases_ADD_LANGUAGE, any non-empty text in that column is added as
@@ -172,18 +253,18 @@ by the standard translation workflow.
 
 Features of generated HTML labels:
 
-🌍 Interactive maps - Distribution maps at global and Brazil state
-levels  
-🎤 Dual audio - Plays personal recordings if available, falls back to
-TTS  
-🎵 Visual feedback - Button shows “🎵 Personal Recording” when
-available  
-🌐 Language selection - Built-in support for Portuguese, English,
-French, and Spanish, plus one optional custom language  
-⏹️ Stop control - Cancel audio playback at any time  
-📝 Text preview - Displays spoken text  
-🎨 Branding - Optional institutional logo with hyperlink  
-📱 Responsive design - Works on all devices
+🌍 Interactive maps — Distribution maps at global and Brazil state
+levels\
+🎤 Dual audio — Plays personal recordings if available, falls back to
+TTS\
+🎵 Visual feedback — Button shows “🎵 Personal Recording” when
+available\
+🌐 Language selection — Built-in support for Portuguese, English,
+French, and Spanish, plus one optional custom language\
+⏹️ Stop control — Cancel audio playback at any time\
+📝 Text preview — Displays spoken text\
+🎨 Branding — Optional institutional logo with hyperlink\
+📱 Responsive design — Works on all devices
 
 #### *Working with one additional community language*
 
@@ -232,50 +313,54 @@ After generating your species labels, create a beautiful, searchable
 index page that lists all species with real-time filtering and
 multilingual interface:
 
-``` r
-# Create an index page for all your species labels
-arboretum_minisite(
-  labels_dir = "html_species_labels",
-  site_title = "My Botanical Garden Collection",
-  printed_lang = c("pt", "en", "fr", "es"),
-  group_by_family = TRUE,
-  logo = "garden_logo.png",
-  logo_url = "https://www.mybotanicalgarden.org",
-  verbose = TRUE
-)
-```
+\
+`# Create an index page for all your species labels`\
+[`arboretum_minisite`](https://DBOSlab.github.io/aRboretum/reference/arboretum_minisite.md)`(`\
+`  labels_dir ``=`` ``"html_species_labels"``,`\
+`  site_title ``=`` ``"My Botanical Garden Collection"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``, ``"fr"``, ``"es"``)``,`\
+`  group_by_family ``=`` ``TRUE``,`\
+`  logo ``=`` ``"garden_logo.png"``,`\
+`  logo_url ``=`` ``"https://www.mybotanicalgarden.org"``,`\
+`  verbose ``=`` ``TRUE`\
+`)`
 
 This creates a searchable index.html page linking to all species labels.
 When data_path is supplied, the minisite also includes vernacular names
 and a dashboard summarizing species, genera, families, origin, Brazilian
 state distribution, phytogeographic domains, and world distribution:
 
-🔍 Real-time search - Filter species by name or family  
-🌐 Multilingual interface - Toggle between Portuguese, English, French,
-Spanish  
-📊 Species counter - Shows filtered/total species  
-🏷️ Family grouping - Organizes species by family (optional)  
-📱 Responsive design - Works on all devices  
-🔗 Direct links - Click any card to open its full species label
+🔍 Real-time search — Filter species by name or family\
+🌐 Multilingual interface — Toggle between Portuguese, English, French,
+Spanish\
+📊 Species counter — Shows filtered/total species\
+🏷️ Family grouping — Organizes species by family (optional)\
+📱 Responsive design — Works on all devices\
+🔗 Direct links — Click any card to open its full species label\
 
 #### *6. `arboretum_qrcodes`: Generate printable QR-code labels*
 
-After generating your species labels, create a beautiful, searchable
-index page that lists all species with real-time filtering and
-multilingual interface:
+Generate print-ready QR code labels arranged on A4 pages and saved as
+PDF or PNG. Four visual layouts are available: `"minimalist"` (default),
+`"classic"`, `"modern"`, and `"botanical"`. Each layout differs in
+typography, colour palette, and border style.
 
-``` r
-# Create qrcodes linked to the species labels
-arboretum_qrcodes(
-  data_path = "extracted_data/my_species_data.xlsx", 
-  base_url = "https://myinstitution.org/my-collection", 
-  layout = "complete", 
-  printed_lang = "pt", 
-  path_to_logo = "jbrj_logo.png", 
-  format = "pdf", 
-  verbose = TRUE
-)
-```
+\
+`# Minimalist QR codes (default) using POWO/FFB URLs from the mined data`\
+[`arboretum_qrcodes`](https://DBOSlab.github.io/aRboretum/reference/arboretum_qrcodes.md)`(`\
+`  data_path ``=`` ``"extracted_data/my_species_data.xlsx"`\
+`)`\
+\
+`# Classic botanical layout linked to a published minisite`\
+[`arboretum_qrcodes`](https://DBOSlab.github.io/aRboretum/reference/arboretum_qrcodes.md)`(`\
+`  data_path ``=`` ``"extracted_data/my_species_data.xlsx"``,`\
+`  base_url ``=`` ``"https://myinstitution.org/my-collection"``,`\
+`  layout ``=`` ``"classic"``,`\
+`  printed_lang ``=`` ``"pt"``,`\
+`  path_to_logo ``=`` ``"jbrj_logo.png"``,`\
+`  format ``=`` ``"pdf"``,`\
+`  verbose ``=`` ``TRUE`\
+`)`
 
 QR codes can point to species pages in a published minisite, to a single
 shared URL, to POWO or FFB source pages, or to the taxon name when no
@@ -285,85 +370,83 @@ URL is available.
 
 Here’s a complete example from data extraction to custom audio labels:
 
-``` r
-# Step 1: Extract species data
-my_species <- c(
-  "Euterpe edulis",
-  "Paubrasilia echinata",
-  "Coffea arabica",
-  "Luetzelburgia bahiensis"
-)
-
-species_data <- arboretum_data(
-  spp_list = my_species,
-  verbose = TRUE,
-  save = TRUE,
-  format = "xlsx",
-  filename = "my_garden_plants",
-  dir = "data"
-)
-
-# Step 2: Create folder structure for personal audio
-arboretum_audios(
-  data_path = "data/my_garden_plants.xlsx",
-  printed_lang = c("pt", "en"),
-  verbose = TRUE
-)
-
-# Step 3: Add your own recordings!
-# Place files like:
-#   arboretum_personal_audios/ARECACEAE_Euterpe_edulis_EN/my_recording.mp3
-#   arboretum_personal_audios/ARECACEAE_Euterpe_edulis_PT/gravacao_pessoal.wav
-
-# Step 4: Prepare personal photo folders 
-arboretum_photos(
-  data_path = "data/my_garden_plants.xlsx", 
-  verbose = TRUE
-)
-
-# Step 5: Generate HTML labels (automatically uses your recordings)
-arboretum_labels(
-  data_path = "data/my_garden_plants.xlsx",
-  printed_lang = c("pt", "en"),
-  rate = 0.9,
-  path_to_logo = "my_garden_logo.png",
-  dir = "labels"
-)
-
-# Step 6: Create a multilingual minisite index
-arboretum_minisite(
-  labels_dir = "labels",
-  site_title = "My Botanical Garden Collection",
-  printed_lang = c("pt", "en"),
-  group_by_family = TRUE,
-  logo = "my_garden_logo.png",
-  verbose = TRUE
-)
-
-# Step 7: Generate QR-code labels linked to the published minisite 
-arboretum_qrcodes(
-  data_path = "data/my_garden_plants.xlsx", 
-  base_url = "https://myinstitution.org/my-collection", 
-  layout = "complete", 
-  printed_lang = "pt", 
-  path_to_logo = "my_garden_logo.png", 
-  format = "pdf", 
-  verbose = TRUE
-)
-
-# Step 8: Deploy to an internet pages
-# Copy the entire 'minisite' folder to your internet page repository
-# The index.html file will automatically show all species!
-
-# Labels are now available in the 'labels' directory
-# Open in any modern browser to see distribution maps and hear your recordings!
-```
+\
+`# Step 1: Extract species data`\
+`my_species`` ``<-`` `[`c`](https://rdrr.io/r/base/c.html)`(`\
+`  ``"Euterpe edulis"``,`\
+`  ``"Paubrasilia echinata"``,`\
+`  ``"Coffea arabica"``,`\
+`  ``"Luetzelburgia bahiensis"`\
+`)`\
+\
+`species_data`` ``<-`` `[`arboretum_data`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)`(`\
+`  spp_list ``=`` ``my_species``,`\
+`  verbose ``=`` ``TRUE``,`\
+`  save ``=`` ``TRUE``,`\
+`  format ``=`` ``"xlsx"``,`\
+`  filename ``=`` ``"my_garden_plants"``,`\
+`  dir ``=`` ``"data"`\
+`)`\
+\
+`# Step 2: Create folder structure for personal audio`\
+[`arboretum_audios`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)`(`\
+`  data_path ``=`` ``"data/my_garden_plants.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  verbose ``=`` ``TRUE`\
+`)`\
+\
+`# Step 3: Add your own recordings!`\
+`# Place files like:`\
+`#   arboretum_audios/ARECACEAE_Euterpe_edulis_EN/my_recording.mp3`\
+`#   arboretum_audios/ARECACEAE_Euterpe_edulis_PT/gravacao_pessoal.wav`\
+\
+`# Step 4: Prepare personal photo folders `\
+[`arboretum_photos`](https://DBOSlab.github.io/aRboretum/reference/arboretum_photos.md)`(`\
+`  data_path ``=`` ``"data/my_garden_plants.xlsx"``, `\
+`  verbose ``=`` ``TRUE`\
+`)`\
+\
+`# Step 5: Generate HTML labels (automatically uses your recordings)`\
+[`arboretum_labels`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)`(`\
+`  data_path ``=`` ``"data/my_garden_plants.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  path_to_logo ``=`` ``"my_garden_logo.png"``,`\
+`  dir ``=`` ``"labels"`\
+`)`\
+\
+`# Step 6: Create a multilingual minisite index`\
+[`arboretum_minisite`](https://DBOSlab.github.io/aRboretum/reference/arboretum_minisite.md)`(`\
+`  labels_dir ``=`` ``"labels"``,`\
+`  site_title ``=`` ``"My Botanical Garden Collection"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  group_by_family ``=`` ``TRUE``,`\
+`  logo ``=`` ``"my_garden_logo.png"``,`\
+`  verbose ``=`` ``TRUE`\
+`)`\
+\
+`# Step 7: Generate QR-code labels linked to the published minisite `\
+[`arboretum_qrcodes`](https://DBOSlab.github.io/aRboretum/reference/arboretum_qrcodes.md)`(`\
+`  data_path ``=`` ``"data/my_garden_plants.xlsx"``,`\
+`  base_url ``=`` ``"https://myinstitution.org/my-collection"``,`\
+`  layout ``=`` ``"classic"``,`\
+`  printed_lang ``=`` ``"pt"``,`\
+`  path_to_logo ``=`` ``"my_garden_logo.png"``,`\
+`  format ``=`` ``"pdf"``,`\
+`  verbose ``=`` ``TRUE`\
+`)`\
+\
+`# Step 8: Deploy to an internet pages`\
+`# Copy the entire 'minisite' folder to your internet page repository`\
+`# The index.html file will automatically show all species!`\
+\
+`# Labels are now available in the 'labels' directory`\
+`# Open in any modern browser to see distribution maps and hear your recordings!`
 
 ## What Happens When You Open index.html?
 
-Landing page loads - Shows all species with search bar and language
-selector User searches - Real-time filtering without page reload Clicks
-a species card - Opens individual label with:
+Landing page loads — Shows all species with search bar and language
+selector User searches — Real-time filtering without page reload Clicks
+a species card — Opens individual label with:
 
 - Interactive distribution maps
 - Audio playback (personal recording or TTS)
@@ -374,9 +457,9 @@ a species card - Opens individual label with:
 
 The site is fully responsive and works on:
 
-📱 Smartphones (iOS, Android)  
-💻 Tablets and laptops  
-🖥️ Desktop computers  
+📱 Smartphones (iOS, Android)\
+💻 Tablets and laptops\
+🖥️ Desktop computers\
 For QR codes at your botanical garden:
 
 Point QR codes to individual species URLs:
@@ -400,23 +483,27 @@ The input data for
 must include the following columns (as produced by
 [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)):
 
-| Column                      | Description                                   |
-|-----------------------------|-----------------------------------------------|
-| `taxonName`                 | Accepted scientific name                      |
-| `family`                    | Botanical family                              |
-| `scientificNameAuthorship`  | Scientific name authorship                    |
-| `FFB.vernacularName`        | Vernacular names from Flora e Funga do Brasil |
-| `country`                   | Country-level distribution                    |
-| `endemism`                  | Endemism status                               |
-| `botanical_country`         | POWO botanical-country distribution           |
-| `introduced_to`             | Introduced range from POWO                    |
-| `FFB.establishmentMeans`    | Native, cultivated, naturalized, etc.         |
-| `FFB.stateProvince`         | Brazilian states                              |
-| `FFB.phytogeographicDomain` | Brazilian phytogeographic domains             |
-| `FFB.vegetationType`        | Vegetation types                              |
-| `IUCN.status`               | IUCN status from POWO, when available         |
-| `POWO.url`                  | POWO species page                             |
-| `FFB.url`                   | FFB species page                              |
+| Column | Description |
+|----|----|
+| `taxonName` | Accepted scientific name |
+| `family` | Botanical family |
+| `scientificNameAuthorship` | Scientific name authorship |
+| `FFB.vernacularName` | Vernacular names from Flora e Funga do Brasil |
+| `country` | Country-level distribution |
+| `endemism` | Endemism status |
+| `botanical_country` | Native distribution in WCVP botanical countries |
+| `introduced_to` | Introduced range from WCVP |
+| `FFB.establishmentMeans` | Native, cultivated, naturalized, etc. |
+| `FFB.stateProvince` | Brazilian states |
+| `FFB.phytogeographicDomain` | Brazilian phytogeographic domains |
+| `FFB.vegetationType` | Vegetation types |
+| `IUCN.status` | IUCN Red List category (e.g. `Endangered (EN)`), when assessed |
+| `plant_uses_EN/PT/ES/FR` | Plant-use annotation fields (editable via HTML guide) |
+| `free_notes_EN/PT/ES/FR` | Free-text note fields (editable via HTML guide) |
+| `full_phrases_EN/PT/ES/FR` | Generated species phrases; optional, editable, and filled in automatically when empty |
+| `full_phrases_ADD_LANGUAGE` | Full phrase for the custom language set in `add_lang` |
+| `POWO.url` | POWO species page |
+| `FFB.url` | FFB species page |
 
 ## Browser requirements
 
@@ -445,12 +532,10 @@ Personal audio recordings support multiple formats:
 
 If you use `aRboretum` in your work, please cite:
 
-``` text
-Boucknooghe, M. & Cardoso, D. (2025). aRboretum:
-Generate Multilingual Audio-Enhanced Labels for Plant Collections.
-R package version 1.0.0.
-https://github.com/DBOSlab/aRboretum
-```
+    Boucknooghe, M. & Cardoso, D. (2025). aRboretum:
+    Generate Multilingual Audio-Enhanced Labels for Plant Collections.
+    R package version 1.0.0.
+    https://github.com/DBOSlab/aRboretum
 
 ## Documentation
 
@@ -464,10 +549,10 @@ for details.
 
 ## Authors
 
-- **Martin Boucknooghe** — Author, Creator Université de Montpellier  
+- **Martin Boucknooghe** — Author, Creator Université de Montpellier\
   ORCID: 0000-0001-7072-2656
-- **Domingos Cardoso** — Author, Creator, Copyright holder  
-  Rio de Janeiro Botanical Garden  
+- **Domingos Cardoso** — Author, Creator, Copyright holder\
+  Rio de Janeiro Botanical Garden\
   ORCID: 0000-0001-7072-2656
 
 ## Acknowledgments
@@ -475,7 +560,12 @@ for details.
 The package uses data from:
 
 - [Flora e Funga do Brasil (FFB)](https://floradobrasil.jbrj.gov.br/)
-- [Plants of the World Online (POWO)](https://powo.science.kew.org/)
+- [World Checklist of Vascular Plants
+  (WCVP)](https://powo.science.kew.org/), through the
+  [`rWCVPdata`](https://github.com/matildabrown/rWCVPdata) package
+- [IUCN Red List of Threatened Species](https://www.iucnredlist.org/),
+  through [GBIF](https://www.gbif.org/) or the
+  [`rredlist`](https://docs.ropensci.org/rredlist/) package
 
 ## Contributing
 

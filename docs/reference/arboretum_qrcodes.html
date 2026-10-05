@@ -4,15 +4,25 @@ specimens using a species data file, typically produced by
 arboretum_data(). Labels are arranged on A4 pages and saved as PDF
 or PNG files. If the number of labels exceeds the page capacity, the function
 automatically creates multiple output files, one per page.
-Two visual layouts are available:
-"minimalist": a compact label with a border, scientific name,
-optional first vernacular name, and QR code.
-"complete": a larger botanical label with scientific name,
-authorship, family name, optional first vernacular name, optional
-language-specific endemism phrase, QR code, optional specimen identifier,
-and optional institutional logo.
+Four visual layouts are available:
+"minimalist" (default): a compact label with a thin border,
+scientific name in italic, optional first vernacular name, and QR code.
+All elements scale proportionally to the chosen label size.
+"classic": a traditional botanical label with dark-green
+serif typography, scientific name, authorship, bold family name, optional
+vernacular name, optional language-specific endemism phrase, QR code,
+optional specimen identifier, and optional institutional logo.
+"modern": a contemporary label with a slate-blue colour palette,
+clean sans-serif fonts throughout, a lightweight border, and the same
+information fields as "classic".
+"botanical": a warm parchment-background label with brown
+earth-tone serif typography, an ornamental double border, and the same
+information fields as "classic".
 
 
+In all "classic", "modern", and "botanical" layouts,
+all font sizes scale proportionally to both the label width and height, so
+the text remains readable at any custom size.
 QR codes can link to species pages in a published minisite, to a single shared
 URL, to POWO or FFB source pages from the input data, or, when no URL is
 available, encode the taxon name as plain text.'><meta property="og:description" content='This function generates print-ready QR code labels for living plant collection
@@ -20,15 +30,25 @@ specimens using a species data file, typically produced by
 arboretum_data(). Labels are arranged on A4 pages and saved as PDF
 or PNG files. If the number of labels exceeds the page capacity, the function
 automatically creates multiple output files, one per page.
-Two visual layouts are available:
-"minimalist": a compact label with a border, scientific name,
-optional first vernacular name, and QR code.
-"complete": a larger botanical label with scientific name,
-authorship, family name, optional first vernacular name, optional
-language-specific endemism phrase, QR code, optional specimen identifier,
-and optional institutional logo.
+Four visual layouts are available:
+"minimalist" (default): a compact label with a thin border,
+scientific name in italic, optional first vernacular name, and QR code.
+All elements scale proportionally to the chosen label size.
+"classic": a traditional botanical label with dark-green
+serif typography, scientific name, authorship, bold family name, optional
+vernacular name, optional language-specific endemism phrase, QR code,
+optional specimen identifier, and optional institutional logo.
+"modern": a contemporary label with a slate-blue colour palette,
+clean sans-serif fonts throughout, a lightweight border, and the same
+information fields as "classic".
+"botanical": a warm parchment-background label with brown
+earth-tone serif typography, an ornamental double border, and the same
+information fields as "classic".
 
 
+In all "classic", "modern", and "botanical" layouts,
+all font sizes scale proportionally to both the label width and height, so
+the text remains readable at any custom size.
 QR codes can link to species pages in a published minisite, to a single shared
 URL, to POWO or FFB source pages from the input data, or, when no URL is
 available, encode the taxon name as plain text.'></head><body>
@@ -85,13 +105,23 @@ specimens using a species data file, typically produced by
 <code><a href="arboretum_data.html">arboretum_data()</a></code>. Labels are arranged on A4 pages and saved as PDF
 or PNG files. If the number of labels exceeds the page capacity, the function
 automatically creates multiple output files, one per page.</p>
-<p>Two visual layouts are available:</p><ul><li><p><code>"minimalist"</code>: a compact label with a border, scientific name,
-optional first vernacular name, and QR code.</p></li>
-<li><p><code>"complete"</code>: a larger botanical label with scientific name,
-authorship, family name, optional first vernacular name, optional
-language-specific endemism phrase, QR code, optional specimen identifier,
-and optional institutional logo.</p></li>
-</ul><p>QR codes can link to species pages in a published minisite, to a single shared
+<p>Four visual layouts are available:</p><ul><li><p><code>"minimalist"</code> (default): a compact label with a thin border,
+scientific name in italic, optional first vernacular name, and QR code.
+All elements scale proportionally to the chosen label size.</p></li>
+<li><p><code>"classic"</code>: a traditional botanical label with dark-green
+serif typography, scientific name, authorship, bold family name, optional
+vernacular name, optional language-specific endemism phrase, QR code,
+optional specimen identifier, and optional institutional logo.</p></li>
+<li><p><code>"modern"</code>: a contemporary label with a slate-blue colour palette,
+clean sans-serif fonts throughout, a lightweight border, and the same
+information fields as <code>"classic"</code>.</p></li>
+<li><p><code>"botanical"</code>: a warm parchment-background label with brown
+earth-tone serif typography, an ornamental double border, and the same
+information fields as <code>"classic"</code>.</p></li>
+</ul><p>In all <code>"classic"</code>, <code>"modern"</code>, and <code>"botanical"</code> layouts,
+all font sizes scale proportionally to both the label width and height, so
+the text remains readable at any custom size.</p>
+<p>QR codes can link to species pages in a published minisite, to a single shared
 URL, to POWO or FFB source pages from the input data, or, when no URL is
 available, encode the taxon name as plain text.</p>
     </div>
@@ -105,7 +135,7 @@ available, encode the taxon name as plain text.</p>
 <span>  length <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  path_to_logo <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  layout <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"minimalist"</span>, <span class="st">"complete"</span><span class="op">)</span>,</span>
+<span>  layout <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"minimalist"</span>, <span class="st">"classic"</span>, <span class="st">"modern"</span>, <span class="st">"botanical"</span><span class="op">)</span>,</span>
 <span>  id_code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  base_url <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  url <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -139,45 +169,45 @@ to process. Values must match entries in the <code>taxonName</code> column. If
 
 <dt id="arg-printed-lang">printed_lang<a class="anchor" aria-label="anchor" href="#arg-printed-lang"></a></dt>
 <dd><p>Character vector. Language code used for the endemism phrase
-in <code>"complete"</code> labels. Accepted values are <code>"pt"</code>, <code>"en"</code>,
-<code>"fr"</code>, and <code>"es"</code>. When more than one language is supplied and
-<code>layout = "complete"</code>, the first valid value selected by
-<code><a href="https://rdrr.io/r/base/match.arg.html" class="external-link">match.arg()</a></code> is used. This argument is ignored for
-<code>"minimalist"</code> labels. Default is <code>c("pt", "en", "fr", "es")</code>.</p></dd>
+in detailed labels (<code>"classic"</code>, <code>"modern"</code>, <code>"botanical"</code>).
+Accepted values are <code>"pt"</code>, <code>"en"</code>, <code>"fr"</code>, and <code>"es"</code>.
+When more than one language is supplied, the first valid value selected by
+<code><a href="https://rdrr.io/r/base/match.arg.html" class="external-link">match.arg()</a></code> is used. Ignored for <code>"minimalist"</code> labels. Default
+is <code>c("pt", "en", "fr", "es")</code>.</p></dd>
 
 
 <dt id="arg-length">length<a class="anchor" aria-label="anchor" href="#arg-length"></a></dt>
 <dd><p>Numeric or <code>NULL</code>. Label height in centimetres. If
 <code>NULL</code>, the default is <code>2.5</code> cm for <code>"minimalist"</code> labels and
-<code>8.0</code> cm for <code>"complete"</code> labels.</p></dd>
+<code>8.0</code> cm for detailed layouts. All text sizes scale proportionally.</p></dd>
 
 
 <dt id="arg-width">width<a class="anchor" aria-label="anchor" href="#arg-width"></a></dt>
 <dd><p>Numeric or <code>NULL</code>. Label width in centimetres. If
 <code>NULL</code>, the default is <code>2.5</code> cm for <code>"minimalist"</code> labels and
-<code>6.0</code> cm for <code>"complete"</code> labels.</p></dd>
+<code>6.0</code> cm for detailed layouts. All text sizes scale proportionally.</p></dd>
 
 
 <dt id="arg-path-to-logo">path_to_logo<a class="anchor" aria-label="anchor" href="#arg-path-to-logo"></a></dt>
 <dd><p>Character string or <code>NULL</code>. Optional path to a PNG or
-JPEG logo file. The logo is shown only in <code>"complete"</code> labels, near the
-bottom-right of each label. The image aspect ratio is preserved. If the logo
-file is missing or unsupported, the function warns and continues without it.
-Default is <code>NULL</code>.</p></dd>
+JPEG logo file. The logo is shown in <code>"classic"</code>, <code>"modern"</code>, and
+<code>"botanical"</code> labels, near the bottom-right corner. The image aspect
+ratio is preserved. If the logo file is missing or unsupported, the function
+warns and continues without it. Default is <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-layout">layout<a class="anchor" aria-label="anchor" href="#arg-layout"></a></dt>
-<dd><p>Character string. Label layout. One of <code>"minimalist"</code> or
-<code>"complete"</code>. Default is the first option, <code>"minimalist"</code>.</p></dd>
+<dd><p>Character string. Label layout. One of <code>"minimalist"</code>
+(default), <code>"classic"</code>, <code>"modern"</code>, or <code>"botanical"</code>.</p></dd>
 
 
 <dt id="arg-id-code">id_code<a class="anchor" aria-label="anchor" href="#arg-id-code"></a></dt>
 <dd><p>Character vector or <code>NULL</code>. Optional specimen or collection
-identifier printed on <code>"complete"</code> labels. If a single value matching a
-column name in the input data is supplied, values are taken from that column.
-Otherwise, supplied values are recycled or used directly to match the selected
-species. Ignored visually for <code>"minimalist"</code> labels. Default is
-<code>NULL</code>.</p></dd>
+identifier printed on detailed labels (<code>"classic"</code>, <code>"modern"</code>,
+<code>"botanical"</code>). If a single value matching a column name in the input
+data is supplied, values are taken from that column. Otherwise, supplied
+values are recycled or used directly. Ignored for <code>"minimalist"</code> labels.
+Default is <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-base-url">base_url<a class="anchor" aria-label="anchor" href="#arg-base-url"></a></dt>
@@ -261,13 +291,15 @@ selected label dimensions.</p></li>
 <li><p>Display the first vernacular name when available.</p></li>
 <li><p>Display a QR code with a white quiet zone for scanning reliability.</p></li>
 </ul></li>
-<li><p><strong>Complete labels</strong></p><ul><li><p>Display scientific name, authorship, family, and first vernacular name
+<li><p><strong>Classic / Modern / Botanical labels</strong></p><ul><li><p>Display scientific name, authorship, family, and first vernacular name
 when available.</p></li>
 <li><p>Display a language-specific endemism phrase when <code>endemism</code> is
 <code>"Endemic"</code> and a country value is available.</p></li>
 <li><p>Display an optional specimen identifier from <code>id_code</code>.</p></li>
 <li><p>Display an optional logo when <code>path_to_logo</code> is supplied.</p></li>
 <li><p>Display a QR code with a white quiet zone for scanning reliability.</p></li>
+<li><p>All font sizes are computed from a single proportional scale factor
+<code>min(width / 6, height / 8)</code>, so text remains readable at any size.</p></li>
 </ul></li>
 </ol><p>Output files are named <code>arboretum_qrcodes.pdf</code> or
 <code>arboretum_qrcodes.png</code> when all labels fit on one page. When multiple
@@ -314,11 +346,11 @@ codes difficult to scan.</p></li>
 <span class="r-in"><span>base_url <span class="op">=</span> <span class="st">"https://dboslab.github.io/jbrj-arboretum"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Complete labels with specimen IDs and a logo</span></span></span>
+<span class="r-in"><span><span class="co"># Classic labels with specimen IDs and a logo</span></span></span>
 <span class="r-in"><span><span class="fu">arboretum_qrcodes</span><span class="op">(</span></span></span>
 <span class="r-in"><span>data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span></span>
 <span class="r-in"><span>species <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Euterpe edulis"</span>, <span class="st">"Paubrasilia echinata"</span><span class="op">)</span>,</span></span>
-<span class="r-in"><span>layout <span class="op">=</span> <span class="st">"complete"</span>,</span></span>
+<span class="r-in"><span>layout <span class="op">=</span> <span class="st">"classic"</span>,</span></span>
 <span class="r-in"><span>printed_lang <span class="op">=</span> <span class="st">"pt"</span>,</span></span>
 <span class="r-in"><span>base_url <span class="op">=</span> <span class="st">"https://dboslab.github.io/jbrj-arboretum"</span>,</span></span>
 <span class="r-in"><span>id_code <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"JBRJ-001"</span>, <span class="st">"JBRJ-002"</span><span class="op">)</span>,</span></span>
@@ -326,12 +358,21 @@ codes difficult to scan.</p></li>
 <span class="r-in"><span>format <span class="op">=</span> <span class="st">"pdf"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Complete labels using specimen IDs stored in a data column</span></span></span>
+<span class="r-in"><span><span class="co"># Modern labels using specimen IDs stored in a data column</span></span></span>
 <span class="r-in"><span><span class="fu">arboretum_qrcodes</span><span class="op">(</span></span></span>
 <span class="r-in"><span>data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span></span>
-<span class="r-in"><span>layout <span class="op">=</span> <span class="st">"complete"</span>,</span></span>
+<span class="r-in"><span>layout <span class="op">=</span> <span class="st">"modern"</span>,</span></span>
 <span class="r-in"><span>id_code <span class="op">=</span> <span class="st">"accession_id"</span>,</span></span>
 <span class="r-in"><span>printed_lang <span class="op">=</span> <span class="st">"en"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Botanical labels with warm parchment style</span></span></span>
+<span class="r-in"><span><span class="fu">arboretum_qrcodes</span><span class="op">(</span></span></span>
+<span class="r-in"><span>data_path <span class="op">=</span> <span class="st">"arboretum_data/arboretum_data.xlsx"</span>,</span></span>
+<span class="r-in"><span>layout <span class="op">=</span> <span class="st">"botanical"</span>,</span></span>
+<span class="r-in"><span>printed_lang <span class="op">=</span> <span class="st">"pt"</span>,</span></span>
+<span class="r-in"><span>base_url <span class="op">=</span> <span class="st">"https://dboslab.github.io/jbrj-arboretum"</span>,</span></span>
+<span class="r-in"><span>format <span class="op">=</span> <span class="st">"pdf"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Larger minimalist PNG labels with a custom QR colour</span></span></span>
@@ -355,7 +396,7 @@ codes difficult to scan.</p></li>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
 </div>
 
     </footer></div>

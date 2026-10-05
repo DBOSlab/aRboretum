@@ -141,7 +141,7 @@
   copied <- file.copy(from, to, recursive = TRUE, overwrite = overwrite)
   if (verbose) {
     close(pb)
-    message("\n✅ Copied ", sum(copied), " files successfully")
+    message("\n\u2705 Copied ", sum(copied), " files successfully")
   }
   return(invisible(sum(copied)))
 }
@@ -688,12 +688,12 @@
       "it grows mainly in particular vegetation layers",
       "shrubland Carrasco", "seasonal deciduous forest", "terra-firme forest",
       "rainforest", "herbaceous or grassland savanna", "fire-prone savanna-like Cerrado vegetation",
-      "Várzea forest", "anthropogenic area", "seasonal evergreen forest",
+      "V\u00e1rzea forest", "anthropogenic area", "seasonal evergreen forest",
       "seasonal semideciduous forest", "gallery forest", "mixed ombrophilous forest",
-      "seasonally flooded Igapó forest", "white-sand coastal scrubland Restinga",
+      "seasonally flooded Igap\u00f3 forest", "white-sand coastal scrubland Restinga",
       "Caatinga seasonally dry forest", "rupestrian grassland",
       "rocky outcrop vegetation", "amazonian savanna", "high altitude grassland",
-      "Várzea forest", "mangrove", "palm grove", "white‑sand Campinarana vegetation",
+      "V\u00e1rzea forest", "mangrove", "palm grove", "white\u2011sand Campinarana vegetation",
       "aquatic vegetation",
 
       # IUCN
@@ -711,155 +711,155 @@
     pt = c(
 
       # Taxon
-      "pertence à", "família", "Esta espécie não tem nenhum nome popular conhecido", "É comumente chamada de",
-      "É comumente conhecida", "por pelo menos", "nomes populares", "como", "e",
+      "pertence \u00e0", "fam\u00edlia", "Esta esp\u00e9cie n\u00e3o tem nenhum nome popular conhecido", "\u00c9 comumente chamada de",
+      "\u00c9 comumente conhecida", "por pelo menos", "nomes populares", "como", "e",
 
       # Distribution
-      "Uma verdadeira joia rara", "ela só é encontrada no estado", "Esta espécie é encontrada em vários países como",
-      "Esta espécie é", "do", "não endêmica", "endêmica", "ou", "norte do Brasil", "nordeste do Brasil",
+      "Uma verdadeira joia rara", "ela s\u00f3 \u00e9 encontrada no estado", "Esta esp\u00e9cie \u00e9 encontrada em v\u00e1rios pa\u00edses como",
+      "Esta esp\u00e9cie \u00e9", "do", "n\u00e3o end\u00eamica", "end\u00eamica", "ou", "norte do Brasil", "nordeste do Brasil",
       "sul do Brasil", "sudeste do Brasil", "centro-oeste do Brasil",
 
       # Establishment means
-      "Isso significa que não é encontrado em seu estado natural em nenhum outro lugar do planeta",
-      "Ela é nativa do Brasil, ou seja, cresce naturalmente no país sem intervenção humana",
-      "No Brasil, ela foi cultivada e manejada intencionalmente pelo homem; portanto, essa planta depende inteiramente da intervenção humana para sobreviver e se reproduzir",
-      "No Brasil, ela foi naturalizada, ou seja, foi introduzida no país, mas se adaptou bem, formou populações autônomas e se reproduz sozinha, sem a ajuda do homem", "Ela é",
+      "Isso significa que n\u00e3o \u00e9 encontrado em seu estado natural em nenhum outro lugar do planeta",
+      "Ela \u00e9 nativa do Brasil, ou seja, cresce naturalmente no pa\u00eds sem interven\u00e7\u00e3o humana",
+      "No Brasil, ela foi cultivada e manejada intencionalmente pelo homem; portanto, essa planta depende inteiramente da interven\u00e7\u00e3o humana para sobreviver e se reproduzir",
+      "No Brasil, ela foi naturalizada, ou seja, foi introduzida no pa\u00eds, mas se adaptou bem, formou popula\u00e7\u00f5es aut\u00f4nomas e se reproduz sozinha, sem a ajuda do homem", "Ela \u00e9",
 
       # Introduced
-      "Esta planta também foi introduzida em",
-      "Esta planta também foi introduzida em vários países ao redor do mundo, como",
+      "Esta planta tamb\u00e9m foi introduzida em",
+      "Esta planta tamb\u00e9m foi introduzida em v\u00e1rios pa\u00edses ao redor do mundo, como",
 
       # Phytogeographic domain
-      "Amazônia", "Mata Atlântica", "Pampa", "Pantanal", "Caatinga", "Cerrado",
-      "Ela habita", "Ela coloniza vários habitats",
-      "Ela também pode ser encontrada em todos os biomas do Brasil", "que sorte",
+      "Amaz\u00f4nia", "Mata Atl\u00e2ntica", "Pampa", "Pantanal", "Caatinga", "Cerrado",
+      "Ela habita", "Ela coloniza v\u00e1rios habitats",
+      "Ela tamb\u00e9m pode ser encontrada em todos os biomas do Brasil", "que sorte",
 
       # Vegetation types
-      "onde", "ela cresce preferencialmente em uma camada vegetal específica",
-      "ela cresce preferencialmente em camadas vegetais específicas",
+      "onde", "ela cresce preferencialmente em uma camada vegetal espec\u00edfica",
+      "ela cresce preferencialmente em camadas vegetais espec\u00edficas",
       "Carrasco", "Floresta Estacional Decidual", "Floresta de Terra Firme",
-      "Floresta Ombrófila", "Campo Limpo", "Cerrado sensu lato",
-      "Floresta de Várzea", "Área Antrópica",
-      "Floresta Estacional Perenifólia", "Floresta Estacional Semidecidual",
-      "Floresta Ciliar ou Galeria", "Floresta Ombrófila Mista", "Floresta de Igapó",
+      "Floresta Ombr\u00f3fila", "Campo Limpo", "Cerrado sensu lato",
+      "Floresta de V\u00e1rzea", "\u00c1rea Antr\u00f3pica",
+      "Floresta Estacional Perenif\u00f3lia", "Floresta Estacional Semidecidual",
+      "Floresta Ciliar ou Galeria", "Floresta Ombr\u00f3fila Mista", "Floresta de Igap\u00f3",
       "Restinga", "Caatinga sensu stricto", "Campo rupestre",
-      "Vegetação Sobre Afloramentos Rochosos", "Savana Amazônica", "Campo de Altitude",
-      "Campo de Várzea", "Manguezal", "Palmeiral", "Campinarana", "Vegetação Aquática",
+      "Vegeta\u00e7\u00e3o Sobre Afloramentos Rochosos", "Savana Amaz\u00f4nica", "Campo de Altitude",
+      "Campo de V\u00e1rzea", "Manguezal", "Palmeiral", "Campinarana", "Vegeta\u00e7\u00e3o Aqu\u00e1tica",
 
       # IUCN
       "extinto (EX)", "extinto na natureza (EW)", "criticamente em perigo (CR)", "em perigo (EN)",
-      "vulnerável (VU)", "quase ameaçado (NT)", "pouco preocupante (LC)", "dados insuficientes (DD)",
-      "não avaliado (NE)",
-      "A União Internacional para a Conservação da Natureza (IUCN) classificou esta espécie como",
+      "vulner\u00e1vel (VU)", "quase amea\u00e7ado (NT)", "pouco preocupante (LC)", "dados insuficientes (DD)",
+      "n\u00e3o avaliado (NE)",
+      "A Uni\u00e3o Internacional para a Conserva\u00e7\u00e3o da Natureza (IUCN) classificou esta esp\u00e9cie como",
 
       # Genus
-      "É a única espécie desse gênero no Brasil",
-      "É uma das poucas {n} espécies desse gênero no Brasil",
-      "Essa espécie faz parte do gênero com maior diversidade no Brasil",
-      "Essa espécie pertence a um dos gêneros com maior diversidade no Brasil"
+      "\u00c9 a \u00fanica esp\u00e9cie desse g\u00eanero no Brasil",
+      "\u00c9 uma das poucas {n} esp\u00e9cies desse g\u00eanero no Brasil",
+      "Essa esp\u00e9cie faz parte do g\u00eanero com maior diversidade no Brasil",
+      "Essa esp\u00e9cie pertence a um dos g\u00eaneros com maior diversidade no Brasil"
     ),
 
     es = c(
 
       # Taxon
-      "pertenece a", "la familia", "Esta especie no tiene ningún nombre común conocido",
-      "Se la conoce comúnmente como", "Se conoce comúnmente como", "por al menos",
+      "pertenece a", "la familia", "Esta especie no tiene ning\u00fan nombre com\u00fan conocido",
+      "Se la conoce com\u00fanmente como", "Se conoce com\u00fanmente como", "por al menos",
       "nombres comunes", "como", "y",
 
       # Distribution
       "Una verdadera joya rara", "solo se encuentra en ese estado",
-      "Esta especie se encuentra en varios países como",
-      "Esta especie es", "del", "no endémica", "endémica", "o", "norte de Brasil",
+      "Esta especie se encuentra en varios pa\u00edses como",
+      "Esta especie es", "del", "no end\u00e9mica", "end\u00e9mica", "o", "norte de Brasil",
       "nordeste de Brasil", "sur de Brasil", "sudeste de Brasil", "centro-oeste de Brasil",
 
       # Establishment means
-      "Esto significa que no se encuentra en su estado natural en ningún otro lugar del planeta",
-      "Es autóctona de Brasil, es decir, crece allí de forma natural sin intervención humana",
-      "En Brasil, ha sido cultivada y gestionada intencionadamente por el ser humano, por lo que esta planta depende por completo de la intervención humana para sobrevivir y reproducirse",
-      "En Brasil se ha naturalizado, es decir, que fue introducida allí, pero se ha adaptado bien, ha formado poblaciones autónomas y se reproduce por sí sola, sin la ayuda del hombre", "Es",
+      "Esto significa que no se encuentra en su estado natural en ning\u00fan otro lugar del planeta",
+      "Es aut\u00f3ctona de Brasil, es decir, crece all\u00ed de forma natural sin intervenci\u00f3n humana",
+      "En Brasil, ha sido cultivada y gestionada intencionadamente por el ser humano, por lo que esta planta depende por completo de la intervenci\u00f3n humana para sobrevivir y reproducirse",
+      "En Brasil se ha naturalizado, es decir, que fue introducida all\u00ed, pero se ha adaptado bien, ha formado poblaciones aut\u00f3nomas y se reproduce por s\u00ed sola, sin la ayuda del hombre", "Es",
 
       # Introduced
-      "Esta planta también ha sido introducida en",
-      "Esta planta también ha sido introducida en varios países del mundo, como",
+      "Esta planta tambi\u00e9n ha sido introducida en",
+      "Esta planta tambi\u00e9n ha sido introducida en varios pa\u00edses del mundo, como",
 
       # Phytogeographic domain
-      "Amazonía", "Mata Atlántica", "Pampa", "Pantanal", "Caatinga", "Cerrado",
-      "Habita", "Coloniza varios hábitats",
-      "También se puede encontrar en todos los biomas de Brasil", "qué suerte",
+      "Amazon\u00eda", "Mata Atl\u00e1ntica", "Pampa", "Pantanal", "Caatinga", "Cerrado",
+      "Habita", "Coloniza varios h\u00e1bitats",
+      "Tambi\u00e9n se puede encontrar en todos los biomas de Brasil", "qu\u00e9 suerte",
 
       # Vegetation types
-      "donde", "«crece preferentemente en un estrato vegetal concreto",
+      "donde", "\u00abcrece preferentemente en un estrato vegetal concreto",
       "crece preferentemente en estratos vegetales concretos",
       "Carrasco (matorral)", "Bosque Estacional Deciduo", "Bosque de Tierra Firme",
-      "Selva Ombrófila", "Campo Limpio", "Cerrado",
-      "Bosque de Várzea", "Área Antrópica", "Bosque Estacional Perennifolio",
-      "Bosque Estacional Semideciduo", "Bosque de Galería",
-      "Bosque Ombrófilo Mixto", "Bosque de Igapó", "Restinga",
-      "Caatinga", "Campo Rupestre", "Vegetación sobre Afloramientos Rochosos",
-      "Sabana Amazónica", "Campo de Altitud", "Campo de Várzea", "Manglar",
-      "Palmeral", "vegetación de Campinarana sobre arena blanca", "Vegetación Acuática",
+      "Selva Ombr\u00f3fila", "Campo Limpio", "Cerrado",
+      "Bosque de V\u00e1rzea", "\u00c1rea Antr\u00f3pica", "Bosque Estacional Perennifolio",
+      "Bosque Estacional Semideciduo", "Bosque de Galer\u00eda",
+      "Bosque Ombr\u00f3filo Mixto", "Bosque de Igap\u00f3", "Restinga",
+      "Caatinga", "Campo Rupestre", "Vegetaci\u00f3n sobre Afloramientos Rochosos",
+      "Sabana Amaz\u00f3nica", "Campo de Altitud", "Campo de V\u00e1rzea", "Manglar",
+      "Palmeral", "vegetaci\u00f3n de Campinarana sobre arena blanca", "Vegetaci\u00f3n Acu\u00e1tica",
 
       # IUCN
-      "extinto (EX)", "extinto en estado silvestre (EW)", "en peligro crítico (CR)", "en peligro (EN)",
-      "vulnerable (VU)", "casi amenazado (NT)", "preocupación menor (LC)", "datos insuficientes (DD)",
+      "extinto (EX)", "extinto en estado silvestre (EW)", "en peligro cr\u00edtico (CR)", "en peligro (EN)",
+      "vulnerable (VU)", "casi amenazado (NT)", "preocupaci\u00f3n menor (LC)", "datos insuficientes (DD)",
       "no evaluado (NE)",
-      "La Unión Internacional para la Conservación de la Naturaleza (IUCN) ha clasificado esta especie como",
+      "La Uni\u00f3n Internacional para la Conservaci\u00f3n de la Naturaleza (IUCN) ha clasificado esta especie como",
 
       # Genus
-      "Es la única especie de este género en Brasil",
-      "Es una de las pocas {n} especies de este género en Brasil",
-      "Esta especie forma parte del género con mayor diversidad en Brasil",
-      "Esta especie pertenece a uno de los géneros con mayor diversidad en Brasil"
+      "Es la \u00fanica especie de este g\u00e9nero en Brasil",
+      "Es una de las pocas {n} especies de este g\u00e9nero en Brasil",
+      "Esta especie forma parte del g\u00e9nero con mayor diversidad en Brasil",
+      "Esta especie pertenece a uno de los g\u00e9neros con mayor diversidad en Brasil"
     ),
 
     fr = c(
       # Taxon
-      "appartient à", "la famille", "Cette espèce n’a aucun nom commun connu", "Elle est communément appelée",
-      "Elle est communément appelée", "par au moins", "noms communs", "comme", "et",
+      "appartient \u00e0", "la famille", "Cette esp\u00e8ce n\u2019a aucun nom commun connu", "Elle est commun\u00e9ment appel\u00e9e",
+      "Elle est commun\u00e9ment appel\u00e9e", "par au moins", "noms communs", "comme", "et",
 
       # Distribution
-      "Un vrai joyau rare", "on ne la retrouve que dans l'état", "Cette espèce se trouve dans plusieurs pays tels que",
-      "Cette espèce est", "du", "non endémique", "endémique", "ou", "nord du Brésil", "nord-est du Brésil",
-      "sud du Brésil", "sud-est du Brésil", "centre-ouest du Brésil",
+      "Un vrai joyau rare", "on ne la retrouve que dans l'\u00e9tat", "Cette esp\u00e8ce se trouve dans plusieurs pays tels que",
+      "Cette esp\u00e8ce est", "du", "non end\u00e9mique", "end\u00e9mique", "ou", "nord du Br\u00e9sil", "nord-est du Br\u00e9sil",
+      "sud du Br\u00e9sil", "sud-est du Br\u00e9sil", "centre-ouest du Br\u00e9sil",
 
       # Establishment means
-      "Cela signifie qu'on ne la trouve à l'état naturel nulle part ailleurs sur Terre",
-      "Elle est native du Brésil, c'est à dire qu'elle y pousse naturellement sans intervention humaine",
-      "Au Brésil, elle a été intentionnellement cultivée et gérée par l'homme, cette plante dépend donc entièrement de l'intervention humaine pour survivre et se reproduire",
-      "Au Brésil, elle a été naturalisée, c'est à dire qu'elle y a été introduite, mais s'est bien adaptée, a formé des populations autonomes et se reproduit seule, sans l'aide de l'homme", "Elle est",
+      "Cela signifie qu'on ne la trouve \u00e0 l'\u00e9tat naturel nulle part ailleurs sur Terre",
+      "Elle est native du Br\u00e9sil, c'est \u00e0 dire qu'elle y pousse naturellement sans intervention humaine",
+      "Au Br\u00e9sil, elle a \u00e9t\u00e9 intentionnellement cultiv\u00e9e et g\u00e9r\u00e9e par l'homme, cette plante d\u00e9pend donc enti\u00e8rement de l'intervention humaine pour survivre et se reproduire",
+      "Au Br\u00e9sil, elle a \u00e9t\u00e9 naturalis\u00e9e, c'est \u00e0 dire qu'elle y a \u00e9t\u00e9 introduite, mais s'est bien adapt\u00e9e, a form\u00e9 des populations autonomes et se reproduit seule, sans l'aide de l'homme", "Elle est",
 
       # Introduced
-      "Cette plante a également été introduite au",
-      "Cette plante a également été introduite dans plusieurs pays du monde, comme",
+      "Cette plante a \u00e9galement \u00e9t\u00e9 introduite au",
+      "Cette plante a \u00e9galement \u00e9t\u00e9 introduite dans plusieurs pays du monde, comme",
 
       # Phytogeographic domain
-      "Amazonie", "Forêt Atlantique", "Pampa", "Pantanal", "Caatinga", "Cerrado",
-      "Elle habite", "Elle colonise des écosystèmes divers comme",
-      "On peut aussi la trouver dans tous les biomes du Brésil", "quelle chance",
+      "Amazonie", "For\u00eat Atlantique", "Pampa", "Pantanal", "Caatinga", "Cerrado",
+      "Elle habite", "Elle colonise des \u00e9cosyst\u00e8mes divers comme",
+      "On peut aussi la trouver dans tous les biomes du Br\u00e9sil", "quelle chance",
 
       # Vegetation types
-      "où", "elle pousse de préférence dans une strate végétale particulière",
-      "elle pousse de préférence dans des strates végétales particulières",
-      "Carrasco (fourré)", "forêt tropicale semi-décidue", "forêt amazonienne non inondable",
-      "forêt ombrophile", "savane herbacée ou prairiale", "Cerrado",
-      "forêt de Várzea", "zone anthropique", "forêt tropicale saisonnière perennifoliée",
-      "forêt saisonnière semi-décidue", "forêt galerie",
-      "forêt ombrophile mixte", "forêt d’Igapó", "Restinga",
-      "Caatinga", "prairie rupestre", "végétation sur affleurements rocheux",
-      "savane amazonienne", "prairie d’altitude", "prairie de Várzea", "mangrove",
-      "palmeraie", "Campinarana (végétation sur sable blanc)", "végétation aquatique",
+      "o\u00f9", "elle pousse de pr\u00e9f\u00e9rence dans une strate v\u00e9g\u00e9tale particuli\u00e8re",
+      "elle pousse de pr\u00e9f\u00e9rence dans des strates v\u00e9g\u00e9tales particuli\u00e8res",
+      "Carrasco (fourr\u00e9)", "for\u00eat tropicale semi-d\u00e9cidue", "for\u00eat amazonienne non inondable",
+      "for\u00eat ombrophile", "savane herbac\u00e9e ou prairiale", "Cerrado",
+      "for\u00eat de V\u00e1rzea", "zone anthropique", "for\u00eat tropicale saisonni\u00e8re perennifoli\u00e9e",
+      "for\u00eat saisonni\u00e8re semi-d\u00e9cidue", "for\u00eat galerie",
+      "for\u00eat ombrophile mixte", "for\u00eat d\u2019Igap\u00f3", "Restinga",
+      "Caatinga", "prairie rupestre", "v\u00e9g\u00e9tation sur affleurements rocheux",
+      "savane amazonienne", "prairie d\u2019altitude", "prairie de V\u00e1rzea", "mangrove",
+      "palmeraie", "Campinarana (v\u00e9g\u00e9tation sur sable blanc)", "v\u00e9g\u00e9tation aquatique",
 
       # IUCN
-      "éteint (EX)", "éteint à l'état sauvage (EW)", "en danger critique (CR)", "en danger (EN)",
-      "vulnérable (VU)", "quasi menacé (NT)", "préoccupation mineure (LC)", "données insuffisantes (DD)",
-      "non évalué (NE)",
-      "L'Union internationale pour la conservation de la nature (IUCN) a classé cette espèce comme",
+      "\u00e9teint (EX)", "\u00e9teint \u00e0 l'\u00e9tat sauvage (EW)", "en danger critique (CR)", "en danger (EN)",
+      "vuln\u00e9rable (VU)", "quasi menac\u00e9 (NT)", "pr\u00e9occupation mineure (LC)", "donn\u00e9es insuffisantes (DD)",
+      "non \u00e9valu\u00e9 (NE)",
+      "L'Union internationale pour la conservation de la nature (IUCN) a class\u00e9 cette esp\u00e8ce comme",
 
       # Genus
-      "C'est la seule espèce de ce genre au Brésil",
-      "C'est l'une des seules {n} espèces de ce genre au Brésil",
-      "Cette espèce fait partie du genre avec la plus grande diversité au Brésil",
-      "Cette espèce appartient à l'un des genres avec la plus grande diversité au Brésil"
+      "C'est la seule esp\u00e8ce de ce genre au Br\u00e9sil",
+      "C'est l'une des seules {n} esp\u00e8ces de ce genre au Br\u00e9sil",
+      "Cette esp\u00e8ce fait partie du genre avec la plus grande diversit\u00e9 au Br\u00e9sil",
+      "Cette esp\u00e8ce appartient \u00e0 l'un des genres avec la plus grande diversit\u00e9 au Br\u00e9sil"
     )
   )
   return(dict)
@@ -1337,7 +1337,7 @@ ifelse(function_use == "_audios",
        paste0('
     </div>
     <div class="record-root-wrap">
-      <button id="pickAudioRoot" class="lang-btn" type="button">📁 Choose audio folder</button>
+      <button id="pickAudioRoot" class="lang-btn" type="button">\U{1f4c1} Choose audio folder</button>
       <span id="audioRootStatus" class="record-root-status"></span>
     </div>'), paste0("\n")),
 '</section>
@@ -1612,11 +1612,11 @@ ifelse(function_use == "_data", paste0(
 
   function setUnsaved() {
     const stat = document.getElementById("saveStatus");
-    if (stat) stat.textContent = "● Unsaved changes";
+    if (stat) stat.textContent = "\u25cf Unsaved changes";
   }
   function setSaved(msg) {
     const stat = document.getElementById("saveStatus");
-    if (stat) stat.textContent = msg || "✓ Saved";
+    if (stat) stat.textContent = msg || "\u2713 Saved";
   }
 
   // Toggle edit panels
@@ -1626,7 +1626,7 @@ ifelse(function_use == "_data", paste0(
       if (!panel) return;
       if (panel.hasAttribute("hidden")) {
         panel.removeAttribute("hidden");
-        this.innerHTML = "× Close editing";
+        this.innerHTML = "\u00d7 Close editing";
       } else {
         panel.setAttribute("hidden", "");
         this.innerHTML = "&#9998; Edit data fields";
@@ -1704,9 +1704,9 @@ ifelse(function_use == "_data", paste0(
     const lines   = [cols.map(csvEscape).join(","),
                      ...data.map(r => cols.map(c => csvEscape(r[c])).join(","))];
     const csvName = dataFilename.replace(/\\.xlsx$/i, ".csv");
-    triggerDownload(new Blob(["﻿" + lines.join("\\n")], { type: "text/csv;charset=utf-8;" }),
+    triggerDownload(new Blob(["\ufeff" + lines.join("\\n")], { type: "text/csv;charset=utf-8;" }),
                     csvName);
-    setSaved("✓ CSV downloaded");
+    setSaved("\u2713 CSV downloaded");
   }
 
   function loadSheetJS(cb) {
@@ -1714,7 +1714,7 @@ ifelse(function_use == "_data", paste0(
     const s = document.createElement("script");
     s.src = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
     s.onload = cb;
-    s.onerror = () => setSaved("⚠ XLSX unavailable — try CSV");
+    s.onerror = () => setSaved("\u26a0 XLSX unavailable \u2014 try CSV");
     document.head.appendChild(s);
   }
 
@@ -1727,7 +1727,7 @@ ifelse(function_use == "_data", paste0(
   function downloadXLSX() {
     loadSheetJS(() => {
       XLSX.writeFile(buildWorkbook(), dataFilename);
-      setSaved("✓ XLSX downloaded");
+      setSaved("\u2713 XLSX downloaded");
     });
   }
 
@@ -1785,11 +1785,11 @@ ifelse(function_use == "_data", paste0(
       if (h) {
         h.createWritable()
           .then(w => w.write(blob).then(() => w.close()))
-          .then(() => setSaved("✓ Saved"))
-          .catch(() => { triggerDownload(blob, dataFilename); setSaved("✓ Downloaded"); });
+          .then(() => setSaved("\u2713 Saved"))
+          .catch(() => { triggerDownload(blob, dataFilename); setSaved("\u2713 Downloaded"); });
       } else if (window.showSaveFilePicker) {
         // When opened as file://, the dialog starts in the same folder as
-        // this HTML file — i.e. the dir/ that arboretum_data() wrote to.
+        // this HTML file \u2014 i.e. the dir/ that arboretum_data() wrote to.
         window.showSaveFilePicker({
           suggestedName: dataFilename,
           types: [{ description: "Excel Workbook", accept: { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] } }]
@@ -1797,11 +1797,11 @@ ifelse(function_use == "_data", paste0(
           xlsxFileHandle = h2;
           _idbPut(handleKey, h2).catch(() => {});
           return h2.createWritable().then(w => w.write(blob).then(() => w.close()));
-        }).then(() => setSaved("✓ Saved"))
+        }).then(() => setSaved("\u2713 Saved"))
           .catch(() => {});
       } else {
         triggerDownload(blob, dataFilename);
-        setSaved("✓ Downloaded");
+        setSaved("\u2713 Downloaded");
       }
     });
   }
@@ -1901,8 +1901,8 @@ ifelse(function_use == "_data", paste0(
           ifelse(function_use == "_audios",
                  paste0(
                    '<div class="record-controls">',
-                   '<button type="button" class="record-btn">🎙 Record</button>',
-                   '<button type="button" class="stop-record-btn">⏹ Stop</button>',
+                   '<button type="button" class="record-btn">\U{1f399} Record</button>',
+                   '<button type="button" class="stop-record-btn">\u23f9 Stop</button>',
                    '<span class="record-status"></span>',
                    '</div>'), paste0("\n")),
           '</section>'
@@ -2035,10 +2035,10 @@ ifelse(function_use == "_data", paste0(
 
 .lang_label <- function(lang) {
   switch(lang,
-         pt = "Português",
+         pt = "Portugu\u00eas",
          en = "English",
-         fr = "Français",
-         es = "Español",
+         fr = "Fran\u00e7ais",
+         es = "Espa\u00f1ol",
          toupper(lang))
 }
 
@@ -2213,43 +2213,43 @@ subtitle_html <- function(ui_strings, lang) {
     ),
     pt = list(
       html_lang = "pt",
-      title_audios = "Guia para Gravação de Áudios Pessoais",
-      title_data = "Guia de Geração de Frases",
-      subtitle_audios = "Use este arquivo para gravar seus próprios áudios das espécies antes de gerar os rótulos em HTML e o minisite.",
-      subtitle_data = "Use este arquivo para verificar as frases geradas automaticamente antes de gravar os áudios e gerar as etiquetas HTML e o minisite.",
-      search_placeholder = "Pesquisar nome da espécie ou família...",
-      index_title = "Índice",
-      no_results = "Nenhuma espécie corresponde à sua busca.",
+      title_audios = "Guia para Grava\u00e7\u00e3o de \u00c1udios Pessoais",
+      title_data = "Guia de Gera\u00e7\u00e3o de Frases",
+      subtitle_audios = "Use este arquivo para gravar seus pr\u00f3prios \u00e1udios das esp\u00e9cies antes de gerar os r\u00f3tulos em HTML e o minisite.",
+      subtitle_data = "Use este arquivo para verificar as frases geradas automaticamente antes de gravar os \u00e1udios e gerar as etiquetas HTML e o minisite.",
+      search_placeholder = "Pesquisar nome da esp\u00e9cie ou fam\u00edlia...",
+      index_title = "\u00cdndice",
+      no_results = "Nenhuma esp\u00e9cie corresponde \u00e0 sua busca.",
       back_to_top = "Voltar ao topo",
-      footer_note = "Use a busca do navegador ou o campo acima para navegar rapidamente entre as espécies.",
-      family = "Família",
+      footer_note = "Use a busca do navegador ou o campo acima para navegar rapidamente entre as esp\u00e9cies.",
+      family = "Fam\u00edlia",
       generated_with = "Gerado com"
     ),
     fr = list(
       html_lang = "fr",
-      title_audios = "Guide d’Enregistrement Audio Personnel",
-      title_data = "Guide de génération de phrases",
-      subtitle_audios = "Utilisez ce fichier pour enregistrer vos propres audios d’espèces avant de générer les étiquettes HTML et le minisite.",
-      subtitle_data = "Utilisez ce fichier pour vérifier les phrases générées automatiquement avant d’enregistrer les audios et de générer les étiquettes HTML et le minisite.",
-      search_placeholder = "Rechercher le nom de l’espèce ou de la famille...",
+      title_audios = "Guide d\u2019Enregistrement Audio Personnel",
+      title_data = "Guide de g\u00e9n\u00e9ration de phrases",
+      subtitle_audios = "Utilisez ce fichier pour enregistrer vos propres audios d\u2019esp\u00e8ces avant de g\u00e9n\u00e9rer les \u00e9tiquettes HTML et le minisite.",
+      subtitle_data = "Utilisez ce fichier pour v\u00e9rifier les phrases g\u00e9n\u00e9r\u00e9es automatiquement avant d\u2019enregistrer les audios et de g\u00e9n\u00e9rer les \u00e9tiquettes HTML et le minisite.",
+      search_placeholder = "Rechercher le nom de l\u2019esp\u00e8ce ou de la famille...",
       index_title = "Index",
-      no_results = "Aucune espèce ne correspond à votre recherche.",
+      no_results = "Aucune esp\u00e8ce ne correspond \u00e0 votre recherche.",
       back_to_top = "Retour en haut",
-      footer_note = "Utilisez la recherche du navigateur ou le champ ci-dessus pour naviguer rapidement entre les espèces.",
+      footer_note = "Utilisez la recherche du navigateur ou le champ ci-dessus pour naviguer rapidement entre les esp\u00e8ces.",
       family = "Famille",
-      generated_with = "Généré avec"
+      generated_with = "G\u00e9n\u00e9r\u00e9 avec"
     ),
     es = list(
       html_lang = "es",
-      title_audios = "Guía para Grabar Audios Personales",
-      title_data = "Guía de Generación de Frases",
+      title_audios = "Gu\u00eda para Grabar Audios Personales",
+      title_data = "Gu\u00eda de Generaci\u00f3n de Frases",
       subtitle_audios = "Use este archivo para grabar sus propios audios de especies antes de generar las etiquetas HTML y el minisitio.",
-      subtitle_data = "Use este archivo para revisar las frases generadas automáticamente antes de grabar los audios y generar las etiquetas HTML y el minisite.",
+      subtitle_data = "Use este archivo para revisar las frases generadas autom\u00e1ticamente antes de grabar los audios y generar las etiquetas HTML y el minisite.",
       search_placeholder = "Buscar nombre de la especie o familia...",
-      index_title = "Índice",
-      no_results = "Ninguna especie coincide con su búsqueda.",
+      index_title = "\u00cdndice",
+      no_results = "Ninguna especie coincide con su b\u00fasqueda.",
       back_to_top = "Volver arriba",
-      footer_note = "Use la búsqueda del navegador o el campo superior para navegar rápidamente entre las especies.",
+      footer_note = "Use la b\u00fasqueda del navegador o el campo superior para navegar r\u00e1pidamente entre las especies.",
       family = "Familia",
       generated_with = "Generado con"
     )

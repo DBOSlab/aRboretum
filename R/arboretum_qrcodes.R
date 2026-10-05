@@ -303,7 +303,7 @@ arboretum_qrcodes <- function(data_path = NULL,
                        gsub("\\s+", "_", df$taxonName),
                        "_label.html")
     if (verbose)
-      message("Using minisite base URL — linking each QR code to its species label page.")
+      message("Using minisite base URL \u2014 linking each QR code to its species label page.")
   } else if (!is.null(url)) {
     qr_urls <- if (length(url) == 1L) rep(url, n_sp) else url
   } else if ("POWO.url" %in% names(df) && any(!is.na(df$POWO.url))) {
@@ -314,7 +314,7 @@ arboretum_qrcodes <- function(data_path = NULL,
                       df$FFB.url, df$taxonName)
   } else {
     qr_urls <- df$taxonName
-    if (verbose) message("No URL provided — encoding taxon names in QR codes.")
+    if (verbose) message("No URL provided \u2014 encoding taxon names in QR codes.")
   }
 
   # Specimen ID codes
@@ -351,7 +351,7 @@ arboretum_qrcodes <- function(data_path = NULL,
 
   if (verbose) {
     message(sprintf(
-      "Layout: %-12s | Size: %.1f × %.1f cm | Grid: %d×%d (%d/page) | Pages: %d",
+      "Layout: %-12s | Size: %.1f \u00d7 %.1f cm | Grid: %d\u00d7%d (%d/page) | Pages: %d",
       layout, label_w, label_h, n_cols, n_rows, per_page, n_pages
     ))
   }
@@ -686,12 +686,12 @@ arboretum_qrcodes <- function(data_path = NULL,
   if (endem_val == "Endemic" && nzchar(cntr_first)) {
     endemic_text <- switch(printed_lang,
       en = paste0("Endemic of ", cntr_first),
-      pt = if (cntr_first == "Brazil") "Endêmica do Brasil"
-           else paste0("Endêmica de ", cntr_first),
-      es = paste0("Endémica de ",
+      pt = if (cntr_first == "Brazil") "End\u00eamica do Brasil"
+           else paste0("End\u00eamica de ", cntr_first),
+      es = paste0("End\u00e9mica de ",
                   if (cntr_first == "Brazil") "Brasil" else cntr_first),
-      fr = if (cntr_first == "Brazil") "Endémique du Brésil"
-           else paste0("Endémique de ", cntr_first),
+      fr = if (cntr_first == "Brazil") "End\u00e9mique du Br\u00e9sil"
+           else paste0("End\u00e9mique de ", cntr_first),
       paste0("Endemic of ", cntr_first)
     )
   }

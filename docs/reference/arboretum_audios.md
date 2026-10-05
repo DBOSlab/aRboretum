@@ -44,7 +44,8 @@ arboretum_audios(
 - printed_lang:
 
   Character vector. Built-in language(s) to generate folders and phrases
-  for. Accepted values are `"pt"`, `"en"`, `"fr"`, and `"es"`.
+  for. Accepted values are `"pt"`, `"en"`, `"fr"`, and `"es"`. Default
+  is `c("pt", "en", "fr", "es")`.
 
 - add_lang:
 

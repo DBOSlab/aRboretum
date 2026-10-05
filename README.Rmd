@@ -52,12 +52,43 @@ herbaria, and living plant collections.
 
 ## Installation
 
-You can install the development version of `aRboretum` from
+`aRboretum` depends on two packages that are not on CRAN, so install them
+first:
+
+- [`rWCVPdata`](https://github.com/matildabrown/rWCVPdata), which provides
+  the World Checklist of Vascular Plants data and is distributed through its
+  own repository;
+- [`floraR`](https://github.com/DBOSlab/floraR), which downloads and parses
+  the Flora e Funga do Brasil dataset used by `arboretum_data()`.
+
+``` r
+if (!requireNamespace("rWCVPdata", quietly = TRUE)) {
+  install.packages("rWCVPdata",
+                   repos = c(
+                     "https://matildabrown.github.io/drat",
+                     "https://cloud.r-project.org"
+                   )
+  )
+}
+
+if (!requireNamespace("BiocManager", quietly = TRUE)) 
+install.packages("BiocManager") 
+
+# Install the development version of floraR from GitHub, 
+# together with its required dependencies 
+BiocManager::install("DBOSlab/floraR", dependencies = TRUE)
+```
+
+Then install the development version of `aRboretum` from
 [GitHub](https://github.com/DBOSlab/aRboretum) with:
 
 ``` r
-if (!require("devtools")) install.packages("devtools")
-devtools::install_github("DBOSlab/aRboretum")
+if (!requireNamespace("BiocManager", quietly = TRUE)) 
+install.packages("BiocManager") 
+
+# Install the development version of aRboretum from GitHub, 
+# together with its required dependencies 
+BiocManager::install("DBOSlab/aRboretum", dependencies = TRUE)
 ```
 
 ``` r

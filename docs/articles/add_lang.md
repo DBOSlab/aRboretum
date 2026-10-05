@@ -47,25 +47,24 @@ or from your own formatted input file. To include Tukano, add a column
 named `full_phrases_ADD_LANGUAGE`. This column should contain the
 complete label text you want to display in the extra language.
 
-``` r
-tukano_example <- data.frame(
-  taxonName = c("Paubrasilia echinata", "Euterpe edulis"),
-  family = c("Fabaceae", "Arecaceae"),
-  full_phrases_ADD_LANGUAGE = c(
-    "Texto completo em Tukano para Paubrasilia echinata.",
-    "Texto completo em Tukano para Euterpe edulis."
-  ),
-  stringsAsFactors = FALSE
-)
-
-tukano_example
-#>              taxonName    family
-#> 1 Paubrasilia echinata  Fabaceae
-#> 2       Euterpe edulis Arecaceae
-#>                             full_phrases_ADD_LANGUAGE
-#> 1 Texto completo em Tukano para Paubrasilia echinata.
-#> 2       Texto completo em Tukano para Euterpe edulis.
-```
+\
+`tukano_example`` ``<-`` `[`data.frame`](https://rdrr.io/r/base/data.frame.html)`(`\
+`  taxonName ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Paubrasilia echinata"``, ``"Euterpe edulis"``)``,`\
+`  family ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Fabaceae"``, ``"Arecaceae"``)``,`\
+`  full_phrases_ADD_LANGUAGE ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(`\
+`    ``"Texto completo em Tukano para Paubrasilia echinata."``,`\
+`    ``"Texto completo em Tukano para Euterpe edulis."`\
+`  ``)``,`\
+`  stringsAsFactors ``=`` ``FALSE`\
+`)`\
+\
+`tukano_example`\
+`#>              taxonName    family`\
+`#> 1 Paubrasilia echinata  Fabaceae`\
+`#> 2       Euterpe edulis Arecaceae`\
+`#>                             full_phrases_ADD_LANGUAGE`\
+`#> 1 Texto completo em Tukano para Paubrasilia echinata.`\
+`#> 2       Texto completo em Tukano para Euterpe edulis.`
 
 In practice, your file will also include the standard columns used by
 `aRboretum`, such as taxonomy, native distribution, uses, and notes.
@@ -89,33 +88,32 @@ A minimal input file should include at least the following columns:
 A more realistic toy example may also include built-in language note
 fields:
 
-``` r
-tukano_example_extended <- data.frame(
-  taxonName = c("Paubrasilia echinata", "Euterpe edulis"),
-  family = c("Fabaceae", "Arecaceae"),
-  plant_uses_PT = c("Madeira e uso ornamental.", "Alimentação e paisagismo."),
-  free_notes_PT = c(
-    "Espécie simbólica no Brasil.",
-    "Espécie importante da Mata Atlântica."
-  ),
-  full_phrases_ADD_LANGUAGE = c(
-    "Texto completo em Tukano para Paubrasilia echinata.",
-    "Texto completo em Tukano para Euterpe edulis."
-  ),
-  stringsAsFactors = FALSE
-)
-
-tukano_example_extended
-#>              taxonName    family             plant_uses_PT
-#> 1 Paubrasilia echinata  Fabaceae Madeira e uso ornamental.
-#> 2       Euterpe edulis Arecaceae Alimentação e paisagismo.
-#>                           free_notes_PT
-#> 1          Espécie simbólica no Brasil.
-#> 2 Espécie importante da Mata Atlântica.
-#>                             full_phrases_ADD_LANGUAGE
-#> 1 Texto completo em Tukano para Paubrasilia echinata.
-#> 2       Texto completo em Tukano para Euterpe edulis.
-```
+\
+`tukano_example_extended`` ``<-`` `[`data.frame`](https://rdrr.io/r/base/data.frame.html)`(`\
+`  taxonName ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Paubrasilia echinata"``, ``"Euterpe edulis"``)``,`\
+`  family ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Fabaceae"``, ``"Arecaceae"``)``,`\
+`  plant_uses_PT ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Madeira e uso ornamental."``, ``"Alimentação e paisagismo."``)``,`\
+`  free_notes_PT ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(`\
+`    ``"Espécie simbólica no Brasil."``,`\
+`    ``"Espécie importante da Mata Atlântica."`\
+`  ``)``,`\
+`  full_phrases_ADD_LANGUAGE ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(`\
+`    ``"Texto completo em Tukano para Paubrasilia echinata."``,`\
+`    ``"Texto completo em Tukano para Euterpe edulis."`\
+`  ``)``,`\
+`  stringsAsFactors ``=`` ``FALSE`\
+`)`\
+\
+`tukano_example_extended`\
+`#>              taxonName    family             plant_uses_PT`\
+`#> 1 Paubrasilia echinata  Fabaceae Madeira e uso ornamental.`\
+`#> 2       Euterpe edulis Arecaceae Alimentação e paisagismo.`\
+`#>                           free_notes_PT`\
+`#> 1          Espécie simbólica no Brasil.`\
+`#> 2 Espécie importante da Mata Atlântica.`\
+`#>                             full_phrases_ADD_LANGUAGE`\
+`#> 1 Texto completo em Tukano para Paubrasilia echinata.`\
+`#> 2       Texto completo em Tukano para Euterpe edulis.`
 
 ### Step 2. Create folders for optional personal recordings
 
@@ -123,23 +121,22 @@ Use
 [`arboretum_audios()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)
 with `add_lang = "TUKANO"`:
 
-``` r
-library(aRboretum)
-
-arboretum_audios(
-  data_path = "extracted_data/my_species_data.xlsx",
-  printed_lang = c("pt", "en"),
-  add_lang = "TUKANO",
-  verbose = TRUE
-)
-```
+\
+[`library`](https://rdrr.io/r/base/library.html)`(`[`aRboretum`](https://DBOSlab.github.io/aRboretum)`)`\
+\
+[`arboretum_audios`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)`(`\
+`  data_path ``=`` ``"extracted_data/my_species_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  add_lang ``=`` ``"TUKANO"``,`\
+`  verbose ``=`` ``TRUE`\
+`)`
 
 This creates the `arboretum_audios/` folder and one additional recording
 folder per species using the `TUKANO` code.
 
 A simplified folder structure looks like this:
 
-``` text
+```
 arboretum_audios/
 ├── FABACEAE_Paubrasilia_echinata_PT/
 ├── FABACEAE_Paubrasilia_echinata_EN/
@@ -170,16 +167,15 @@ possible.
 Now generate the labels with
 [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md):
 
-``` r
-arboretum_labels(
-  data_path = "extracted_data/my_species_data.xlsx",
-  audio_dir = "arboretum_audios",
-  printed_lang = c("pt", "en"),
-  add_lang = "TUKANO",
-  verbose = TRUE,
-  dir = "html_species_labels"
-)
-```
+\
+[`arboretum_labels`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)`(`\
+`  data_path ``=`` ``"extracted_data/my_species_data.xlsx"``,`\
+`  audio_dir ``=`` ``"arboretum_audios"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  add_lang ``=`` ``"TUKANO"``,`\
+`  verbose ``=`` ``TRUE``,`\
+`  dir ``=`` ``"html_species_labels"`\
+`)`
 
 When `add_lang` is provided and `full_phrases_ADD_LANGUAGE` contains
 non-empty text, the generated HTML labels include **Tukano** as an

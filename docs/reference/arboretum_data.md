@@ -1,14 +1,20 @@
 # Extract and compile flora data from multiple taxonomic databases
 
 This function queries both [Flora e Funga do Brasil
-(FFB)](https://floradobrasil.jbrj.gov.br/consulta/) and [Plants of the
-World Online (POWO)](https://powo.science.kew.org/) to retrieve
-taxonomic, distributional, vernacular, conservation, and
-occurrence-related information for a given list of plant species. It
-standardizes input names, handles synonyms, merges data from both
-sources, and returns a single dataframe that can optionally be saved as
-a CSV or Excel file. The output also includes genus-level richness and
-rank information derived from FFB.
+(FFB)](https://floradobrasil.jbrj.gov.br/consulta/) and the [World
+Checklist of Vascular Plants (WCVP)](https://powo.science.kew.org/), the
+backbone of Plants of the World Online (POWO), to retrieve taxonomic,
+distributional, vernacular, and occurrence-related information for a
+given list of plant species. The global conservation status of each
+species is retrieved from the [IUCN Red
+List](https://www.iucnredlist.org/). It standardizes input names,
+handles synonyms, merges data from both sources, and returns a single
+dataframe that can optionally be saved as a CSV or Excel file. The
+output also includes genus-level richness and rank information derived
+from FFB. When `save = TRUE`, the function also writes a standalone HTML
+phrase guide (`__phrase_generating_guide.html`) to `dir`, which allows
+users to review, edit annotation fields, and export the updated data
+directly from the browser.
 
 ## Usage
 
@@ -38,18 +44,20 @@ arboretum_data(
 
 - printed_lang:
 
-  Character vector. Built-in language(s) to generate folders and phrases
-  for. Accepted values are `"pt"`, `"en"`, `"fr"`, and `"es"`.
+  Character vector. Built-in language(s) for which phrases are generated
+  in the HTML guide. Accepted values are `"pt"`, `"en"`, `"fr"`, and
+  `"es"`. Default is `c("pt", "en", "fr", "es")`.
 
 - add_lang:
 
-  Character string or `NULL`. Optional code for one additional language
-  to include in the folder structure for personal recordings, for
-  example `"PANARA"` or `"TUKANO"`. This argument is intended for cases
-  where users want to add custom community or local-language audio
-  without translating the full package interface. When supplied, one
-  extra recording folder per species is created using that language
-  code.
+  Character string or `NULL`. Optional code for one additional language,
+  for example `"PANARA"` or `"TUKANO"`. When supplied, the HTML phrase
+  guide includes a dedicated editable field for entering a full phrase
+  translation for the specified custom language. The content entered
+  there is stored in the `full_phrases_ADD_LANGUAGE` column and can be
+  used on subsequent runs of
+  [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)
+  to include that language in the species labels. Default is `NULL`.
 
 - verbose:
 
@@ -71,18 +79,21 @@ arboretum_data(
 - filename:
 
   Character string. Base name for the output file, without extension.
-  Default is `"arboretum_mined_data"`.
+  Default is `"arboretum_data"`.
 
 - dir:
 
   Character string. Directory path where the output file will be saved.
   Trailing slashes are automatically removed. The directory is created
-  if it does not exist. Default is `"arboretum_mined_data"`.
+  if it does not exist. Default is `"arboretum_data"`.
 
 ## Value
 
 A dataframe combining data retrieved from FFB and POWO. The returned
 columns include:
+
+- `original_query`: The species name as originally supplied in
+  `spp_list`.
 
 - `family`: Family name of the accepted taxon.
 
@@ -120,9 +131,6 @@ columns include:
 - `FFB.vegetationType`: Vegetation types from FFB, concatenated by
   `" | "`.
 
-- `IUCN.status`: IUCN conservation status retrieved from POWO, when
-  available.
-
 - `FFB.genusRichness`: Number of accepted species of the genus recorded
   in FFB.
 
@@ -130,12 +138,30 @@ columns include:
   representing the richest genus.
 
 - `plant_uses_EN`, `plant_uses_PT`, `plant_uses_ES`, `plant_uses_FR`:
-  Plant-use fields in English, Portuguese, Spanish, and French, reserved
-  for downstream annotation or future use.
+  Plant-use fields in English, Portuguese, Spanish, and French, intended
+  for user annotation via the HTML phrase guide or direct editing of the
+  saved file.
 
 - `free_notes_EN`, `free_notes_PT`, `free_notes_ES`, `free_notes_FR`:
   Free-text note fields in English, Portuguese, Spanish, and French,
-  reserved for downstream annotation or future use.
+  intended for user annotation via the HTML phrase guide or direct
+  editing of the saved file.
+
+- `IUCN.status`: Global IUCN Red List category, for example
+  `"Endangered (EN)"`, or `NA` when the species has not been assessed.
+
+- `full_phrases_EN`, `full_phrases_PT`, `full_phrases_ES`,
+  `full_phrases_FR`: Natural-language species descriptions automatically
+  generated for each language in `printed_lang`. Phrases stored in these
+  columns are reused as they are on later runs, so they can be manually
+  edited in the saved file or in the HTML phrase guide; clearing a cell
+  makes the phrase be generated again. Plant uses and free notes are
+  appended after the phrase.
+
+- `full_phrases_ADD_LANGUAGE`: Reserved field for a complete phrase
+  translation in the custom language specified by `add_lang`. Always
+  present in the output; populated by the user via the HTML phrase guide
+  or direct editing.
 
 - `POWO.url`: URL to the species page in POWO.
 
@@ -144,12 +170,19 @@ columns include:
 If a species is found in only one database, fields from the missing
 database are returned as `NA`. Species not found in either database are
 omitted from the final dataframe. For overlapping fields, FFB data
-generally take precedence, except for selected POWO-derived fields such
-as botanical country, introduced range, IUCN status, and POWO URL.
+generally take precedence, except for selected WCVP-derived fields such
+as botanical country, introduced range, and POWO URL.
+
+When `save = TRUE`, the function also writes a standalone HTML phrase
+guide (`__phrase_generating_guide.html`) to `dir`. This file embeds the
+full dataframe and allows users to review generated phrases, edit
+annotation fields (`FFB.vernacularName`, `plant_uses_*`, `free_notes_*`,
+`full_phrases_*`), and export the updated data as CSV or XLSX without
+rerunning the function.
 
 ## Details
 
-The function follows four main steps:
+The function follows five main steps:
 
 1.  **Flora e Funga do Brasil data extraction**
 
@@ -170,19 +203,17 @@ The function follows four main steps:
       distribution, endemism, establishment means, Brazilian states,
       phytogeographic domains, vegetation types, and FFB reference URLs.
 
-2.  **POWO data extraction**
+2.  **WCVP data extraction**
 
-    - Searches POWO using
-      [`taxize::pow_search()`](https://docs.ropensci.org/taxize/reference/pow_search.html).
+    - Loads the WCVP names and distribution tables once from rWCVPdata,
+      so no per-species web requests are needed.
 
     - Resolves synonyms to accepted names when possible.
 
-    - Retrieves detailed information using
-      [`taxize::pow_lookup()`](https://docs.ropensci.org/taxize/reference/pow_lookup.html),
-      including taxonomy, distribution, introduced range, IUCN status,
-      and POWO URL.
+    - Retrieves family, authorship, native distribution (botanical
+      countries), introduced range, and the POWO URL.
 
-    - Converts POWO botanical countries to standard country names using
+    - Converts WCVP botanical countries to standard country names using
       an internal helper function.
 
 3.  **Data merging**
@@ -208,11 +239,39 @@ The function follows four main steps:
     - Adds multilingual genus curiosity notes using internal helper
       functions, when available.
 
+5.  **IUCN Red List status**
+
+    - If the rredlist package is installed and an IUCN Red List API
+      token is stored in the `IUCN_REDLIST_KEY` environment variable (a
+      free token can be requested at <https://api.iucnredlist.org>), the
+      latest global assessment is retrieved from the official IUCN Red
+      List API.
+
+    - Otherwise, the status is retrieved without a token from the IUCN
+      Red List checklist mirrored by GBIF (<https://www.gbif.org>).
+
+6.  **HTML phrase guide generation**
+
+    - Generates natural-language species descriptions for each
+      `printed_lang` and stores them in the `full_phrases_*` columns.
+      Phrases already present in these columns are kept, so manual edits
+      are never overwritten. If `add_lang` is supplied, a dedicated
+      editable field is included for the custom language.
+
+    - Saves a standalone `__phrase_generating_guide.html` to `dir` when
+      `save = TRUE`. The guide embeds the full dataframe and provides
+      browser-based editing and export functionality.
+
 Before processing, `spp_list` is cleaned using internal helper
 functions. Leading and trailing whitespace are removed, names are
 standardized, and each element is checked to ensure that it contains a
 space. The function stops with an error if any element appears not to be
 a binomial species name.
+
+If `dir` already contains a CSV or XLSX data file, the species data are
+read from that file instead of being retrieved again, and only empty
+`full_phrases_*` cells are filled; the file is rewritten only when new
+phrases were generated.
 
 If `save = TRUE`, the function creates the output directory if needed
 and saves the resulting dataframe either as a CSV file using
@@ -229,7 +288,10 @@ when the function exits.
 - The floraR package is required to download and parse the FFB Darwin
   Core Archive.
 
-- The taxize package is required to query POWO.
+- The rWCVPdata package is required to access WCVP data.
+
+- The rredlist package is optional and only used when an IUCN Red List
+  API token is available.
 
 - The openxlsx package is required only when `format = "xlsx"`.
 
@@ -248,8 +310,7 @@ when the function exits.
 
 [`flora_download`](https://rdrr.io/pkg/floraR/man/flora_download.html),
 [`flora_parse`](https://rdrr.io/pkg/floraR/man/flora_parse.html),
-[`pow_search`](https://docs.ropensci.org/taxize/reference/pow_search.html),
-[`pow_lookup`](https://docs.ropensci.org/taxize/reference/pow_lookup.html)
+[`rl_species`](https://docs.ropensci.org/rredlist/reference/rl_species.html)
 
 ## Author
 

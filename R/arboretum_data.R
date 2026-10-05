@@ -334,9 +334,9 @@ arboretum_data <- function(spp_list = NULL,
     distribution_data[[4]][distribution_data[[4]] %in% "CULTIVADA"] <- "Cultivated"
     distribution_data[[4]][distribution_data[[4]] %in% "NATURALIZADA"] <- "Naturalized"
     distribution_data[[6]][distribution_data[[6]] %in% "Endemica"] <- "Endemic"
-    distribution_data[[6]][distribution_data[[6]] %in% "Não endemica"] <- "Non-endemic"
-    distribution_data[[7]][distribution_data[[7]] %in% "Amazônia"] <- "Amazon"
-    distribution_data[[7]][distribution_data[[7]] %in% "Mata Atlântica"] <- "Atlantic Forest"
+    distribution_data[[6]][distribution_data[[6]] %in% "N\u00e3o endemica"] <- "Non-endemic"
+    distribution_data[[7]][distribution_data[[7]] %in% "Amaz\u00f4nia"] <- "Amazon"
+    distribution_data[[7]][distribution_data[[7]] %in% "Mata Atl\u00e2ntica"] <- "Atlantic Forest"
 
     #Genus statistics and synonym management for accurate data
     taxon_data_temp <- taxon_data[taxon_data$taxonomicStatus %in% "NOME_ACEITO", ]

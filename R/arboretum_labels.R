@@ -625,30 +625,30 @@ arboretum_labels <- function(data_path = NULL,
                                                brazil = "Distribution in the states of Brazil",
                                                photos = "Photos",
                                                back_index = "Back to main page"),
-                                     pt = list(title = "Apresentação da espécie",
+                                     pt = list(title = "Apresenta\u00e7\u00e3o da esp\u00e9cie",
                                                stop = "Parar",
                                                uses = "Usos",
                                                curi = "Curiosidades",
-                                               world = "Distribuição global",
-                                               brazil = "Distribuição nos estados do Brasil",
+                                               world = "Distribui\u00e7\u00e3o global",
+                                               brazil = "Distribui\u00e7\u00e3o nos estados do Brasil",
                                                photos = "Fotos",
-                                               back_index = "Voltar à página principal"),
-                                     fr = list(title = "Présentation de l'espèce",
-                                               stop = "Arrêter",
+                                               back_index = "Voltar \u00e0 p\u00e1gina principal"),
+                                     fr = list(title = "Pr\u00e9sentation de l'esp\u00e8ce",
+                                               stop = "Arr\u00eater",
                                                uses = "Usages",
-                                               curi = "Curiosités",
+                                               curi = "Curiosit\u00e9s",
                                                world = "Distribution mondiale",
-                                               brazil = "Distribution dans les États du Brésil",
+                                               brazil = "Distribution dans les \u00c9tats du Br\u00e9sil",
                                                photos = "Photos",
-                                               back_index = "Retour à la page principale"),
-                                     es = list(title = "Descripción de la especie",
+                                               back_index = "Retour \u00e0 la page principale"),
+                                     es = list(title = "Descripci\u00f3n de la especie",
                                                stop = "Detener",
                                                uses = "Usos",
                                                curi = "Curiosidades",
-                                               world = "Distribución mundial",
-                                               brazil = "Distribución en los estados de Brasil",
+                                               world = "Distribuci\u00f3n mundial",
+                                               brazil = "Distribuci\u00f3n en los estados de Brasil",
                                                photos = "Fotos",
-                                               back_index = "Volver a la página principal")
+                                               back_index = "Volver a la p\u00e1gina principal")
     )
 
     if (is.null(add_lang) || lang != add_lang) {
@@ -1213,14 +1213,14 @@ arboretum_labels <- function(data_path = NULL,
       htmltools::tags$p(id = "distText", style = "font-size: 1.05rem;"),
       htmltools::tags$div(
         class = "controls",
-        htmltools::tags$button(id = "voiceBtn", class = "voice-btn", "🔊 Listen"),
-        htmltools::tags$button(id = "stopBtn", class = "stop-btn", "⏹ Stop"),
+        htmltools::tags$button(id = "voiceBtn", class = "voice-btn", "\U{1f50a} Listen"),
+        htmltools::tags$button(id = "stopBtn", class = "stop-btn", "\u23f9 Stop"),
         lapply(printed_lang, function(lang){
           label <- switch(lang,
-                          pt = "Português",
+                          pt = "Portugu\u00eas",
                           en = "English",
-                          fr = "Français",
-                          es = "Español",
+                          fr = "Fran\u00e7ais",
+                          es = "Espa\u00f1ol",
                           toupper(lang))
           htmltools::tags$button(class = "lang-btn", `data-lang` = lang, label)
         })
@@ -1371,11 +1371,11 @@ arboretum_labels <- function(data_path = NULL,
           const hasAudio = !!audioFiles[langKey];
           const hasTts = !!voiceLangs[langKey];
           if (hasAudio) {
-            voiceBtn.textContent = '🎵 Listen (Personal Recording)';
+            voiceBtn.textContent = '\U{1f3b5} Listen (Personal Recording)';
           } else if (hasTts) {
-            voiceBtn.textContent = '🔊 Listen';
+            voiceBtn.textContent = '\U{1f50a} Listen';
           } else {
-            voiceBtn.textContent = '📖 Text only';
+            voiceBtn.textContent = '\U{1f4d6} Text only';
           }
         }
       }

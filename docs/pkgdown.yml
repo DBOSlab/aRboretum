@@ -1,5 +1,5 @@
-pandoc: 3.6.3
-pkgdown: 2.2.0
+pandoc: '3.11'
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   add_lang: add_lang.html
@@ -7,7 +7,7 @@ articles:
   howto_audios: howto_audios.html
   howto_photos: howto_photos.html
   quickstart: quickstart.html
-last_built: 2026-06-17T18:58Z
+last_built: 2026-10-05T15:35Z
 urls:
   reference: https://DBOSlab.github.io/aRboretum/reference
   article: https://DBOSlab.github.io/aRboretum/articles

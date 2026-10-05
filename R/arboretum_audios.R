@@ -105,9 +105,9 @@ arboretum_audios <- function(data_path = NULL,
 
   lang_button_label <- c(
     en = "English",
-    pt = "Português",
-    fr = "Français",
-    es = "Español"
+    pt = "Portugu\u00eas",
+    fr = "Fran\u00e7ais",
+    es = "Espa\u00f1ol"
   )
 
   missing_langs <- setdiff(printed_lang, names(lang_button_label))

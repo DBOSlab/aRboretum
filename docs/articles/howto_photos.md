@@ -27,18 +27,17 @@ illustrate.
 If you have not yet created your dataset, start with
 [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md):
 
-``` r
-library(aRboretum)
-
-spp_list <- c("Luetzelburgia bahiensis", "Paubrasilia echinata")
-
-arboretum_data(
-  spp_list = spp_list,
-  save = TRUE,
-  format = "csv",
-  dir = "arboretum_data"
-)
-```
+\
+[`library`](https://rdrr.io/r/base/library.html)`(`[`aRboretum`](https://DBOSlab.github.io/aRboretum)`)`\
+\
+`spp_list`` ``<-`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Luetzelburgia bahiensis"``, ``"Paubrasilia echinata"``)`\
+\
+[`arboretum_data`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)`(`\
+`  spp_list ``=`` ``spp_list``,`\
+`  save ``=`` ``TRUE``,`\
+`  format ``=`` ``"csv"``,`\
+`  dir ``=`` ``"arboretum_data"`\
+`)`
 
 This creates a folder such as `arboretum_data/` containing the exported
 species dataset.
@@ -49,18 +48,17 @@ Run
 [`arboretum_photos()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_photos.md)
 with the path to your species data file:
 
-``` r
-arboretum_photos(
-  data_path = "arboretum_data/arboretum_data.csv",
-  verbose = TRUE
-)
-```
+\
+[`arboretum_photos`](https://DBOSlab.github.io/aRboretum/reference/arboretum_photos.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.csv"``,`\
+`  verbose ``=`` ``TRUE`\
+`)`
 
 This creates a directory named `arboretum_photos/` in your working
 directory. Inside, you will find one subfolder per species, named like
 this:
 
-``` text
+```
 arboretum_photos/
 ├── FABACEAE_Luetzelburgia_bahiensis_photos/
 └── FABACEAE_Paubrasilia_echinata_photos/
@@ -82,7 +80,7 @@ Supported formats include:
 
 For example, for *Paubrasilia echinata* you might place:
 
-``` text
+```
 arboretum_photos/FABACEAE_Paubrasilia_echinata_photos/
 ├── whole_paubrasilia.jpg
 └── paubrasilia_fruit.png
@@ -100,13 +98,12 @@ Now run
 [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)
 and indicate the photo folder with the `photo_dir` argument:
 
-``` r
-arboretum_labels(
-  data_path = "arboretum_data/arboretum_data.csv",
-  photo_dir = "arboretum_photos",
-  dir = "arboretum_species_labels"
-)
-```
+\
+[`arboretum_labels`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.csv"``,`\
+`  photo_dir ``=`` ``"arboretum_photos"``,`\
+`  dir ``=`` ``"arboretum_species_labels"`\
+`)`
 
 The function will:
 
@@ -118,7 +115,7 @@ The function will:
 
 Open one of the generated HTML files in your browser, for example:
 
-``` text
+```
 arboretum_species_labels/FABACEAE_Paubrasilia_echinata_label.html
 ```
 
@@ -136,7 +133,7 @@ When
 is run with `photo_dir = "arboretum_photos"`, the output directory
 typically looks like this:
 
-``` text
+```
 arboretum_species_labels/
 ├── __arboretum_photos/
 │   ├── FABACEAE_Luetzelburgia_bahiensis_photos/

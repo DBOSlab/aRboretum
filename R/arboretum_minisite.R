@@ -324,26 +324,26 @@ arboretum_minisite <- function(labels_dir = NULL,
 # ==============================================================================
 .minisite_ui_strings <- list(
   search_placeholder = c(
-    en = "Search species, family or vernacular name…",
-    pt = "Pesquisar espécie, família ou nome popular…",
-    fr = "Rechercher espèce, famille ou nom vernaculaire…",
-    es = "Buscar especie, familia o nombre vernáculo…"
+    en = "Search species, family or vernacular name\u2026",
+    pt = "Pesquisar esp\u00e9cie, fam\u00edlia ou nome popular\u2026",
+    fr = "Rechercher esp\u00e8ce, famille ou nom vernaculaire\u2026",
+    es = "Buscar especie, familia o nombre vern\u00e1culo\u2026"
   ),
-  species_singular = c(en = "species", pt = "espécie",  fr = "espèce", es = "especie"),
-  species_plural = c(en = "species", pt = "espécies", fr = "espèces", es = "especies"),
-  family_singular = c(en = "family", pt = "família", fr = "famille", es = "familia"),
-  family_plural = c(en = "families", pt = "famílias", fr = "familles", es = "familias"),
+  species_singular = c(en = "species", pt = "esp\u00e9cie",  fr = "esp\u00e8ce", es = "especie"),
+  species_plural = c(en = "species", pt = "esp\u00e9cies", fr = "esp\u00e8ces", es = "especies"),
+  family_singular = c(en = "family", pt = "fam\u00edlia", fr = "famille", es = "familia"),
+  family_plural = c(en = "families", pt = "fam\u00edlias", fr = "familles", es = "familias"),
   of_count = c(en = "of",  pt = "de",  fr = "sur", es = "de"),
   no_results = c(
     en = "No species match your search.",
-    pt = "Nenhuma espécie encontrada.",
-    fr = "Aucune espèce ne correspond à votre recherche.",
+    pt = "Nenhuma esp\u00e9cie encontrada.",
+    fr = "Aucune esp\u00e8ce ne correspond \u00e0 votre recherche.",
     es = "No se encontraron especies."
   ),
   generated_with = c(en = "Generated with", pt = "Gerado com",
-                     fr = "Généré avec", es = "Generado con"),
-  lang_btn_label = c(en = "English", pt = "Português",
-                     fr = "Français", es = "Español")
+                     fr = "G\u00e9n\u00e9r\u00e9 avec", es = "Generado con"),
+  lang_btn_label = c(en = "English", pt = "Portugu\u00eas",
+                     fr = "Fran\u00e7ais", es = "Espa\u00f1ol")
 )
 
 # Dashboard labels per language (all dynamically updated by JS via data-i18n)
@@ -360,35 +360,35 @@ arboretum_minisite <- function(labels_dir = NULL,
     spp_abbr = "spp."
   ),
   pt = list(
-    title = "Visão Geral da Coleção",
-    species = "Espécies", genera = "Gêneros", families = "Famílias",
-    origin = "Espécies por origem",
-    phyto = "Espécies por domínio fitogeográfico",
-    states = "Distribuição no Brasil",
-    countries = "Distribuição mundial",
-    top_states = "principais estados", top_countries = "principais países",
-    top_phyto = "principais domínios",
+    title = "Vis\u00e3o Geral da Cole\u00e7\u00e3o",
+    species = "Esp\u00e9cies", genera = "G\u00eaneros", families = "Fam\u00edlias",
+    origin = "Esp\u00e9cies por origem",
+    phyto = "Esp\u00e9cies por dom\u00ednio fitogeogr\u00e1fico",
+    states = "Distribui\u00e7\u00e3o no Brasil",
+    countries = "Distribui\u00e7\u00e3o mundial",
+    top_states = "principais estados", top_countries = "principais pa\u00edses",
+    top_phyto = "principais dom\u00ednios",
     spp_abbr = "spp."
   ),
   fr = list(
-    title = "Aperçu de la Collection",
-    species = "Espèces", genera = "Genres", families = "Familles",
-    origin = "Espèces par origine",
-    phyto = "Espèces par domaine phytogéographique",
-    states = "Distribution au Brésil",
+    title = "Aper\u00e7u de la Collection",
+    species = "Esp\u00e8ces", genera = "Genres", families = "Familles",
+    origin = "Esp\u00e8ces par origine",
+    phyto = "Esp\u00e8ces par domaine phytog\u00e9ographique",
+    states = "Distribution au Br\u00e9sil",
     countries = "Distribution mondiale",
-    top_states = "principaux états", top_countries = "principaux pays",
+    top_states = "principaux \u00e9tats", top_countries = "principaux pays",
     top_phyto = "principaux domaines",
     spp_abbr = "spp."
   ),
   es = list(
-    title = "Resumen de la Colección",
-    species = "Especies", genera = "Géneros", families = "Familias",
+    title = "Resumen de la Colecci\u00f3n",
+    species = "Especies", genera = "G\u00e9neros", families = "Familias",
     origin = "Especies por origen",
-    phyto = "Especies por dominio fitogeográfico",
-    states = "Distribución en Brasil",
-    countries = "Distribución mundial",
-    top_states = "principales estados", top_countries = "principales países",
+    phyto = "Especies por dominio fitogeogr\u00e1fico",
+    states = "Distribuci\u00f3n en Brasil",
+    countries = "Distribuci\u00f3n mundial",
+    top_states = "principales estados", top_countries = "principales pa\u00edses",
     top_phyto = "principales dominios",
     spp_abbr = "spp."
   )
@@ -411,7 +411,7 @@ arboretum_minisite <- function(labels_dir = NULL,
 # ==============================================================================
 .establish_color <- function(val) {
   v <- tolower(trimws(val))
-  if (v %in% c("native", "nativa", "indígena")) "#2c5f2d"
+  if (v %in% c("native", "nativa", "ind\u00edgena")) "#2c5f2d"
   else if (v %in% c("naturalized", "naturalizada")) "#7b5ea7"
   else if (v %in% c("cultivated", "cultivada",
                     "introduced", "introduzida")) "#e07b39"
@@ -941,7 +941,7 @@ arboretum_minisite <- function(labels_dir = NULL,
     "    var spWord  = nTotal === 1 ? ui.speciesSingular : ui.speciesPlural;\n",
     "    var famWord = nFamilies === 1 ? ui.familySingular : ui.familyPlural;\n",
     "    document.getElementById('subtitleEl').textContent =\n",
-    "      nTotal + ' ' + spWord + ' · ' + nFamilies + ' ' + famWord;\n",
+    "      nTotal + ' ' + spWord + ' \u00b7 ' + nFamilies + ' ' + famWord;\n",
     "    document.getElementById('noResults').textContent = ui.noResults;\n",
     "    document.getElementById('generatedWith').textContent = ui.generatedWith;\n",
     "    updateCount(currentFilteredCount);\n",

@@ -43,22 +43,21 @@ If you have not already done so, first generate your species dataset
 with
 [`arboretum_data()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md).
 
-``` r
-library(aRboretum)
-
-species_list <- c("Luetzelburgia bahiensis", "Paubrasilia echinata")
-
-arboretum_data(
-  spp_list = species_list,
-  save = TRUE,
-  format = "xlsx",
-  dir = "arboretum_data"
-)
-```
+\
+[`library`](https://rdrr.io/r/base/library.html)`(`[`aRboretum`](https://DBOSlab.github.io/aRboretum)`)`\
+\
+`species_list`` ``<-`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Luetzelburgia bahiensis"``, ``"Paubrasilia echinata"``)`\
+\
+[`arboretum_data`](https://DBOSlab.github.io/aRboretum/reference/arboretum_data.md)`(`\
+`  spp_list ``=`` ``species_list``,`\
+`  save ``=`` ``TRUE``,`\
+`  format ``=`` ``"xlsx"``,`\
+`  dir ``=`` ``"arboretum_data"`\
+`)`
 
 This creates a folder containing your input spreadsheet, for example:
 
-``` text
+```
 arboretum_data/
 └── arboretum_data.xlsx
 ```
@@ -90,16 +89,15 @@ in the extra language.
 
 For example:
 
-``` r
-example_df <- data.frame(
-  taxonName = c("Paubrasilia echinata", "Euterpe edulis"),
-  family = c("Fabaceae", "Arecaceae"),
-  full_phrases_ADD_LANGUAGE = c(
-    "Texto completo em Tukano para Paubrasilia echinata.",
-    "Texto completo em Tukano para Euterpe edulis."
-  )
-)
-```
+\
+`example_df`` ``<-`` `[`data.frame`](https://rdrr.io/r/base/data.frame.html)`(`\
+`  taxonName ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Paubrasilia echinata"``, ``"Euterpe edulis"``)``,`\
+`  family ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Fabaceae"``, ``"Arecaceae"``)``,`\
+`  full_phrases_ADD_LANGUAGE ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(`\
+`    ``"Texto completo em Tukano para Paubrasilia echinata."``,`\
+`    ``"Texto completo em Tukano para Euterpe edulis."`\
+`  ``)`\
+`)`
 
 This extra language text is read directly by
 [`arboretum_labels()`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md).
@@ -123,18 +121,17 @@ The function will:
 - optionally create one extra folder per species for the language
   supplied in `add_lang`.
 
-``` r
-arboretum_audios(
-  data_path = "arboretum_data/arboretum_data.xlsx",
-  printed_lang = c("pt", "en"),
-  add_lang = "TUKANO",
-  verbose = TRUE
-)
-```
+\
+[`arboretum_audios`](https://DBOSlab.github.io/aRboretum/reference/arboretum_audios.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``)``,`\
+`  add_lang ``=`` ``"TUKANO"``,`\
+`  verbose ``=`` ``TRUE`\
+`)`
 
 The resulting structure may look like this:
 
-``` text
+```
 arboretum_audios/
 ├── ARECACEAE_Euterpe_edulis_EN/
 ├── ARECACEAE_Euterpe_edulis_TUKANO/
@@ -156,7 +153,7 @@ folders are not overwritten; only missing folders are created.
 
 Open the recording guide:
 
-``` text
+```
 arboretum_audios/__personal_audio_recording_guide.html
 ```
 
@@ -197,16 +194,15 @@ The function will:
 - add the extra language when `add_lang` is supplied and
   `full_phrases_ADD_LANGUAGE` contains non-empty text.
 
-``` r
-arboretum_labels(
-  data_path = "arboretum_data/arboretum_data.xlsx",
-  audio_dir = "arboretum_audios",
-  printed_lang = c("pt", "en", "fr"),
-  add_lang = "TUKANO",
-  dir = "arboretum_labels",
-  verbose = TRUE
-)
-```
+\
+[`arboretum_labels`](https://DBOSlab.github.io/aRboretum/reference/arboretum_labels.md)`(`\
+`  data_path ``=`` ``"arboretum_data/arboretum_data.xlsx"``,`\
+`  audio_dir ``=`` ``"arboretum_audios"``,`\
+`  printed_lang ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"pt"``, ``"en"``, ``"fr"``)``,`\
+`  add_lang ``=`` ``"TUKANO"``,`\
+`  dir ``=`` ``"arboretum_labels"``,`\
+`  verbose ``=`` ``TRUE`\
+`)`
 
 ## What happens in the final labels
 
@@ -233,7 +229,7 @@ for the extra language.
 
 A typical output directory looks like this:
 
-``` text
+```
 arboretum_labels/
 ├── __arboretum_audios/
 │   ├── FABACEAE_Paubrasilia_echinata_EN/
@@ -257,33 +253,31 @@ important requirement is a column named `full_phrases_ADD_LANGUAGE`.
 
 A minimal toy example is:
 
-``` r
-tukano_example <- data.frame(
-  taxonName = c("Paubrasilia echinata", "Euterpe edulis"),
-  family = c("Fabaceae", "Arecaceae"),
-  full_phrases_ADD_LANGUAGE = c(
-    "Texto completo em Tukano para Paubrasilia echinata.",
-    "Texto completo em Tukano para Euterpe edulis."
-  ),
-  stringsAsFactors = FALSE
-)
-```
+\
+`tukano_example`` ``<-`` `[`data.frame`](https://rdrr.io/r/base/data.frame.html)`(`\
+`  taxonName ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Paubrasilia echinata"``, ``"Euterpe edulis"``)``,`\
+`  family ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Fabaceae"``, ``"Arecaceae"``)``,`\
+`  full_phrases_ADD_LANGUAGE ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(`\
+`    ``"Texto completo em Tukano para Paubrasilia echinata."``,`\
+`    ``"Texto completo em Tukano para Euterpe edulis."`\
+`  ``)``,`\
+`  stringsAsFactors ``=`` ``FALSE`\
+`)`
 
 A more realistic file may also include built-in language notes and uses:
 
-``` r
-tukano_example <- data.frame(
-  taxonName = c("Paubrasilia echinata", "Euterpe edulis"),
-  family = c("Fabaceae", "Arecaceae"),
-  plant_uses_PT = c("Madeira e uso ornamental.", "Alimentação e paisagismo."),
-  free_notes_PT = c("Espécie simbólica no Brasil.", "Espécie importante da Mata Atlântica."),
-  full_phrases_ADD_LANGUAGE = c(
-    "Texto completo em Tukano para Paubrasilia echinata.",
-    "Texto completo em Tukano para Euterpe edulis."
-  ),
-  stringsAsFactors = FALSE
-)
-```
+\
+`tukano_example`` ``<-`` `[`data.frame`](https://rdrr.io/r/base/data.frame.html)`(`\
+`  taxonName ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Paubrasilia echinata"``, ``"Euterpe edulis"``)``,`\
+`  family ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Fabaceae"``, ``"Arecaceae"``)``,`\
+`  plant_uses_PT ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Madeira e uso ornamental."``, ``"Alimentação e paisagismo."``)``,`\
+`  free_notes_PT ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"Espécie simbólica no Brasil."``, ``"Espécie importante da Mata Atlântica."``)``,`\
+`  full_phrases_ADD_LANGUAGE ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(`\
+`    ``"Texto completo em Tukano para Paubrasilia echinata."``,`\
+`    ``"Texto completo em Tukano para Euterpe edulis."`\
+`  ``)``,`\
+`  stringsAsFactors ``=`` ``FALSE`\
+`)`
 
 ## Why `add_lang` matters
 

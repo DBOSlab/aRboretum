@@ -66,8 +66,7 @@ arboretum_labels(
   `free_notes_EN`, `free_notes_PT`, `free_notes_ES`, `free_notes_FR`,
   `FFB.url`, `POWO.url`, `IUCN.status`, `botanical_country`,
   `introduced_to`, `FFB.stateProvince`, `FFB.establishmentMeans`, and
-  and `full_phrases_ADD_LANGUAGE` are used when available. are used when
-  available.
+  `full_phrases_ADD_LANGUAGE` are used when available.
 
 - audio_dir:
 
@@ -211,7 +210,7 @@ The function follows five main steps:
       maps.
 
     - Reads Brazilian state boundaries using
-      [`geobr::read_state()`](https://ipeagit.github.io/geobr/reference/read_state.html).
+      [`geobr::read_state()`](https://rdrr.io/pkg/geobr/man/read_state.html).
 
     - Creates an interactive world map using native and introduced
       distribution information when available.
