@@ -25,8 +25,10 @@ knitr::opts_chunk$set(
 `aRboretum` is an R package for generating interactive, multilingual
 audio-enhanced HTML labels for botanical and living plant collections.
 It extracts species data from taxonomic databases ([Flora e Funga do
-Brasil](https://floradobrasil.jbrj.gov.br/) and [Plants of the World
-Online](https://powo.science.kew.org/)), handles synonym resolution,
+Brasil](https://floradobrasil.jbrj.gov.br/) and the [World Checklist of
+Vascular Plants](https://powo.science.kew.org/), the backbone of Plants of
+the World Online), retrieves conservation status from the [IUCN Red
+List](https://www.iucnredlist.org/), handles synonym resolution,
 generates natural language descriptions, and produces standalone HTML
 files with audio playback capabilities.
 
@@ -36,7 +38,8 @@ files with audio playback capabilities.
 - 🌐 **Multilingual** — Portuguese, English, French, Spanish, plus one flexible custom language slot for community-based accessibility
 - 🗺️ **Interactive maps** — World and Brazil state-level distribution
 - 🔍 **Searchable index** — Real-time filtering of species collection
-- 📊 **Data mining** — Automatic extraction from FFB and POWO databases
+- 📊 **Data mining** — Automatic extraction from FFB and WCVP, plus IUCN Red List status
+- ✏️ **Editable phrases** — Generated descriptions are stored in the data and can be edited by hand
 - 🎨 **Customizable branding** — Add institutional logos
 - 📱 **Responsive design** — Works on mobile and desktop
 - 🚀 **Ready to deploy** — Complete website in one folder, no build step needed 
@@ -61,11 +64,24 @@ devtools::install_github("DBOSlab/aRboretum")
 library(aRboretum)
 ```
 
+### Optional: IUCN Red List API token
+
+By default, IUCN Red List categories are retrieved from the IUCN Red List
+checklist mirrored by [GBIF](https://www.gbif.org/), which requires no
+registration. To query the official [IUCN Red List API](https://api.iucnredlist.org/)
+instead, install the [`rredlist`](https://docs.ropensci.org/rredlist/) package,
+request a free API token, and store it in your `.Renviron` file:
+
+``` r
+install.packages("rredlist")
+usethis::edit_r_environ()   # add the line: IUCN_REDLIST_KEY=your_token
+```
+
 ## Usage
 
 The package provides six main functions:
 
-- `arboretum_data()` — retrieves and merges species data from Flora e Funga do Brasil and Plants of the World Online.
+- `arboretum_data()` — retrieves and merges species data from Flora e Funga do Brasil and the World Checklist of Vascular Plants, adds IUCN Red List status, and generates editable multilingual species phrases.
 - `arboretum_audios()` — creates folders and an HTML recording guide for custom personal audio files, including one optional extra community or local language.
 - `arboretum_photos()` — creates folders for personal species photos.
 - `arboretum_labels()` — generates interactive multilingual, audio-enhanced HTML species labels, with support for one optional extra language supplied directly in the input data.
@@ -76,8 +92,11 @@ The package provides six main functions:
 #### *1. `arboretum_data`: Extracting species data from taxonomic databases*
 
 The following code retrieves species information from both Flora e Funga
-do Brasil (FFB) and Plants of the World Online (POWO), handling synonym
-resolution and merging data from both sources into a single dataframe.  
+do Brasil (FFB) and the World Checklist of Vascular Plants (WCVP, via the
+[`rWCVPdata`](https://github.com/matildabrown/rWCVPdata) package), handling
+synonym resolution and merging data from both sources into a single
+dataframe. The global IUCN Red List status of each species is then
+retrieved, as described in [Installation](#optional-iucn-red-list-api-token).  
 
 ``` r
 library(aRboretum)
@@ -95,7 +114,25 @@ species_data <- arboretum_data(
 )
 ```
 
-The resulting dataframe includes taxonomic information, distribution data, Brazilian states, phytogeographic domains, vegetation types, endemism, establishment means, IUCN status when available, genus-level richness summaries, and links to FFB and POWO species pages. When `save = TRUE`, the function also writes a standalone HTML phrase guide (`__phrase_generating_guide.html`) to `dir`, allowing you to review generated phrases, fill in annotation fields (`FFB.vernacularName`, `plant_uses_*`, `free_notes_*`, `full_phrases_ADD_LANGUAGE`), and export the updated data as CSV or XLSX directly from the browser.
+The resulting dataframe includes taxonomic information, distribution data, Brazilian states, phytogeographic domains, vegetation types, endemism, establishment means, IUCN Red List status (e.g. `"Endangered (EN)"`) when the species has been assessed, genus-level richness summaries, and links to FFB and POWO species pages. When `save = TRUE`, the function also writes a standalone HTML phrase guide (`__phrase_generating_guide.html`) to `dir`, allowing you to review generated phrases, fill in annotation fields (`FFB.vernacularName`, `plant_uses_*`, `free_notes_*`, `full_phrases_*`), and export the updated data as CSV or XLSX directly from the browser.
+
+##### Editing the species phrases
+
+The natural-language species descriptions are generated automatically and
+stored in the columns `full_phrases_EN`, `full_phrases_PT`,
+`full_phrases_ES`, and `full_phrases_FR`. You can rewrite any of them, either
+directly in the saved CSV/XLSX file or in the phrase guide, and your text is
+then used as is by `arboretum_audios()` and `arboretum_labels()`:
+
+- Phrases already stored in these columns are never overwritten.
+- If you clear a cell, a new phrase is generated for that species on the next
+  `arboretum_data()` run with the same `dir`.
+- Text in `plant_uses_*` and `free_notes_*` is appended after the phrase, so
+  there is no need to repeat it there.
+
+Running `arboretum_data()` again on a `dir` that already contains the data
+file reuses that file instead of querying the databases again, and only
+fills in empty phrase cells.
     
 
 #### *2. `arboretum_audios`: Prepare folders for personal audio recordings*
@@ -368,22 +405,22 @@ columns (as produced by `arboretum_data()`):
 
 | Column | Description |
 |---|---|
-| `original_query` | Original species name as supplied to `arboretum_data()` |
 | `taxonName` | Accepted scientific name |
 | `family` | Botanical family |
 | `scientificNameAuthorship` | Scientific name authorship |
 | `FFB.vernacularName` | Vernacular names from Flora e Funga do Brasil |
 | `country` | Country-level distribution |
 | `endemism` | Endemism status |
-| `botanical_country` | POWO botanical-country distribution |
-| `introduced_to` | Introduced range from POWO |
+| `botanical_country` | Native distribution in WCVP botanical countries |
+| `introduced_to` | Introduced range from WCVP |
 | `FFB.establishmentMeans` | Native, cultivated, naturalized, etc. |
 | `FFB.stateProvince` | Brazilian states |
 | `FFB.phytogeographicDomain` | Brazilian phytogeographic domains |
 | `FFB.vegetationType` | Vegetation types |
-| `IUCN.status` | IUCN status from POWO, when available |
+| `IUCN.status` | IUCN Red List category (e.g. `Endangered (EN)`), when assessed |
 | `plant_uses_EN/PT/ES/FR` | Plant-use annotation fields (editable via HTML guide) |
 | `free_notes_EN/PT/ES/FR` | Free-text note fields (editable via HTML guide) |
+| `full_phrases_EN/PT/ES/FR` | Generated species phrases; optional, editable, and filled in automatically when empty |
 | `full_phrases_ADD_LANGUAGE` | Full phrase for the custom language set in `add_lang` |
 | `POWO.url` | POWO species page |
 | `FFB.url` | FFB species page |
@@ -445,7 +482,8 @@ for details.
 The package uses data from:
 
 - [Flora e Funga do Brasil (FFB)](https://floradobrasil.jbrj.gov.br/)
-- [Plants of the World Online (POWO)](https://powo.science.kew.org/)
+- [World Checklist of Vascular Plants (WCVP)](https://powo.science.kew.org/), through the [`rWCVPdata`](https://github.com/matildabrown/rWCVPdata) package
+- [IUCN Red List of Threatened Species](https://www.iucnredlist.org/), through [GBIF](https://www.gbif.org/) or the [`rredlist`](https://docs.ropensci.org/rredlist/) package
 
 ## Contributing
 
